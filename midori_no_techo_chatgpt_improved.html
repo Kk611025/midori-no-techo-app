@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#315b45">
+<title>みどりの手帳｜観葉植物管理</title>
+<style>
+:root{--green:#315b45;--green2:#527b5e;--mint:#e9f1e8;--cream:#f7f6ef;--ink:#26352b;--muted:#718075;--line:#e3e8df;--white:#fff;--gold:#d6a84b}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;padding-bottom:88px}
+header{background:var(--green);color:white;padding:22px 18px 18px;border-radius:0 0 24px 24px}
+header .eyebrow{font-size:11px;letter-spacing:.16em;opacity:.8}header h1{font-size:24px;margin:5px 0 4px}header p{font-size:12px;margin:0;opacity:.85}
+main{max-width:760px;margin:auto;padding:16px}
+.tabs{display:flex;gap:8px;overflow:auto;margin:0 0 16px;padding-bottom:4px}
+.tab{border:1px solid var(--line);background:white;border-radius:99px;padding:10px 15px;white-space:nowrap;color:var(--muted);font-size:13px}
+.tab.active{background:var(--green);color:white;border-color:var(--green)}
+.panel{display:none}.panel.active{display:block}
+.card{background:white;border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:12px;box-shadow:0 3px 12px #253b2910}
+.section-title{font-size:17px;margin:4px 0 12px}.muted{color:var(--muted);font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}.stat{background:var(--mint);border-radius:15px;padding:12px 8px;text-align:center}.stat b{display:block;font-size:22px;color:var(--green)}.stat span{font-size:11px;color:var(--muted)}
+.row{display:flex;align-items:center;gap:12px}.grow{flex:1;min-width:0}
+.plant-img{width:68px;height:68px;border-radius:14px;object-fit:cover;background:var(--mint);flex-shrink:0}.plant-img.placeholder{display:grid;place-items:center;font-size:30px}
+.plant-name{font-weight:700;font-size:15px}.plant-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.btn{border:0;background:var(--green);color:white;border-radius:12px;padding:11px 14px;font-size:13px;font-weight:600}.btn.secondary{background:var(--mint);color:var(--green)}.btn.light{background:#f2f4ef;color:var(--ink)}.btn.danger{background:#fae9e5;color:#a34332}.btn.small{padding:8px 10px;font-size:11px}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.badge{display:inline-block;border-radius:99px;background:var(--mint);color:var(--green);font-size:10px;padding:4px 8px}.badge.due{background:#fff0d9;color:#8b5b12}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px;background:#fff;font:inherit;font-size:14px;color:var(--ink);margin:5px 0 12px}
+label{font-size:12px;color:var(--muted);display:block}textarea{min-height:75px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.empty{text-align:center;padding:28px 12px;color:var(--muted);font-size:13px}
+.due-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.due-item:last-child{border:0}
+.book-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.book{border:1px solid var(--line);border-radius:15px;padding:12px;background:white;text-align:left}
+.book .emoji{font-size:28px}.book strong{display:block;font-size:13px;margin:5px 0}.book small{color:var(--muted);font-size:10px}
+.detail-head{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+hr{border:0;border-top:1px solid var(--line);margin:12px 0}
+footer{text-align:center;color:#8a968c;font-size:10px;padding:20px}
+nav{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1px solid var(--line);display:flex;justify-content:center;gap:3px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(12px);z-index:5}
+nav button{flex:1;max-width:150px;border:0;background:none;color:var(--muted);font-size:10px;padding:5px}nav button span{display:block;font-size:19px;margin-bottom:2px}nav button.active{color:var(--green);font-weight:700}
+.modal{position:fixed;inset:0;background:#15251dcc;display:none;align-items:flex-end;z-index:10}.modal.show{display:flex}.sheet{background:var(--cream);width:100%;max-height:90vh;overflow:auto;border-radius:22px 22px 0 0;padding:20px 18px calc(24px + env(safe-area-inset-bottom));max-width:760px;margin:auto}
+.sheet-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.close{border:0;background:#e8ede6;border-radius:50%;width:34px;height:34px;font-size:18px}
+@media(min-width:650px){.book-grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<header><div class="eyebrow">HOUSEPLANT JOURNAL</div><h1>🌿 みどりの手帳</h1><p>毎日の小さなお世話を、忘れずに。</p></header>
+<main>
+<div class="tabs" id="tabs">
+<button class="tab active" data-page="home">ホーム</button><button class="tab" data-page="plants">植物一覧</button><button class="tab" data-page="book">植物図鑑</button><button class="tab" data-page="records">お世話記録</button>
+</div>
+<section class="panel active" id="home">
+<div class="stats"><div class="stat"><b id="plantCount">0</b><span>育てている植物</span></div><div class="stat"><b id="waterCount">0</b><span>今日の水やり候補</span></div><div class="stat"><b id="recordCount">0</b><span>お世話記録</span></div></div>
+<div class="card"><div class="row"><div class="grow"><h2 class="section-title">今日のお世話 💧</h2><div class="muted">予定日は目安です。土の乾き具合も確認しましょう。</div></div><button class="btn small" onclick="openAdd()">＋ 植物を追加</button></div><div id="todayList"></div></div>
+<div class="card"><h2 class="section-title">育てている植物</h2><div id="homePlants"></div></div>
+<div class="card"><h2 class="section-title">🌱 今日の育て方メモ</h2><p class="muted">水やりは「何日おき」と決めつけず、土の状態を確認するのが基本。鉢の表面だけでなく、指で少し土に触れて乾き具合を確かめてから水を与えましょう。</p></div>
+</section>
+<section class="panel" id="plants"><div class="row" style="margin-bottom:12px"><h2 class="section-title grow">植物一覧</h2><button class="btn" onclick="openAdd()">＋ 登録</button></div><div id="plantList"></div></section>
+<section class="panel" id="book"><h2 class="section-title">植物図鑑 🌿</h2><p class="muted">植物を選ぶと特徴と基本的な育て方を確認できます。</p><input id="bookSearch" placeholder="植物名で検索…" oninput="renderBook()"><div class="book-grid" id="bookGrid"></div></section>
+<section class="panel" id="records"><h2 class="section-title">お世話記録 📖</h2><div id="recordList"></div></section>
+<footer>みどりの手帳 · データはこの端末のブラウザ内に保存されます</footer>
+</main>
+<nav><button class="active" data-page="home"><span>🏡</span>ホーム</button><button data-page="plants"><span>🪴</span>植物</button><button data-page="book"><span>📚</span>図鑑</button><button data-page="records"><span>📖</span>記録</button></nav>
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()"><div class="sheet"><div class="sheet-top"><strong id="modalTitle">植物を登録</strong><button class="close" onclick="closeModal()">×</button></div><div id="modalBody"></div></div></div>
+<script>
+const key='midori_note_v1';
+let state=JSON.parse(localStorage.getItem(key)||'{"plants":[],"records":[]}');
+const today=()=>new Date().toISOString().slice(0,10);
+const plus=(date,days)=>{let d=new Date(date+'T12:00:00');d.setDate(d.getDate()+Number(days||0));return d.toISOString().slice(0,10)};
+const fmt=d=>d?d.replaceAll('-','/'): '未設定';
+const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function save(){localStorage.setItem(key,JSON.stringify(state));render()}
+const encyclopedia=[
+['モンステラ','🌿','明るい日陰','土が乾いてからたっぷり','春〜秋に生育。強い直射日光は避け、葉のほこりを拭く。','春〜秋','中毒性があるため、ペットや小さな子どもの誤食に注意。'],
+['ポトス','🍃','明るい日陰','土の表面が乾いたらたっぷり','丈夫で育てやすいつる性植物。伸びたつるは剪定して挿し木にできる。','春〜秋','寒さと過湿に注意。'],
+['サンスベリア','🌵','明るい場所','土が中まで乾いてから','乾燥に強い。冬は水やりをかなり控えめにする。','春〜夏','低温時の水の与えすぎは根腐れの原因。'],
+['パキラ','🌳','明るい日陰','土の表面が乾いたら','明るく風通しのよい場所を好む。生育期は定期的に向きを変える。','春〜秋','冬の寒さ・水の与えすぎに注意。'],
+['ガジュマル','🌳','日当たりのよい場所','土の表面が乾いたら','日光を好む。急な環境変化を避け、徐々に日当たりに慣らす。','春〜秋','受け皿に水をためない。'],
+['フィカス・ウンベラータ','🌱','明るい日陰','土の表面が乾いたら','大きな葉が特徴。乾燥する季節は葉水もおすすめ。','春〜秋','急な移動や温度変化で葉が落ちることがある。'],
+['アレカヤシ','🌴','明るい日陰','土の表面が乾き始めたら','高温多湿を好む。乾燥時は葉水で湿度を補う。','春〜秋','エアコンの風が直接当たらない場所に。'],
+['ドラセナ','🌿','明るい日陰','土が乾いてから','品種が多く比較的丈夫。風通しのよい場所で管理する。','春〜秋','過湿と冬の冷え込みに注意。'],
+['ゴムの木','🍃','明るい場所','土の表面が乾いたら','光沢のある葉が特徴。葉のほこりを定期的に拭く。','春〜秋','樹液に触れるとかぶれる場合がある。'],
+['アイビー','🍀','明るい場所','土の表面が乾いたら','つるを伸ばして育つ。蒸れに注意し風通しを確保する。','春〜秋','高温多湿が苦手。'],
+['オリヅルラン','🌱','明るい日陰','土の表面が乾いたら','ランナーの先に子株ができる。子株から増やしやすい。','春〜秋','強い直射日光で葉焼けすることがある。'],
+['シェフレラ（カポック）','🌳','明るい場所','土の表面が乾いたら','環境への適応力が高い。剪定で樹形を整えられる。','春〜秋','冬は水やりを控えめにする。']
+];
+function switchPage(p){document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===p));}
+document.querySelectorAll('[data-page]').forEach(x=>x.addEventListener('click',()=>switchPage(x.dataset.page)));
+function due(p){if(!p.lastWater)return true;return plus(p.lastWater,p.interval||7)<=today()}
+function plantCard(p){let d=due(p);return `<div class="card"><div class="row"><div class="plant-img ${p.photo?'':'placeholder'}">${p.photo?`<img class="plant-img" src="${p.photo}">`:'🪴'}</div><div class="grow"><div class="plant-name">${esc(p.name)}</div><div class="plant-sub">${esc(p.place||'置き場所未設定')} · 水やり目安 ${p.interval||7}日ごと</div><div style="margin-top:6px"><span class="badge ${d?'due':''}">${d?'水やり時期の目安':'次回 '+fmt(plus(p.lastWater,p.interval||7))}</span></div></div></div><div class="actions"><button class="btn small" onclick="logCare('${p.id}','水やり')">💧 水やりした</button><button class="btn secondary small" onclick="showDetail('${p.id}')">詳細・編集</button></div></div>`}
+function render(){document.getElementById('plantCount').textContent=state.plants.length;document.getElementById('waterCount').textContent=state.plants.filter(due).length;document.getElementById('recordCount').textContent=state.records.length;
+let duePlants=state.plants.filter(due);document.getElementById('todayList').innerHTML=duePlants.length?duePlants.map(p=>`<div class="due-item"><div class="grow"><b>${esc(p.name)}</b><div class="muted">前回：${fmt(p.lastWater)}</div></div><button class="btn small" onclick="logCare('${p.id}','水やり')">完了</button></div>`).join(''):'<div class="empty">今日が目安日の植物はありません 🌿</div>';
+document.getElementById('homePlants').innerHTML=state.plants.length?state.plants.slice(0,4).map(plantCard).join(''):'<div class="empty">まだ植物が登録されていません。<br>「＋植物を追加」から登録しましょう。</div>';
+document.getElementById('plantList').innerHTML=state.plants.length?state.plants.map(plantCard).join(''):'<div class="empty">植物を登録すると、ここに一覧表示されます。</div>';
+document.getElementById('recordList').innerHTML=state.records.length?state.records.slice().reverse().map(r=>`<div class="card"><div class="row"><div class="grow"><b>${esc(r.plantName)}</b><div class="muted">${fmt(r.date)} · ${esc(r.type)}</div>${r.note?`<div class="muted" style="margin-top:5px">${esc(r.note)}</div>`:''}</div><span>✓</span></div></div>`).join(''):'<div class="empty">お世話を記録すると、ここに履歴が残ります。</div>';
+}
+function openModal(title,body){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function openAdd(){openModal('植物を登録',`<form id="plantForm"><label>植物の名前 *</label><input name="name" required placeholder="例：モンステラ"><label>写真（任意）</label><input type="file" name="photo" accept="image/*"><div class="grid2"><div><label>置き場所</label><input name="place" placeholder="例：リビング窓際"></div><div><label>水やり間隔の目安（日）</label><input name="interval" type="number" min="1" max="90" value="7"></div></div><div class="grid2"><div><label>購入・お迎え日</label><input name="since" type="date" value="${today()}"></div><div><label>日当たり</label><select name="light"><option>明るい日陰</option><option>日当たりのよい場所</option><option>半日陰</option><option>日陰</option></select></div></div><label>メモ</label><textarea name="note" placeholder="品種、気になることなど"></textarea><button class="btn" style="width:100%">登録する</button></form>`);document.getElementById('plantForm').onsubmit=async e=>{e.preventDefault();let f=e.target;let photo='';let file=f.photo.files[0];if(file)photo=await resizeImage(file);state.plants.push({id:crypto.randomUUID(),name:f.name.value,place:f.place.value,interval:Number(f.interval.value)||7,lastWater:'',since:f.since.value,light:f.light.value,note:f.note.value,photo});closeModal();save()}}
+function resizeImage(file){return new Promise(resolve=>{let reader=new FileReader();reader.onload=()=>{let img=new Image();img.onload=()=>{let c=document.createElement('canvas'),scale=Math.min(1,600/Math.max(img.width,img.height));c.width=img.width*scale;c.height=img.height*scale;c.getContext('2d').drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.72))};img.src=reader.result};reader.readAsDataURL(file)})}
+function logCare(id,type){let p=state.plants.find(x=>x.id===id);if(!p)return;if(type==='水やり')p.lastWater=today();state.records.push({id,date:today(),type,plantName:p.name,note:''});save()}
+function showDetail(id){let p=state.plants.find(x=>x.id===id);if(!p)return;openModal(p.name,`<div class="detail-head">${p.photo?`<img class="plant-img" src="${p.photo}">`:'<div class="plant-img placeholder">🪴</div>'}<div><b>${esc(p.name)}</b><div class="muted">${esc(p.place||'置き場所未設定')}</div><div class="badge">${esc(p.light||'日当たり未設定')}</div></div></div><div class="card"><div class="muted">水やり管理</div><b>前回：${fmt(p.lastWater)}</b><br><span class="muted">次回目安：${p.lastWater?fmt(plus(p.lastWater,p.interval)): '未記録（初回の状態を確認）'}</span></div><div class="grid2"><div><label>水やり間隔（日）</label><input id="editInterval" type="number" min="1" max="90" value="${p.interval}"></div><div><label>置き場所</label><input id="editPlace" value="${esc(p.place)}"></div></div><label>メモ</label><textarea id="editNote">${esc(p.note)}</textarea><div class="actions"><button class="btn" onclick="logCare('${p.id}','水やり');closeModal()">💧 水やり記録</button><button class="btn secondary" onclick="logCare('${p.id}','肥料');closeModal()">🌱 肥料記録</button><button class="btn light" onclick="logCare('${p.id}','植え替え');closeModal()">🪴 植え替え記録</button></div><button class="btn" style="width:100%;margin-top:12px" onclick="updatePlant('${p.id}')">変更を保存</button><button class="btn danger" style="width:100%;margin-top:8px" onclick="deletePlant('${p.id}')">この植物を削除</button>`)}
+function updatePlant(id){let p=state.plants.find(x=>x.id===id);p.interval=Number(document.getElementById('editInterval').value)||7;p.place=document.getElementById('editPlace').value;p.note=document.getElementById('editNote').value;closeModal();save()}
+function deletePlant(id){if(confirm('この植物を削除しますか？記録は残ります。')){state.plants=state.plants.filter(p=>p.id!==id);closeModal();save()}}
+function renderBook(){let q=(document.getElementById('bookSearch')?.value||'').toLowerCase();document.getElementById('bookGrid').innerHTML=encyclopedia.filter(x=>x[0].toLowerCase().includes(q)).map((x,i)=>`<button class="book" onclick="bookDetail(${i})"><div class="emoji">${x[1]}</div><strong>${x[0]}</strong><small>${x[2]} · ${x[3]}</small></button>`).join('')||'<div class="empty">見つかりませんでした。</div>'}
+function bookDetail(i){let x=encyclopedia.filter(y=>y[0].toLowerCase().includes((document.getElementById('bookSearch').value||'').toLowerCase()))[i];if(!x)return;openModal(x[0],`<div style="font-size:48px;text-align:center">${x[1]}</div><div class="card"><b>☀️ 日当たり</b><p>${x[2]}</p><b>💧 水やり</b><p>${x[3]}</p><b>🌱 育て方</b><p>${x[4]}</p><b>🪴 植え替え目安</b><p>${x[5]}</p><b>⚠️ 注意点</b><p>${x[6]}</p></div><button class="btn" style="width:100%" onclick="prefill('${x[0]}')">この植物を登録する</button>`)}
+function prefill(name){closeModal();openAdd();document.querySelector('#plantForm [name=name]').value=name}
+render();renderBook();
+
+// 追加機能：年間カレンダー・成長写真比較・通知・写真から調べるガイド
+state.growth = state.growth || [];
+const extraStyle = document.createElement('style');
+extraStyle.textContent = `
+.extra-panel{display:none}.extra-panel.active{display:block}
+.extra-nav{display:flex;gap:6px;overflow:auto;margin:0 0 14px}
+.extra-nav button{white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:99px;padding:9px 12px;color:var(--muted);font-size:12px}
+.extra-nav button.active{background:var(--green);color:#fff}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.calendar-grid button{border:1px solid var(--line);background:#fff;border-radius:9px;min-height:48px;text-align:left;padding:5px;font-size:12px}
+.calendar-grid button.marked{background:var(--mint);border-color:#b7cbb7}
+.photo-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.photo-grid img{width:100%;height:160px;object-fit:cover;border-radius:12px}
+`;
+document.head.appendChild(extraStyle);
+const extraNav=document.createElement('div');extraNav.className='extra-nav';
+extraNav.innerHTML='<button data-extra="calendar">📅 お世話カレンダー</button><button data-extra="growth">🖼️ 成長写真アルバム</button><button data-extra="identify">📸 写真で植物を調べる</button>';
+document.querySelector('main').insertBefore(extraNav,document.querySelector('main').firstChild);
+const extraWrap=document.createElement('div');extraWrap.innerHTML=`
+<section class="extra-panel" id="extra-calendar"><div class="card"><h2 class="section-title">お世話・成長記録カレンダー</h2><p class="muted">水やり・肥料などのお世話と、成長写真を撮った日がカレンダーに表示されます。</p><div class="row"><button class="btn secondary small" id="calPrev">‹</button><b class="grow" id="calTitle" style="text-align:center"></b><button class="btn secondary small" id="calNext">›</button></div><div class="calendar-grid" id="calGrid" style="margin-top:12px"></div><div id="calInfo" class="muted" style="margin-top:12px">日付をタップすると、その日の記録を確認できます。</div></div></section>
+<section class="extra-panel" id="extra-growth"><div class="card"><h2 class="section-title">成長写真アルバム</h2><p class="muted">植物ごとに写真を日付順で保存。以前と最近の写真を並べて成長を比べられます。</p><label>植物</label><select id="growthSelect"></select><label>成長写真を追加</label><input id="growthFile" type="file" accept="image/*" capture="environment"><input id="growthMemo" placeholder="メモ（新芽が出た、葉が増えた等）"><button class="btn" id="growthSave">写真を保存</button><div id="growthPhotos" style="margin-top:14px"></div><div id="growthCompare"></div></div></section>
+<section class="extra-panel" id="extra-identify"><div class="card"><h2 class="section-title">📸 写真から植物を調べる</h2><p class="muted">写真を選び、ChatGPTに送って調べます。結果をこの画面に貼り付けると、自分の図鑑に保存できます。</p><label>植物の写真</label><input id="identifyFile" type="file" accept="image/*" capture="environment"><div id="identifyPreview"></div><div class="actions"><button class="btn" id="chatgptIdentify" disabled>ChatGPTで調べる</button></div><p class="muted">ボタンを押すと質問文を準備してChatGPTを開きます。ChatGPTで写真を添付し、質問文と一緒に送信してください。</p><button class="btn secondary" id="copyPlantPrompt" disabled>質問文をコピー</button><hr><h3 class="section-title">調べた結果を図鑑に保存</h3><label>植物の名前</label><input id="customPlantName" placeholder="例：ガジュマル"><label>ChatGPTの回答を貼り付け</label><textarea id="customPlantInfo" style="min-height:150px" placeholder="特徴、育て方、剪定方法、豆知識など"></textarea><button class="btn" id="saveCustomPlant" style="width:100%">📚 図鑑に保存</button><p class="muted">保存した内容は、このiPhoneのブラウザ内に保存されます。写真の判定は候補として扱い、種類が確定できない場合は追加情報を確認してください。</p></div></section>`;
+document.querySelector('main').appendChild(extraWrap);
+let calDate=new Date();
+function showExtra(which){
+ document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+ document.querySelectorAll('.extra-panel').forEach(x=>x.classList.remove('active'));
+ document.querySelectorAll('.extra-nav button').forEach(x=>x.classList.toggle('active',x.dataset.extra===which));
+ document.getElementById('extra-'+which).classList.add('active');
+ if(which==='calendar')drawCalendar(); if(which==='growth')drawGrowth();
+}
+extraNav.querySelectorAll('button').forEach(b=>b.onclick=()=>showExtra(b.dataset.extra));
+document.getElementById('calPrev').onclick=()=>{calDate.setMonth(calDate.getMonth()-1);drawCalendar()};
+document.getElementById('calNext').onclick=()=>{calDate.setMonth(calDate.getMonth()+1);drawCalendar()};
+function drawCalendar(){
+ const y=calDate.getFullYear(),m=calDate.getMonth(),start=(new Date(y,m,1).getDay()+6)%7,days=new Date(y,m+1,0).getDate();
+ document.getElementById('calTitle').textContent=`${y}年 ${m+1}月`;
+ let out=['月','火','水','木','金','土','日'].map(x=>`<div class="muted" style="text-align:center">${x}</div>`).join('');
+ for(let i=0;i<start;i++)out+='<div></div>';
+ for(let d=1;d<=days;d++){let ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,rs=(state.records||[]).filter(r=>r.date===ds),photos=(state.growth||[]).filter(g=>g.date===ds);out+=`<button class="${rs.length||photos.length?'marked':''}" data-day="${ds}"><b>${d}</b><br><small>${rs.length?'📝'+rs.length:''} ${photos.length?'📷'+photos.length:''}</small></button>`}
+ document.getElementById('calGrid').innerHTML=out;
+ document.getElementById('calInfo').innerHTML='📝 お世話記録　📷 成長写真　／ 日付をタップすると内容を確認できます。';
+ document.querySelectorAll('#calGrid button[data-day]').forEach(b=>b.onclick=()=>{let rs=(state.records||[]).filter(r=>r.date===b.dataset.day),photos=(state.growth||[]).filter(g=>g.date===b.dataset.day);let detail=rs.length?rs.map(r=>`${esc(r.plantName)}：${esc(r.type)}`).join('<br>'):'お世話記録はありません';let photoHtml=photos.length?'<div class="photo-grid" style="margin-top:8px">'+photos.map(g=>`<div><img src="${g.photo}" style="width:100%;height:110px;object-fit:cover;border-radius:10px"><small>${esc(g.plantName)}</small></div>`).join('')+'</div>':'<br>成長写真はありません';document.getElementById('calInfo').innerHTML=`<b>${b.dataset.day}</b><br>${detail}<br><b>📷 成長写真</b>${photoHtml}`});
+}
+function drawGrowth(){
+ let s=document.getElementById('growthSelect'),old=s.value;
+ s.innerHTML=state.plants.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+ if(state.plants.some(p=>p.id===old))s.value=old;
+ const arr=(state.growth||[]).filter(g=>g.plantId===s.value).sort((a,b)=>a.date.localeCompare(b.date));
+ document.getElementById('growthPhotos').innerHTML=arr.length?'<div class="photo-grid">'+arr.map(g=>`<div class="card" style="margin:0;padding:8px"><img src="${g.photo}" alt="${esc(g.plantName)}の成長写真"><b>${g.date}</b><div class="muted">${esc(g.memo||'メモなし')}</div></div>`).join('')+'</div>':'<p class="muted">まだ写真がありません。撮影した写真は、ここに日付順のアルバムとして保存されます。</p>';
+ document.getElementById('growthCompare').innerHTML=arr.length>1?`<hr><b>写真を2枚選んで比較</b><div class="grid2"><div><label>以前</label><select id="compareOld">${arr.map(g=>`<option value="${g.id}">${g.date}</option>`).join('')}</select></div><div><label>最近</label><select id="compareNew">${arr.map((g,i)=>`<option value="${g.id}" ${i===arr.length-1?'selected':''}>${g.date}</option>`).join('')}</select></div></div><button class="btn secondary" id="compareBtn">並べて比較</button><div id="compareOutput" class="photo-grid" style="margin-top:12px"></div>`:'';
+ let cb=document.getElementById('compareBtn');if(cb)cb.onclick=()=>{let a=arr.find(g=>g.id===document.getElementById('compareOld').value),b=arr.find(g=>g.id===document.getElementById('compareNew').value);document.getElementById('compareOutput').innerHTML=[a,b].map(g=>`<div><img src="${g.photo}"><small>${g.date}</small></div>`).join('')};
+}
+document.getElementById('growthSelect').onchange=drawGrowth;
+document.getElementById('growthSave').onclick=async()=>{
+ let id=document.getElementById('growthSelect').value,file=document.getElementById('growthFile').files[0];
+ if(!id){alert('先に植物を登録してください');return}if(!file){alert('写真を選んでください');return}
+ let data=await new Promise(resolve=>{let r=new FileReader();r.onload=()=>{let im=new Image();im.onload=()=>{let c=document.createElement('canvas'),sc=Math.min(1,700/Math.max(im.width,im.height));c.width=im.width*sc;c.height=im.height*sc;c.getContext('2d').drawImage(im,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.75))};im.src=r.result};r.readAsDataURL(file)});
+ let plant=state.plants.find(p=>p.id===id);state.growth.push({id:Date.now().toString(),plantId:id,plantName:plant.name,date:today(),photo:data,memo:document.getElementById('growthMemo').value});
+ state.records.push({date:today(),type:'成長写真',plantName:plant.name,note:document.getElementById('growthMemo').value});save();drawGrowth();drawCalendar();document.getElementById('growthFile').value='';document.getElementById('growthMemo').value='';alert('成長写真をアルバムに保存しました');
+};
+let identifyPhotoData='';
+let plantPrompt='';
+document.getElementById('identifyFile').onchange=async e=>{
+ let f=e.target.files[0];if(!f)return;
+ identifyPhotoData=await resizeImage(f);
+ document.getElementById('identifyPreview').innerHTML=`<img src="${identifyPhotoData}" style="width:100%;max-height:240px;object-fit:contain;border-radius:12px">`;
+ plantPrompt='この植物の写真を見て、分かる範囲で教えてください。①植物名と候補（確信度も）②見分けた特徴③原産地や豆知識④日当たり・水やり・温度・肥料⑤剪定の適期と具体的な切る位置・切り方⑥病害虫や注意点。断定できない場合は断定せず、追加で必要な写真や確認点を教えてください。剪定は植物の種類・季節・状態を確認し、安全側の方法を説明してください。';
+ document.getElementById('chatgptIdentify').disabled=false;document.getElementById('copyPlantPrompt').disabled=false;
+};
+document.getElementById('copyPlantPrompt').onclick=async()=>{try{await navigator.clipboard.writeText(plantPrompt);alert('質問文をコピーしました。ChatGPTに貼り付けてください。')}catch(e){prompt('この質問文をコピーしてください',plantPrompt)}};
+document.getElementById('chatgptIdentify').onclick=async()=>{if(!identifyPhotoData)return;try{await navigator.clipboard.writeText(plantPrompt)}catch(e){};const chatUrl='https://chatgpt.com/?q='+encodeURIComponent(plantPrompt);window.location.href=chatUrl};
+document.getElementById('saveCustomPlant').onclick=()=>{
+ let name=document.getElementById('customPlantName').value.trim(),info=document.getElementById('customPlantInfo').value.trim();
+ if(!name||!info){alert('植物の名前と回答を入力してください');return}
+ state.customBook=state.customBook||[];state.customBook.push({id:Date.now().toString(),name,info,photo:identifyPhotoData||'',date:today()});save();
+ document.getElementById('customPlantName').value='';document.getElementById('customPlantInfo').value='';document.getElementById('identifyFile').value='';document.getElementById('identifyPreview').innerHTML='';identifyPhotoData='';document.getElementById('chatgptIdentify').disabled=true;document.getElementById('copyPlantPrompt').disabled=true;
+ alert('あなたの植物図鑑に保存しました。植物図鑑タブから確認できます。');
+};
+const oldRenderBook=renderBook;
+renderBook=function(){
+ oldRenderBook();let q=(document.getElementById('bookSearch')?.value||'').toLowerCase(),custom=(state.customBook||[]).filter(x=>x.name.toLowerCase().includes(q));
+ if(custom.length){document.getElementById('bookGrid').innerHTML+=custom.map(x=>`<button class="book" onclick="customBookDetail('${x.id}')"><div class="emoji">${x.photo?`<img src="${x.photo}" style="width:58px;height:58px;object-fit:cover;border-radius:10px">`:'🌱'}</div><strong>${esc(x.name)}</strong><small>自分の図鑑 · ${x.date}</small></button>`).join('')}
+};
+function customBookDetail(id){let x=(state.customBook||[]).find(y=>y.id===id);if(!x)return;openModal(x.name,`${x.photo?`<img src="${x.photo}" style="width:100%;max-height:220px;object-fit:contain;border-radius:12px">`:''}<div class="card"><b>調べた内容</b><p style="white-space:pre-wrap">${esc(x.info)}</p><small class="muted">保存日：${x.date}</small></div>`)}
+// Moisture-check guidance is added to plant detail without pretending calendar dates guarantee watering.
+const oldShowDetail=showDetail;
+showDetail=function(id){oldShowDetail(id);let body=document.getElementById('modalBody');if(body&&!body.innerHTML.includes('土の乾き具合')){let box=document.createElement('div');box.className='card';box.innerHTML='<b>💧 土の乾き具合チェック</b><p class="muted">指を土に1〜2cm入れて確認。湿っていれば予定日でも水やりを待ち、乾いていれば鉢底から流れるまで与え、受け皿の水を捨てましょう。</p><div class="actions"><button class="btn secondary small" id="soilDry">乾いている</button><button class="btn light small" id="soilWet">まだ湿っている</button></div><p class="muted" id="soilAdvice"></p>';body.insertBefore(box,body.firstChild);document.getElementById('soilDry').onclick=()=>document.getElementById('soilAdvice').textContent='水やりの目安です。鉢底から流れるまでたっぷり与えましょう。';document.getElementById('soilWet').onclick=()=>document.getElementById('soilAdvice').textContent='今日は水やりを見送り、数日後に再確認しましょう。'}}
+;
+// Browser notifications: permission + check when the app is opened. Reliable background alerts require hosted PWA push setup.
+async function askPlantNotifications(){
+ if(!('Notification'in window)){alert('このブラウザは通知に対応していません');return}
+ let p=await Notification.requestPermission();if(p==='granted'){alert('通知を許可しました。アプリを開いたときに水やり目安日を確認して通知します。');notifyDue()}else alert('通知が許可されませんでした。iPhoneの設定も確認してください。')
+}
+function notifyDue(){
+ if(!('Notification'in window)||Notification.permission!=='granted')return;
+ let duePlants=state.plants.filter(p=>!p.lastWater||new Date(p.lastWater+'T12:00:00').setDate(new Date(p.lastWater+'T12:00:00').getDate()+Number(p.interval||7))<=new Date(today()+'T12:00:00').getTime());
+ let stamp='midori_due_notice_'+today();if(duePlants.length&&!localStorage.getItem(stamp)){new Notification('みどりの手帳｜お世話確認',{body:duePlants.map(p=>p.name).join('、')+' の土の乾き具合を確認しましょう。'});localStorage.setItem(stamp,'1')}
+}
+const notifyCard=document.createElement('div');notifyCard.className='card';notifyCard.innerHTML='<b>🔔 水やりのお知らせ</b><p class="muted">通知を許可すると、アプリを開いた際に水やり目安日の植物をお知らせします。土の状態も確認してください。</p><button class="btn secondary" id="notifyBtn">通知を有効にする</button>';
+document.getElementById('home').appendChild(notifyCard);document.getElementById('notifyBtn').onclick=askPlantNotifications;
+notifyDue();
+
+</script>
+</body></html>

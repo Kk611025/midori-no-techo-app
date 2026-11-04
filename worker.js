@@ -1,6 +1,7 @@
 /**
  * うちのごはん - Cloudflare Worker
  * Secret: GEMINI_API_KEY (Google AI Studio)
+ * Secret反映確認用
  * Deploy this Worker, then paste its workers.dev URL into the app.
  */
 const ALLOWED_ORIGIN = "https://kk611025.github.io";

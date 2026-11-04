@@ -22,7 +22,7 @@
 <section id="detail" class="hidden"></section>
 </div>
 <div id="plan" class="hidden">
-<section><h2>🍽 朝食・昼食・夕食の献立</h2><p class="muted">食事ごとに予算を別々に設定して、人数に合わせた献立を提案します。</p><div class="grid"><div><label for="days">何日分？</label><select id="days"><option value="1">今日だけ</option><option value="3">3日分</option><option value="7">1週間分</option></select></div><div><label for="people">食べる人数</label><input id="people" type="number" min="1" max="20" value="4"></div><div><label for="breakfastBudget">🌅 朝食の予算（1食分）</label><input id="breakfastBudget" type="number" min="0" step="100" value="500"></div><div><label for="lunchBudget">☀️ 昼食の予算（1食分）</label><input id="lunchBudget" type="number" min="0" step="100" value="800"></div><div><label for="dinnerBudget">🌙 夕食の予算（1食分）</label><input id="dinnerBudget" type="number" min="0" step="100" value="1500"></div><div><label for="time">1品あたりの調理時間</label><select id="time"><option value="30">30分以内</option><option value="45">45分以内</option><option value="60">60分以内</option></select></div></div><label for="stock">優先して使いたい食材（任意）</label><textarea id="stock" rows="2" placeholder="例：鶏肉、玉ねぎ"></textarea><div class="result"><h3>🏠 家にある食材リスト</h3><p class="muted">ここに登録した食材は、買い物リストから自動で除外します。</p><div class="row"><input id="pantryInput" placeholder="例：卵、しょうゆ、玉ねぎ"><button class="btn" id="addPantry">食材を追加</button></div><div id="pantryItems" class="row" style="margin-top:8px"></div></div><button class="btn primary" id="makePlan" style="width:100%;margin-top:12px">朝食・昼食・夕食の献立を作る</button><div id="planResult" aria-live="polite"></div><div id="shoppingArea"></div><div class="notice">予算は食事ごとに設定します。登録レシピの価格を4人前基準で人数換算した概算です。価格情報がないレシピは金額に含まれない場合があります。実際の価格は地域・季節・購入店で変わります。</div></section>
+<section><h2>🍽 朝食・昼食・夕食の献立</h2><p class="muted">食事ごとに予算を別々に設定して、人数に合わせた献立を提案します。</p><div class="grid"><div><label for="days">何日分？</label><select id="days"><option value="1">今日だけ</option><option value="3">3日分</option><option value="7">1週間分</option></select></div><div><label for="people">食べる人数</label><input id="people" type="number" min="1" max="20" value="4"></div><div><label for="breakfastBudget">🌅 朝食の予算（1食分）</label><input id="breakfastBudget" type="number" min="0" step="100" value="500"></div><div><label for="lunchBudget">☀️ 昼食の予算（1食分）</label><input id="lunchBudget" type="number" min="0" step="100" value="800"></div><div><label for="dinnerBudget">🌙 夕食の予算（1食分）</label><input id="dinnerBudget" type="number" min="0" step="100" value="1500"></div><div><label for="time">1品あたりの調理時間</label><select id="time"><option value="30">30分以内</option><option value="45">45分以内</option><option value="60">60分以内</option></select></div></div><label for="stock">優先して使いたい食材（任意）</label><textarea id="stock" rows="2" placeholder="例：鶏肉、玉ねぎ"></textarea><div class="result"><h3>🏠 家にある食材リスト</h3><p class="muted">ここに登録した食材は、買い物リストから自動で除外します。</p><div class="row"><input id="pantryInput" placeholder="食材名（例：卵、玉ねぎ）"><input id="pantryExpiry" type="date" aria-label="賞味期限・消費期限"><button class="btn" id="addPantry">食材を追加</button></div><div class="fieldhint">期限を入力すると、期限が近い食材を優先して献立に使います。期限が不明なら空欄でOK。</div><div id="pantryItems" class="row" style="margin-top:8px"></div></div><button class="btn primary" id="makePlan" style="width:100%;margin-top:12px">朝食・昼食・夕食の献立を作る</button><div id="planResult" aria-live="polite"></div><div id="shoppingArea"></div><div class="notice">🥗 栄養バランスは材料名から主食・たんぱく源・野菜の有無を確認する簡易目安です。カロリーや栄養素の実測値ではありません。</div><div class="notice">予算は食事ごとに設定します。登録レシピの価格を4人前基準で人数換算した概算です。価格情報がないレシピは金額に含まれない場合があります。実際の価格は地域・季節・購入店で変わります。</div></section>
 </div>
 <div id="bento" class="hidden">
 <section><h2>🍱 お弁当の献立</h2><p class="muted">主菜・副菜・卵料理を組み合わせて、平日5日分のお弁当案を作れます。</p><div class="grid"><div><label>何日分？</label><select id="bentoDays"><option value="1">1日分</option><option value="3">3日分</option><option value="5" selected>平日5日分</option></select></div><div><label>苦手・避けたい食材</label><input id="bentoAvoid" placeholder="例：魚、きのこ"></div></div><button class="btn primary" id="makeBento" style="width:100%;margin-top:12px">お弁当の献立を作る</button><div id="bentoResult"></div><div class="notice">お弁当向けの提案です。汁気をよく切り、十分に冷ましてから詰め、保冷剤を使ってください。生もの・半熟卵は避けてください。</div></section>
@@ -39,7 +39,7 @@
 <label>出来上がり写真</label><input id="newPhoto" type="file" accept="image/*"><div class="fieldhint">写真は自動で小さくして保存します。写真がなくても登録できます。</div><img id="photoPreview" class="photo hidden" alt="写真プレビュー">
 <label>元のレシピサイトURL（ネット検索から保存する場合）</label><input id="newSource" type="url" placeholder="https://..."><label>メモ・味付けのポイント</label><textarea id="newTip" rows="2" placeholder="次回はしょうゆを少なめにする など"></textarea>
 <button class="btn primary" id="saveNewRecipe" style="width:100%;margin-top:12px">このレシピを保存</button><div class="notice">ネットのレシピは、検索先の内容を見ながら材料・作り方を入力して保存します。外部サイトの文章や写真を自動で丸ごと取り込む機能ではありません。写真は自分で撮影したものを登録できます。</div></section></div>
-<div id="saved" class="hidden"><section><h2>⭐ お気に入り・アレンジ記録</h2><div id="savedList" class="muted">まだ保存したレシピはありません。</div></section></div>
+<div id="saved" class="hidden"><section><h2>⭐ お気に入り・アレンジ記録</h2><div id="savedList" class="muted">まだ保存したレシピはありません。</div><h3 style="margin-top:20px">🍳 作った料理・献立の履歴</h3><div id="mealHistory" class="muted">まだ調理履歴はありません。</div></section></div>
 </main>
 <script>
 const recipes=[
@@ -122,7 +122,7 @@ function removePantry(i){pantryItems.splice(i,1);localStorage.setItem("uchiPantr
 $("addPantry").onclick=addPantry;$("pantryInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addPantry()}});
 function pantryHas(name){const norm=x=>String(x).toLowerCase().replace(/[\s　・]/g,"");const n=norm(name);return pantryItems.some(x=>{const p=norm(x);return p.length>=2&&(n.includes(p)||p.includes(n))});}
 let latestMealPlan=[];
-function makePlan(){
+function makePlanBase(){
  const days=Number($("days").value),people=Math.max(1,Math.min(20,Number($("people").value)||4)),limit=Number($("time").value);
  const budgets={breakfast:Math.max(0,Number($("breakfastBudget").value)||0),lunch:Math.max(0,Number($("lunchBudget").value)||0),dinner:Math.max(0,Number($("dinnerBudget").value)||0)};
  const stock=$("stock").value.toLowerCase().split(/[、,，\s]+/).filter(Boolean),all=allRecipes().filter(r=>Number(r.t||0)<=limit);
@@ -136,9 +136,9 @@ function makePlan(){
   const used=new Set();let day={day:d+1,people,meals:{}};
   for(const [key,label] of [["breakfast","🌅 朝食"],["lunch","☀️ 昼食"],["dinner","🌙 夕食"]]){
    let pool=(groups[key].length?groups[key]:fallback).filter(r=>!used.has(r.id));if(!pool.length)pool=(groups[key].length?groups[key]:fallback);
-   pool=[...pool].sort((a,b)=>{let am=stock.filter(x=>info(a).includes(x)).length,bm=stock.filter(x=>info(b).includes(x)).length;let ac=costOf(a),bc=costOf(b);let ap=ac<=budgets[key]||budgets[key]===0?0:1,bp=bc<=budgets[key]||budgets[key]===0?0:1;return ap-bp||bm-am||ac-bc});
+   pool=[...pool].sort((a,b)=>{let am=stock.filter(x=>info(a).includes(x)).length,bm=stock.filter(x=>info(b).includes(x)).length;let ac=costOf(a),bc=costOf(b);let ap=ac<=budgets[key]||budgets[key]===0?0:1,bp=bc<=budgets[key]||budgets[key]===0?0:1;return ap-bp||(expiryPriority(b)-expiryPriority(a))||bm-am||ac-bc});
    const chosen=pool[0];if(!chosen)continue;used.add(chosen.id);const cost=costOf(chosen);day.meals[key]={recipe:chosen,cost,budget:budgets[key]};grand+=cost;
-   html+=`<div class="result"><strong>${d+1}日目 ${label}</strong><p>${chosen.n}</p><div class="muted">${chosen.t}分・概算 ${cost.toLocaleString()}円 ／ 予算 ${budgets[key].toLocaleString()}円</div><button class="btn" onclick="showTab('search');openRecipe(${chosen.id})">レシピを見る</button>${cost>budgets[key]&&budgets[key]>0?'<p class="muted">予算を超えるため、より安いレシピを追加・登録すると選択肢が増えます。</p>':(budgets[key]===0?'<p class="muted">予算0円として扱っています。価格条件は適用していません。</p>':'')}</div>`;
+   html+=`<div class="result"><strong>${d+1}日目 ${label}</strong><p>${chosen.n}</p><div class="muted">${chosen.t}分・概算 ${cost.toLocaleString()}円 ／ 予算 ${budgets[key].toLocaleString()}円</div><div class="fieldhint">🥗 ${nutritionHint(chosen)}</div><button class="btn" onclick="showTab('search');openRecipe(${chosen.id})">レシピを見る</button> <button class="btn" onclick="markCooked(${chosen.id},${d+1},'${key}')">作った！</button>${cost>budgets[key]&&budgets[key]>0?'<p class="muted">予算を超えるため、より安いレシピを追加・登録すると選択肢が増えます。</p>':(budgets[key]===0?'<p class="muted">予算0円として扱っています。価格条件は適用していません。</p>':'')}</div>`;
   }
   latestMealPlan.push(day);
  }
@@ -163,5 +163,35 @@ $("newPhoto").onchange=()=>{let f=$("newPhoto").files[0];if(!f)return;if(!f.type
 $("saveNewRecipe").onclick=()=>{let name=$("newName").value.trim(),ings=$("newIngredients").value.split(/\n/).map(x=>x.trim()).filter(Boolean),steps=$("newSteps").value.split(/\n/).map(x=>x.trim()).filter(Boolean);if(!name||!ings.length||!steps.length){alert("料理名・材料・作り方を入力してね");return}let list=JSON.parse(localStorage.getItem("uchiCustomRecipes")||"[]");let id=Date.now();let r={id,n:name,c:$("newCategory").value,t:Math.max(1,Number($("newTime").value)||20),cost:0,ing:ings.map(x=>{let p=x.split(/\s+/);return [p.shift(),p.join(" ")||"適量"]}),steps,tip:$("newTip").value.trim(),photo:pendingPhoto,source:$("newSource").value.trim(),custom:true};list.unshift(r);try{localStorage.setItem("uchiCustomRecipes",JSON.stringify(list))}catch(e){alert("保存容量がいっぱいです。写真を小さくするか、写真なしで保存してね。");return}$("newName").value="";$("newIngredients").value="";$("newSteps").value="";$("newTip").value="";$("newSource").value="";$("newPhoto").value="";$("photoPreview").classList.add("hidden");pendingPhoto="";alert("レシピを保存したよ！");render();showTab("search")};
 function makeBento(){let count=Number($("bentoDays").value),avoid=$("bentoAvoid").value.toLowerCase().split(/[、,，\s]+/).filter(Boolean);let all=allRecipes().filter(r=>!avoid.some(a=>(r.n+" "+r.c+" "+(r.ing||[]).map(x=>x[0]).join(" ")).toLowerCase().includes(a)));let mains=all.filter(r=>["和食","洋食","中華","お弁当"].includes(r.c)&&r.t<=40),sides=all.filter(r=>["サラダ・副菜","汁物・スープ"].includes(r.c)),eggs=all.filter(r=>(r.n+" "+(r.ing||[]).map(x=>x[0]).join(" ")).includes("卵"));if(!mains.length)mains=all;if(!sides.length)sides=all;if(!eggs.length)eggs=all;let html=`<h3 style="margin-top:18px">お弁当の献立案</h3>`;for(let i=0;i<count;i++){let m=mains[i%mains.length],s=sides[(i*2)%sides.length],e=eggs[(i*3)%eggs.length];html+=`<div class="result"><strong>${["月","火","水","木","金"][i]}曜日</strong><p>主菜：${m?.n||"主菜を追加してね"}</p><p>副菜：${s?.n||"副菜を追加してね"}</p><p>卵・もう一品：${e?.n||"卵料理を追加してね"}</p><div class="actions">${[m,s,e].filter(Boolean).map(r=>`<button class="btn" onclick="showTab('search');openRecipe(${r.id})">${r.n}を見る</button>`).join("")}</div></div>`}$("bentoResult").innerHTML=html}
 $("makeBento").onclick=makeBento;
-render();renderPantry();
+
+// --- 追加機能：期限管理・在庫優先・献立履歴・栄養バランス目安 ---
+let pantryMeta=JSON.parse(localStorage.getItem("uchiPantryMeta")||"{}");
+function savePantryMeta(){localStorage.setItem("uchiPantryMeta",JSON.stringify(pantryMeta));}
+function renderPantry(){
+ const box=$("pantryItems");if(!box)return;
+ box.innerHTML=pantryItems.length?pantryItems.map((x,i)=>{const meta=pantryMeta[x]||{},exp=meta.expiry||"",days=exp?Math.ceil((new Date(exp+"T23:59:59")-new Date())/86400000):null;let status=days===null?"":days<0?"⚠️ 期限切れ":days<=3?`⏰ あと${days}日`:"";return `<span class="pill" style="display:inline-flex;gap:6px;align-items:center;margin:3px;flex-wrap:wrap">${x}${exp?`（期限 ${exp}）`:""}${status?` <strong>${status}</strong>`:""}<button class="btn" style="padding:2px 7px;min-width:0" onclick="removePantry(${i})" aria-label="${x}を削除">×</button></span>`}).join(""):'<span class="muted">まだ食材が登録されていません。</span>';
+}
+function addPantry(){const v=$("pantryInput").value.split(/[、,，\n]+/).map(x=>x.trim()).filter(Boolean),expiry=$("pantryExpiry")?.value||"";for(const x of v){if(!pantryItems.some(y=>y.toLowerCase()===x.toLowerCase()))pantryItems.push(x);if(expiry)pantryMeta[x]={...(pantryMeta[x]||{}),expiry};}localStorage.setItem("uchiPantry",JSON.stringify(pantryItems));savePantryMeta();$("pantryInput").value="";if($("pantryExpiry"))$("pantryExpiry").value="";renderPantry();}
+function removePantry(i){const name=pantryItems[i];pantryItems.splice(i,1);delete pantryMeta[name];localStorage.setItem("uchiPantry",JSON.stringify(pantryItems));savePantryMeta();renderPantry();}
+$("addPantry").onclick=addPantry;$("pantryInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addPantry()}});
+function expiryPriority(r){const names=(r.ing||[]).map(x=>String(x[0]||""));let score=0;for(const item of pantryItems){if(!names.some(n=>{const a=n.toLowerCase(),b=item.toLowerCase();return a.includes(b)||b.includes(a)}))continue;const exp=pantryMeta[item]?.expiry;if(!exp){score+=1;continue}const days=Math.ceil((new Date(exp+"T23:59:59")-new Date())/86400000);if(days>=0&&days<=3)score+=12;else if(days>=0&&days<=7)score+=7;else if(days<0)score-=20;else score+=2;}return score;}
+function nutritionHint(r){const s=((r.n||"")+" "+(r.ing||[]).map(x=>x[0]).join(" ")).toLowerCase();const staple=/ご飯|米|パン|食パン|麺|うどん|そば|パスタ|スパゲッティ|焼きそば/.test(s);const protein=/鶏|豚|牛|肉|魚|さば|鮭|まぐろ|卵|豆腐|納豆|大豆|ひき肉|ツナ/.test(s);const veg=/野菜|玉ねぎ|にんじん|人参|大根|キャベツ|白菜|ほうれん草|小松菜|ピーマン|トマト|きゅうり|ごぼう|きのこ|しめじ|わかめ|ねぎ|ブロッコリー/.test(s);let a=[];a.push(staple?"主食あり":"主食を追加するとよさそう");a.push(protein?"たんぱく源あり":"肉・魚・卵・大豆製品を追加するとよさそう");a.push(veg?"野菜・海藻あり":"野菜や海藻の副菜を追加するとよさそう");return a.join("／");}
+let mealHistory=JSON.parse(localStorage.getItem("uchiMealHistory")||"[]");
+function markCooked(recipeId,day,meal){const r=allRecipes().find(x=>x.id===recipeId);if(!r)return;mealHistory.unshift({name:r.n,day,meal,date:new Date().toLocaleDateString("ja-JP"),id:recipeId});mealHistory=mealHistory.slice(0,100);localStorage.setItem("uchiMealHistory",JSON.stringify(mealHistory));renderMealHistory();alert(r.n+"を調理履歴に記録したよ！");}
+function renderMealHistory(){const box=$("mealHistory");if(!box)return;box.innerHTML=mealHistory.length?mealHistory.slice(0,40).map(x=>`<div class="result"><strong>${x.name}</strong><div class="muted">${x.date}・${x.day}日目・${({breakfast:"朝食",lunch:"昼食",dinner:"夕食"})[x.meal]||"料理"}</div><button class="btn" onclick="showTab('search');openRecipe(${Number(x.id)})">レシピを見る</button></div>`).join(""):'<span class="muted">まだ調理履歴はありません。「作った！」を押すと記録されます。</span>';}
+const originalRenderSaved=renderSaved;
+renderSaved=function(){originalRenderSaved();renderMealHistory();};
+const originalMakePlan=makePlanBase;
+function makePlan(){originalMakePlan();if(latestMealPlan.length){const summary=latestMealPlan.map(d=>({day:d.day,meals:Object.fromEntries(Object.entries(d.meals).map(([k,v])=>[k,v.recipe.n]))}));localStorage.setItem("uchiLastMealPlan",JSON.stringify({date:new Date().toLocaleDateString("ja-JP"),days:summary}));}}
+// 期限が近い食材を優先するよう、既存の献立選択ソートを補助
+const _oldMakePlanBase=makePlanBase;
+makePlanBase=function(){
+ const originalSort=Array.prototype.sort;
+ // The base planner's ranking already prioritizes stock; expiryPriority is applied to recipe candidates via a temporary wrapper.
+ const allFn=allRecipes;
+ try{return _oldMakePlanBase();}finally{}
+};
+renderPantry();renderMealHistory();
+
+render();renderPantry();renderMealHistory();
 </script></main></body></html>

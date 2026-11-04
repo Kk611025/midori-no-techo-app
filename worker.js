@@ -43,6 +43,19 @@ function parseJson(text) {
 }
 export default {
   async fetch(request, env) {
+    if (request.method === "GET") {
+
+      return json({
+
+        gemini: !!env.GEMINI_API_KEY,
+
+        access: !!env.APP_ACCESS_CODE
+
+      }, 200, "");
+
+    }
+
+    
     const origin = request.headers.get("Origin") || "";
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
     if (request.method !== "POST") return json({ error: "POSTで送信してください。" }, 405, origin);

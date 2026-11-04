@@ -1,0 +1,29 @@
+うちのごはん：AIネット自動検索・レシピ補完の設定
+
+この更新版は、献立作成時にGeminiがGoogle検索でレシピを探し、材料・分量・作り方を補って、アプリのレシピ帳へ自動保存する構成です。
+GitHub PagesのHTMLだけではAPIキーを安全に隠せないため、Cloudflare Workerを中継に使います。
+
+必要なもの
+・Cloudflareアカウント（Workersを利用）
+・Google AI StudioのGemini APIキー
+・このZIP内の worker.js
+
+設定の流れ
+1. Google AI StudioでGemini APIキーを作成します。
+   https://aistudio.google.com/app/apikey
+   APIキーは他人に見せたり、GitHubにアップロードしないでください。
+2. Cloudflareにログインし、Workers & Pagesから新しいWorkerを作成します。
+3. worker.jsの内容をWorkerのコード欄に貼り付けてDeployします。
+4. WorkerのSettings → Variables and Secretsで、Secretを2つ登録します。
+   ・GEMINI_API_KEY：Google AI StudioのAPIキー
+   ・APP_ACCESS_CODE：自分で決める12文字以上の長い接続コード
+5. Workerを保存／再デプロイし、表示された https://....workers.dev のURLをコピーします。
+6. アプリのGitHub Pagesを開き、「献立を考える」→「AI・ネット自動検索の接続」にWorker URLと同じ接続コードを入力し、「接続先を保存」を押します。
+7. 「朝食・昼食・夕食の献立を作る」を押します。
+
+注意
+・このWorkerはGoogle Gemini APIとGoogle Search groundingを使います。Gemini APIや検索 grounding の無料枠・料金・利用上限はGoogle側のプランと変更に従います。必ずAI Studioの利用状況・料金を確認してください。
+・APIキーはWorkerのSecretに保存し、GitHubのHTMLには入れません。
+・Workerの初期設定では、接続元をこのGitHub Pagesのドメインに限定しています。
+・AIが作る材料量・費用は目安です。アレルギー、食材の状態、加熱時間などは調理前に確認してください。
+・検索結果を元にAIがレシピを補うため、元サイトの内容と完全一致するとは限りません。

@@ -1,191 +1,88 @@
 <!doctype html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#315b45">
-<title>みどりの手帳｜観葉植物管理</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#5b3a27">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="うちのごはん">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"><meta name="theme-color" content="#f7f5ef"><title>うちのごはん</title>
 <style>
-:root{--green:#315b45;--green2:#527b5e;--mint:#e9f1e8;--cream:#f7f6ef;--ink:#26352b;--muted:#718075;--line:#e3e8df;--white:#fff;--gold:#d6a84b}
-*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;padding-bottom:88px}
-header{background:var(--green);color:white;padding:22px 18px 18px;border-radius:0 0 24px 24px}
-header .eyebrow{font-size:11px;letter-spacing:.16em;opacity:.8}header h1{font-size:24px;margin:5px 0 4px}header p{font-size:12px;margin:0;opacity:.85}
-main{max-width:760px;margin:auto;padding:16px}
-.tabs{display:flex;gap:8px;overflow:auto;margin:0 0 16px;padding-bottom:4px}
-.tab{border:1px solid var(--line);background:white;border-radius:99px;padding:10px 15px;white-space:nowrap;color:var(--muted);font-size:13px}
-.tab.active{background:var(--green);color:white;border-color:var(--green)}
-.panel{display:none}.panel.active{display:block}
-.card{background:white;border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:12px;box-shadow:0 3px 12px #253b2910}
-.section-title{font-size:17px;margin:4px 0 12px}.muted{color:var(--muted);font-size:12px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}.stat{background:var(--mint);border-radius:15px;padding:12px 8px;text-align:center}.stat b{display:block;font-size:22px;color:var(--green)}.stat span{font-size:11px;color:var(--muted)}
-.row{display:flex;align-items:center;gap:12px}.grow{flex:1;min-width:0}
-.plant-img{width:68px;height:68px;border-radius:14px;object-fit:cover;background:var(--mint);flex-shrink:0}.plant-img.placeholder{display:grid;place-items:center;font-size:30px}
-.plant-name{font-weight:700;font-size:15px}.plant-sub{font-size:11px;color:var(--muted);margin-top:4px}
-.btn{border:0;background:var(--green);color:white;border-radius:12px;padding:11px 14px;font-size:13px;font-weight:600}.btn.secondary{background:var(--mint);color:var(--green)}.btn.light{background:#f2f4ef;color:var(--ink)}.btn.danger{background:#fae9e5;color:#a34332}.btn.small{padding:8px 10px;font-size:11px}
-.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
-.badge{display:inline-block;border-radius:99px;background:var(--mint);color:var(--green);font-size:10px;padding:4px 8px}.badge.due{background:#fff0d9;color:#8b5b12}
-input,select,textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px;background:#fff;font:inherit;font-size:14px;color:var(--ink);margin:5px 0 12px}
-label{font-size:12px;color:var(--muted);display:block}textarea{min-height:75px;resize:vertical}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.empty{text-align:center;padding:28px 12px;color:var(--muted);font-size:13px}
-.due-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.due-item:last-child{border:0}
-.book-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.book{border:1px solid var(--line);border-radius:15px;padding:12px;background:white;text-align:left}
-.book .emoji{font-size:28px}.book strong{display:block;font-size:13px;margin:5px 0}.book small{color:var(--muted);font-size:10px}
-.detail-head{display:flex;gap:12px;align-items:center;margin-bottom:12px}
-hr{border:0;border-top:1px solid var(--line);margin:12px 0}
-footer{text-align:center;color:#8a968c;font-size:10px;padding:20px}
-nav{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1px solid var(--line);display:flex;justify-content:center;gap:3px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(12px);z-index:5}
-nav button{flex:1;max-width:150px;border:0;background:none;color:var(--muted);font-size:10px;padding:5px}nav button span{display:block;font-size:19px;margin-bottom:2px}nav button.active{color:var(--green);font-weight:700}
-.modal{position:fixed;inset:0;background:#15251dcc;display:none;align-items:flex-end;z-index:10}.modal.show{display:flex}.sheet{background:var(--cream);width:100%;max-height:90vh;overflow:auto;border-radius:22px 22px 0 0;padding:20px 18px calc(24px + env(safe-area-inset-bottom));max-width:760px;margin:auto}
-.sheet-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.close{border:0;background:#e8ede6;border-radius:50%;width:34px;height:34px;font-size:18px}
-@media(min-width:650px){.book-grid{grid-template-columns:repeat(3,1fr)}}
-</style>
-</head>
-<body>
-<header><div class="eyebrow">HOUSEPLANT JOURNAL</div><h1>🌿 みどりの手帳</h1><p>毎日の小さなお世話を、忘れずに。</p></header>
-<main>
-<div class="tabs" id="tabs">
-<button class="tab active" data-page="home">ホーム</button><button class="tab" data-page="plants">植物一覧</button><button class="tab" data-page="book">植物図鑑</button><button class="tab" data-page="records">お世話記録</button>
+:root{--ink:#302f2b;--muted:#77736b;--line:#e6e1d7;--paper:#fffefa;--accent:#657b59;--soft:#eef2e9}
+*{box-sizing:border-box}body{margin:0;background:#f7f5ef;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif}main{max-width:850px;margin:auto;padding:20px 16px 48px}.head{padding:12px 2px 18px;border-bottom:1px solid var(--line)}h1{font-size:27px;margin:0 0 5px;letter-spacing:.04em}.sub{color:var(--muted);font-size:13px}.tabs{display:flex;gap:8px;overflow:auto;padding:14px 0}.tabs button,.btn{border:1px solid var(--line);background:white;border-radius:12px;padding:11px 14px;font-size:14px;color:var(--ink)}.tabs button.active,.primary{background:var(--accent);color:white;border-color:var(--accent)}section{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}h2{font-size:18px;margin:0 0 12px}h3{font-size:16px;margin:0 0 6px}.muted{color:var(--muted);font-size:13px}input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:10px;padding:11px;background:white;color:var(--ink);width:100%;min-width:0}label{display:block;font-size:13px;color:var(--muted);margin:9px 0 5px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.recipe{border-top:1px solid var(--line);padding:13px 0}.recipe:first-child{border:0}.recipe button{margin-top:8px}.tag{font-size:12px;color:var(--accent);background:var(--soft);padding:4px 8px;border-radius:99px;display:inline-block}.ingredient{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dotted var(--line);font-size:14px}.hidden{display:none}.notice{background:var(--soft);border-radius:10px;padding:10px;font-size:13px;margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1;min-width:120px}.result{padding:12px;border:1px solid var(--line);border-radius:12px;margin:8px 0}.result strong{display:block;margin-bottom:4px}.small{font-size:12px}.pill{border-radius:99px;padding:4px 8px;background:#f1eee7;font-size:12px}
+@media(max-width:480px){.grid{grid-template-columns:1fr 1fr}main{padding:14px 12px 36px}}
+ .brand{display:flex;align-items:center;gap:12px}.brand-icon{width:54px;height:54px;border-radius:15px;box-shadow:0 2px 8px #30201422} </style></head><body><main>
+<header class="head"><div class="brand"><img class="brand-icon" src="icon-192.png" alt="木目調の料理アイコン"><div><h1>うちのごはん</h1><div class="sub">基本のレシピから、わが家の味を育てる料理帳</div></div></div></header>
+<nav class="tabs" aria-label="メニュー"><button class="active" data-tab="search">レシピを探す</button><button data-tab="plan">献立を考える</button><button data-tab="saved">お気に入り・アレンジ</button></nav>
+<div id="search">
+<section><h2>🔎 レシピ検索</h2><input id="q" placeholder="料理名・食材で検索（例：鶏肉、玉ねぎ）"><div class="row" style="margin-top:9px"><select id="category"><option value="">すべてのジャンル</option><option>和食</option><option>洋食</option><option>中華</option><option>麺類</option><option>ご飯もの</option><option>汁物・スープ</option><option>サラダ・副菜</option></select><button class="btn" id="clear">クリア</button></div></section>
+<section><h2>📖 基本レシピ</h2><div class="muted">基本は4人前・控えめな味付け。材料の分量は人数に合わせて計算できます。</div><div id="list"></div></section>
+<section id="detail" class="hidden"></section>
 </div>
-<section class="panel active" id="home">
-<div class="stats"><div class="stat"><b id="plantCount">0</b><span>育てている植物</span></div><div class="stat"><b id="waterCount">0</b><span>今日の水やり候補</span></div><div class="stat"><b id="recordCount">0</b><span>お世話記録</span></div></div>
-<div class="card"><div class="row"><div class="grow"><h2 class="section-title">今日のお世話 💧</h2><div class="muted">予定日は目安です。土の乾き具合も確認しましょう。</div></div><button class="btn small" onclick="openAdd()">＋ 植物を追加</button></div><div id="todayList"></div></div>
-<div class="card"><h2 class="section-title">育てている植物</h2><div id="homePlants"></div></div>
-<div class="card"><h2 class="section-title">🌱 今日の育て方メモ</h2><p class="muted">水やりは「何日おき」と決めつけず、土の状態を確認するのが基本。鉢の表面だけでなく、指で少し土に触れて乾き具合を確かめてから水を与えましょう。</p></div>
-</section>
-<section class="panel" id="plants"><div class="row" style="margin-bottom:12px"><h2 class="section-title grow">植物一覧</h2><button class="btn" onclick="openAdd()">＋ 登録</button></div><div id="plantList"></div></section>
-<section class="panel" id="book"><h2 class="section-title">植物図鑑 🌿</h2><p class="muted">植物を選ぶと特徴と基本的な育て方を確認できます。</p><input id="bookSearch" placeholder="植物名で検索…" oninput="renderBook()"><div class="book-grid" id="bookGrid"></div></section>
-<section class="panel" id="records"><h2 class="section-title">お世話記録 📖</h2><div id="recordList"></div></section>
-<footer>みどりの手帳 · データはこの端末のブラウザ内に保存されます</footer>
+<div id="plan" class="hidden">
+<section><h2>🍽 献立を考える</h2><div class="grid"><div><label for="days">献立の日数</label><select id="days"><option value="1">今日だけ</option><option value="3">3日分</option><option value="7">1週間分</option></select></div><div><label for="people">人数</label><input id="people" type="number" min="1" max="20" value="4"></div><div><label for="budget">予算（1日分・合計）</label><input id="budget" type="number" min="100" step="100" value="2000"></div><div><label for="time">調理時間の目安</label><select id="time"><option value="30">30分以内</option><option value="45">45分以内</option><option value="60">60分以内</option></select></div></div><label for="stock">冷蔵庫にある食材（読点・カンマ・空白で区切る）</label><textarea id="stock" rows="3" placeholder="例：鶏肉、玉ねぎ、卵、キャベツ"></textarea><button class="btn primary" id="makePlan" style="width:100%;margin-top:12px">この条件で献立を作る</button><div id="planResult" aria-live="polite"></div><div class="notice">予算は登録した概算価格による目安です。地域・季節・購入店で変わります。食材を入力すると一致する料理を優先します。</div></section>
+</div>
+<div id="saved" class="hidden"><section><h2>⭐ お気に入り・アレンジ記録</h2><div id="savedList" class="muted">まだ保存したレシピはありません。</div></section></div>
 </main>
-<nav><button class="active" data-page="home"><span>🏡</span>ホーム</button><button data-page="plants"><span>🪴</span>植物</button><button data-page="book"><span>📚</span>図鑑</button><button data-page="records"><span>📖</span>記録</button></nav>
-<div class="modal" id="modal" onclick="if(event.target===this)closeModal()"><div class="sheet"><div class="sheet-top"><strong id="modalTitle">植物を登録</strong><button class="close" onclick="closeModal()">×</button></div><div id="modalBody"></div></div></div>
 <script>
-const key='midori_note_v1';
-let state=JSON.parse(localStorage.getItem(key)||'{"plants":[],"records":[]}');
-const today=()=>new Date().toISOString().slice(0,10);
-const plus=(date,days)=>{let d=new Date(date+'T12:00:00');d.setDate(d.getDate()+Number(days||0));return d.toISOString().slice(0,10)};
-const fmt=d=>d?d.replaceAll('-','/'): '未設定';
-const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function save(){localStorage.setItem(key,JSON.stringify(state));render()}
-const encyclopedia=[
-['モンステラ','🌿','明るい日陰','土が乾いてからたっぷり','春〜秋に生育。強い直射日光は避け、葉のほこりを拭く。','春〜秋','中毒性があるため、ペットや小さな子どもの誤食に注意。'],
-['ポトス','🍃','明るい日陰','土の表面が乾いたらたっぷり','丈夫で育てやすいつる性植物。伸びたつるは剪定して挿し木にできる。','春〜秋','寒さと過湿に注意。'],
-['サンスベリア','🌵','明るい場所','土が中まで乾いてから','乾燥に強い。冬は水やりをかなり控えめにする。','春〜夏','低温時の水の与えすぎは根腐れの原因。'],
-['パキラ','🌳','明るい日陰','土の表面が乾いたら','明るく風通しのよい場所を好む。生育期は定期的に向きを変える。','春〜秋','冬の寒さ・水の与えすぎに注意。'],
-['ガジュマル','🌳','日当たりのよい場所','土の表面が乾いたら','日光を好む。急な環境変化を避け、徐々に日当たりに慣らす。','春〜秋','受け皿に水をためない。'],
-['フィカス・ウンベラータ','🌱','明るい日陰','土の表面が乾いたら','大きな葉が特徴。乾燥する季節は葉水もおすすめ。','春〜秋','急な移動や温度変化で葉が落ちることがある。'],
-['アレカヤシ','🌴','明るい日陰','土の表面が乾き始めたら','高温多湿を好む。乾燥時は葉水で湿度を補う。','春〜秋','エアコンの風が直接当たらない場所に。'],
-['ドラセナ','🌿','明るい日陰','土が乾いてから','品種が多く比較的丈夫。風通しのよい場所で管理する。','春〜秋','過湿と冬の冷え込みに注意。'],
-['ゴムの木','🍃','明るい場所','土の表面が乾いたら','光沢のある葉が特徴。葉のほこりを定期的に拭く。','春〜秋','樹液に触れるとかぶれる場合がある。'],
-['アイビー','🍀','明るい場所','土の表面が乾いたら','つるを伸ばして育つ。蒸れに注意し風通しを確保する。','春〜秋','高温多湿が苦手。'],
-['オリヅルラン','🌱','明るい日陰','土の表面が乾いたら','ランナーの先に子株ができる。子株から増やしやすい。','春〜秋','強い直射日光で葉焼けすることがある。'],
-['シェフレラ（カポック）','🌳','明るい場所','土の表面が乾いたら','環境への適応力が高い。剪定で樹形を整えられる。','春〜秋','冬は水やりを控えめにする。']
+const recipes=[
+{id:1,n:"鶏肉のチンジャオロース",c:"中華",t:25,cost:850,ing:[["鶏もも肉","300g"],["ピーマン","5個"],["たけのこ水煮","150g"],["玉ねぎ","1/2個"],["しょうゆ","大さじ1.5"],["オイスターソース","大さじ1"],["酒","大さじ1"],["砂糖","小さじ1"],["片栗粉","大さじ1"],["ごま油","大さじ1"]],steps:["鶏肉は細切りにして片栗粉をまぶす。","野菜は細切りにする。","フライパンに油を熱し、鶏肉を炒める。","野菜を加えて火を通し、調味料を加えて全体に絡める。"],tip:"味を見て、しょうゆを少量ずつ足す。"},
+{id:2,n:"鶏の照り焼き",c:"和食",t:25,cost:900,ing:[["鶏もも肉","2枚（約600g）"],["しょうゆ","大さじ2"],["みりん","大さじ2"],["酒","大さじ2"],["砂糖","大さじ1"],["油","小さじ1"]],steps:["鶏肉の厚い部分を開いて厚みをそろえる。","皮目から焼き、焼き色がついたら裏返す。","ふたをして弱めの中火で火を通す。","余分な脂を拭き、調味料を加えて煮絡める。"],tip:"甘さは砂糖で、塩味はしょうゆで少しずつ調整。"},
+{id:3,n:"豚肉の生姜焼き",c:"和食",t:20,cost:800,ing:[["豚こま切れ肉","400g"],["玉ねぎ","1個"],["しょうゆ","大さじ2"],["みりん","大さじ2"],["酒","大さじ2"],["おろし生姜","大さじ1"],["油","小さじ1"]],steps:["玉ねぎを薄切りにする。","豚肉を炒め、色が変わったら玉ねぎを加える。","調味料を混ぜて加え、汁気が少なくなるまで炒める。"],tip:"生姜を増やすと香りが立ち、しょうゆを足すと塩味が強くなる。"},
+{id:4,n:"肉じゃが",c:"和食",t:40,cost:950,ing:[["豚こま肉","250g"],["じゃがいも","4個"],["玉ねぎ","1個"],["にんじん","1本"],["しらたき","1袋"],["だし","300ml"],["しょうゆ","大さじ2"],["みりん","大さじ2"],["砂糖","大さじ1"]],steps:["野菜を食べやすい大きさに切る。","鍋で肉と野菜を軽く炒める。","だしと調味料を加え、落としぶたをして煮る。","じゃがいもが柔らかくなったら火を止め、少し置いて味を含ませる。"],tip:"煮詰めすぎると濃くなるので、最後に味を確認。"},
+{id:5,n:"さばの味噌煮",c:"和食",t:30,cost:900,ing:[["さば切り身","4切れ"],["生姜","1かけ"],["水","150ml"],["酒","100ml"],["みそ","大さじ2"],["みりん","大さじ2"],["砂糖","大さじ1"]],steps:["生姜を薄切りにする。","鍋に水・酒・みりん・砂糖を煮立て、さばを入れる。","落としぶたをして煮る。","みそを煮汁で溶いて加え、煮汁をかけながら仕上げる。"],tip:"みその塩分に差があるため、みそは控えめから。"},
+{id:6,n:"ハンバーグ",c:"洋食",t:40,cost:1100,ing:[["合いびき肉","500g"],["玉ねぎ","1個"],["卵","1個"],["パン粉","大さじ6"],["牛乳","大さじ3"],["塩","小さじ1/3"],["こしょう","少々"],["ケチャップ","大さじ3"],["中濃ソース","大さじ2"]],steps:["玉ねぎをみじん切りにして炒め、冷ます。","ひき肉・卵・パン粉・牛乳・調味料と混ぜる。","4等分して空気を抜き、中央をくぼませる。","両面を焼き、ふたをして中まで火を通す。","ケチャップとソースを温めてかける。"],tip:"ソースは別添えにすると各自で濃さを調整できる。"},
+{id:7,n:"鶏肉のトマト煮",c:"洋食",t:35,cost:950,ing:[["鶏もも肉","500g"],["玉ねぎ","1個"],["カットトマト","1缶"],["しめじ","1袋"],["にんにく","1かけ"],["コンソメ","小さじ2"],["水","100ml"],["油","小さじ2"]],steps:["鶏肉を一口大、野菜を食べやすく切る。","鍋でにんにくと鶏肉を焼く。","玉ねぎ・きのこ・トマト・水・コンソメを加える。","ふたをして15〜20分煮る。"],tip:"酸味が強いときは砂糖を少量加える。"},
+{id:8,n:"オムライス",c:"洋食",t:30,cost:750,ing:[["ご飯","茶碗4杯分"],["鶏肉","200g"],["玉ねぎ","1/2個"],["卵","8個"],["ケチャップ","大さじ6"],["牛乳","大さじ2"],["バター","20g"]],steps:["鶏肉と玉ねぎを炒め、ご飯を加える。","ケチャップで味付けして皿に盛る。","卵に牛乳を混ぜ、バターで半熟に焼く。","チキンライスに卵をのせる。"],tip:"ケチャップは控えめに入れ、食べるときに追加できる。"},
+{id:9,n:"麻婆豆腐",c:"中華",t:20,cost:650,ing:[["木綿豆腐","2丁"],["豚ひき肉","200g"],["長ねぎ","1/2本"],["にんにく","1かけ"],["生姜","1かけ"],["みそ","大さじ1"],["しょうゆ","大さじ1"],["鶏ガラスープ","200ml"],["片栗粉","大さじ1"],["ごま油","小さじ2"]],steps:["豆腐を角切り、ねぎ・にんにく・生姜を刻む。","ひき肉と香味野菜を炒める。","みそ・しょうゆ・スープを加え、豆腐を煮る。","水溶き片栗粉でとろみをつける。"],tip:"辛味を足したい場合は取り分け後にラー油を加える。"},
+{id:10,n:"焼きそば",c:"麺類",t:15,cost:550,ing:[["焼きそば麺","4玉"],["豚こま肉","200g"],["キャベツ","1/4個"],["もやし","1袋"],["焼きそばソース","適量"],["油","小さじ2"]],steps:["肉と野菜を食べやすく切る。","肉、野菜の順に炒める。","麺を加え、水少量を振ってほぐす。","ソースを少しずつ加えて味を整える。"],tip:"ソースは商品ごとに塩分が違うので味見しながら。"},
+{id:11,n:"親子丼",c:"ご飯もの",t:20,cost:700,ing:[["鶏もも肉","300g"],["玉ねぎ","1個"],["卵","6個"],["だし","200ml"],["しょうゆ","大さじ2"],["みりん","大さじ2"],["砂糖","小さじ2"],["ご飯","4人分"]],steps:["鶏肉を一口大、玉ねぎを薄切りにする。","だしと調味料で玉ねぎと鶏肉を煮る。","溶き卵を回し入れ、好みの半熟加減で火を止める。","ご飯にのせる。"],tip:"つゆは薄味にして、食べるときに調整できる。"},
+{id:12,n:"具だくさん味噌汁",c:"汁物・スープ",t:20,cost:350,ing:[["豆腐","1丁"],["大根","150g"],["にんじん","1/2本"],["油揚げ","1枚"],["だし","800ml"],["みそ","大さじ2〜3"]],steps:["野菜と油揚げを食べやすく切る。","だしで火の通りにくい野菜から煮る。","豆腐と油揚げを加える。","火を弱め、みそを溶き入れる。"],tip:"みそは大さじ2から溶き、味を見て足す。"},
+{id:13,n:"きゅうりとわかめの酢の物",c:"サラダ・副菜",t:15,cost:300,ing:[["きゅうり","2本"],["乾燥わかめ","5g"],["酢","大さじ2"],["砂糖","大さじ1"],["しょうゆ","小さじ1/2"]],steps:["わかめを戻す。","きゅうりを薄切りにして軽く塩もみし、水気を絞る。","調味料を混ぜ、具材と和える。"],tip:"酸味や甘さは少しずつ調整。"},
+{id:14,n:"豚汁",c:"汁物・スープ",t:30,cost:650,ing:[["豚こま肉","200g"],["大根","150g"],["にんじん","1/2本"],["ごぼう","1/2本"],["こんにゃく","1/2枚"],["長ねぎ","1/2本"],["だし","800ml"],["みそ","大さじ2〜3"]],steps:["具材を食べやすく切る。","鍋で豚肉を炒め、野菜を加える。","だしを注ぎ、具材が柔らかくなるまで煮る。","みそを溶き入れ、ねぎを加える。"],tip:"みそは最後に味を見ながら調整。"},
+{id:15,n:"ナポリタン",c:"麺類",t:20,cost:600,ing:[["スパゲッティ","400g"],["ウインナー","6本"],["玉ねぎ","1個"],["ピーマン","2個"],["ケチャップ","大さじ6"],["牛乳","大さじ2"],["バター","15g"]],steps:["麺を表示時間通りにゆでる。","具材を切ってバターで炒める。","ケチャップを加えて軽く炒め、麺と牛乳を加えて和える。"],tip:"ケチャップは少なめから加え、最後に調整。"},
+{id:16,n:"ポテトサラダ",c:"サラダ・副菜",t:30,cost:500,ing:[["じゃがいも","4個"],["きゅうり","1本"],["にんじん","1/3本"],["ハム","4枚"],["マヨネーズ","大さじ4"],["酢","小さじ1"],["塩こしょう","少々"]],steps:["じゃがいもとにんじんをゆでる。","じゃがいもをつぶし、酢を混ぜて冷ます。","きゅうりは薄切りにして水気を絞る。","具材とマヨネーズを混ぜる。"],tip:"マヨネーズは最初少なめにして調整。"},
+{id:17,n:"カレーライス",c:"ご飯もの",t:40,cost:1000,ing:[["豚肉","300g"],["玉ねぎ","2個"],["にんじん","1本"],["じゃがいも","3個"],["カレールウ","4〜5皿分"],["水","700ml"],["ご飯","4人分"]],steps:["肉と野菜を食べやすく切る。","鍋で肉と野菜を炒め、水を加えて煮る。","具材が柔らかくなったら火を止めてルウを溶かす。","弱火でとろみがつくまで煮る。"],tip:"ルウは少なめに溶かして味を見て追加。"},
+{id:18,n:"鮭のホイル焼き",c:"和食",t:25,cost:950,ing:[["生鮭","4切れ"],["玉ねぎ","1/2個"],["しめじ","1袋"],["バター","20g"],["酒","大さじ2"],["塩こしょう","少々"]],steps:["玉ねぎを薄切り、しめじをほぐす。","アルミホイルに玉ねぎ、鮭、しめじをのせる。","酒とバターを加えて包む。","フライパンに並べ、水を少量入れてふたをし、蒸し焼きにする。"],tip:"しょうゆやポン酢は食べる直前に少量ずつ。"},
+{id:19,n:"きんぴらごぼう",c:"サラダ・副菜",t:20,cost:350,ing:[["ごぼう","1本"],["にんじん","1/2本"],["ごま油","大さじ1"],["しょうゆ","大さじ1"],["みりん","大さじ1"],["砂糖","小さじ2"],["白ごま","適量"]],steps:["ごぼうとにんじんを細切りにする。","ごま油で炒める。","調味料を加え、汁気がなくなるまで炒める。","白ごまを振る。"],tip:"しょうゆは控えめから。"},
+{id:20,n:"卵とわかめのスープ",c:"汁物・スープ",t:10,cost:250,ing:[["卵","2個"],["乾燥わかめ","4g"],["水","800ml"],["鶏ガラスープの素","小さじ2"],["しょうゆ","小さじ1"],["ごま油","少々"]],steps:["鍋に水と鶏ガラスープの素を入れて沸かす。","わかめを加える。","溶き卵を細く流し入れる。","しょうゆとごま油で整える。"],tip:"鶏ガラスープの素は商品によって塩分が異なるので控えめに。"}
 ];
-function switchPage(p){document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===p));}
-document.querySelectorAll('[data-page]').forEach(x=>x.addEventListener('click',()=>switchPage(x.dataset.page)));
-function due(p){if(!p.lastWater)return true;return plus(p.lastWater,p.interval||7)<=today()}
-function plantCard(p){let d=due(p);return `<div class="card"><div class="row"><div class="plant-img ${p.photo?'':'placeholder'}">${p.photo?`<img class="plant-img" src="${p.photo}">`:'🪴'}</div><div class="grow"><div class="plant-name">${esc(p.name)}</div><div class="plant-sub">${esc(p.place||'置き場所未設定')} · 水やり目安 ${p.interval||7}日ごと</div><div style="margin-top:6px"><span class="badge ${d?'due':''}">${d?'水やり時期の目安':'次回 '+fmt(plus(p.lastWater,p.interval||7))}</span></div></div></div><div class="actions"><button class="btn small" onclick="logCare('${p.id}','水やり')">💧 水やりした</button><button class="btn secondary small" onclick="showDetail('${p.id}')">詳細・編集</button></div></div>`}
-function render(){document.getElementById('plantCount').textContent=state.plants.length;document.getElementById('waterCount').textContent=state.plants.filter(due).length;document.getElementById('recordCount').textContent=state.records.length;
-let duePlants=state.plants.filter(due);document.getElementById('todayList').innerHTML=duePlants.length?duePlants.map(p=>`<div class="due-item"><div class="grow"><b>${esc(p.name)}</b><div class="muted">前回：${fmt(p.lastWater)}</div></div><button class="btn small" onclick="logCare('${p.id}','水やり')">完了</button></div>`).join(''):'<div class="empty">今日が目安日の植物はありません 🌿</div>';
-document.getElementById('homePlants').innerHTML=state.plants.length?state.plants.slice(0,4).map(plantCard).join(''):'<div class="empty">まだ植物が登録されていません。<br>「＋植物を追加」から登録しましょう。</div>';
-document.getElementById('plantList').innerHTML=state.plants.length?state.plants.map(plantCard).join(''):'<div class="empty">植物を登録すると、ここに一覧表示されます。</div>';
-document.getElementById('recordList').innerHTML=state.records.length?state.records.slice().reverse().map(r=>`<div class="card"><div class="row"><div class="grow"><b>${esc(r.plantName)}</b><div class="muted">${fmt(r.date)} · ${esc(r.type)}</div>${r.note?`<div class="muted" style="margin-top:5px">${esc(r.note)}</div>`:''}</div><span>✓</span></div></div>`).join(''):'<div class="empty">お世話を記録すると、ここに履歴が残ります。</div>';
-}
-function openModal(title,body){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;document.getElementById('modal').classList.add('show')}
-function closeModal(){document.getElementById('modal').classList.remove('show')}
-function openAdd(){openModal('植物を登録',`<form id="plantForm"><label>植物の名前 *</label><input name="name" required placeholder="例：モンステラ"><label>写真（任意）</label><input type="file" name="photo" accept="image/*"><div class="grid2"><div><label>置き場所</label><input name="place" placeholder="例：リビング窓際"></div><div><label>水やり間隔の目安（日）</label><input name="interval" type="number" min="1" max="90" value="7"></div></div><div class="grid2"><div><label>購入・お迎え日</label><input name="since" type="date" value="${today()}"></div><div><label>日当たり</label><select name="light"><option>明るい日陰</option><option>日当たりのよい場所</option><option>半日陰</option><option>日陰</option></select></div></div><label>メモ</label><textarea name="note" placeholder="品種、気になることなど"></textarea><button class="btn" style="width:100%">登録する</button></form>`);document.getElementById('plantForm').onsubmit=async e=>{e.preventDefault();let f=e.target;let photo='';let file=f.photo.files[0];if(file)photo=await resizeImage(file);state.plants.push({id:crypto.randomUUID(),name:f.name.value,place:f.place.value,interval:Number(f.interval.value)||7,lastWater:'',since:f.since.value,light:f.light.value,note:f.note.value,photo});closeModal();save()}}
-function resizeImage(file){return new Promise(resolve=>{let reader=new FileReader();reader.onload=()=>{let img=new Image();img.onload=()=>{let c=document.createElement('canvas'),scale=Math.min(1,600/Math.max(img.width,img.height));c.width=img.width*scale;c.height=img.height*scale;c.getContext('2d').drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.72))};img.src=reader.result};reader.readAsDataURL(file)})}
-function logCare(id,type){let p=state.plants.find(x=>x.id===id);if(!p)return;if(type==='水やり')p.lastWater=today();state.records.push({id,date:today(),type,plantName:p.name,note:''});save()}
-function showDetail(id){let p=state.plants.find(x=>x.id===id);if(!p)return;openModal(p.name,`<div class="detail-head">${p.photo?`<img class="plant-img" src="${p.photo}">`:'<div class="plant-img placeholder">🪴</div>'}<div><b>${esc(p.name)}</b><div class="muted">${esc(p.place||'置き場所未設定')}</div><div class="badge">${esc(p.light||'日当たり未設定')}</div></div></div><div class="card"><div class="muted">水やり管理</div><b>前回：${fmt(p.lastWater)}</b><br><span class="muted">次回目安：${p.lastWater?fmt(plus(p.lastWater,p.interval)): '未記録（初回の状態を確認）'}</span></div><div class="grid2"><div><label>水やり間隔（日）</label><input id="editInterval" type="number" min="1" max="90" value="${p.interval}"></div><div><label>置き場所</label><input id="editPlace" value="${esc(p.place)}"></div></div><label>メモ</label><textarea id="editNote">${esc(p.note)}</textarea><div class="actions"><button class="btn" onclick="logCare('${p.id}','水やり');closeModal()">💧 水やり記録</button><button class="btn secondary" onclick="logCare('${p.id}','肥料');closeModal()">🌱 肥料記録</button><button class="btn light" onclick="logCare('${p.id}','植え替え');closeModal()">🪴 植え替え記録</button></div><button class="btn" style="width:100%;margin-top:12px" onclick="updatePlant('${p.id}')">変更を保存</button><button class="btn danger" style="width:100%;margin-top:8px" onclick="deletePlant('${p.id}')">この植物を削除</button>`)}
-function updatePlant(id){let p=state.plants.find(x=>x.id===id);p.interval=Number(document.getElementById('editInterval').value)||7;p.place=document.getElementById('editPlace').value;p.note=document.getElementById('editNote').value;closeModal();save()}
-function deletePlant(id){if(confirm('この植物を削除しますか？記録は残ります。')){state.plants=state.plants.filter(p=>p.id!==id);closeModal();save()}}
-function renderBook(){let q=(document.getElementById('bookSearch')?.value||'').toLowerCase();document.getElementById('bookGrid').innerHTML=encyclopedia.filter(x=>x[0].toLowerCase().includes(q)).map((x,i)=>`<button class="book" onclick="bookDetail(${i})"><div class="emoji">${x[1]}</div><strong>${x[0]}</strong><small>${x[2]} · ${x[3]}</small></button>`).join('')||'<div class="empty">見つかりませんでした。</div>'}
-function bookDetail(i){let x=encyclopedia.filter(y=>y[0].toLowerCase().includes((document.getElementById('bookSearch').value||'').toLowerCase()))[i];if(!x)return;openModal(x[0],`<div style="font-size:48px;text-align:center">${x[1]}</div><div class="card"><b>☀️ 日当たり</b><p>${x[2]}</p><b>💧 水やり</b><p>${x[3]}</p><b>🌱 育て方</b><p>${x[4]}</p><b>🪴 植え替え目安</b><p>${x[5]}</p><b>⚠️ 注意点</b><p>${x[6]}</p></div><button class="btn" style="width:100%" onclick="prefill('${x[0]}')">この植物を登録する</button>`)}
-function prefill(name){closeModal();openAdd();document.querySelector('#plantForm [name=name]').value=name}
-render();renderBook();
+let saved=JSON.parse(localStorage.getItem("uchiSaved")||"[]"), active=null;
+const $=id=>document.getElementById(id);
+function showTab(tab){["search","plan","saved"].forEach(x=>$(x).classList.toggle("hidden",x!==tab));document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));if(tab==="saved")renderSaved()}
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 
-// 追加機能：年間カレンダー・成長写真比較・通知・写真から調べるガイド
-state.growth = state.growth || [];
-const extraStyle = document.createElement('style');
-extraStyle.textContent = `
-.extra-panel{display:none}.extra-panel.active{display:block}
-.extra-nav{display:flex;gap:6px;overflow:auto;margin:0 0 14px}
-.extra-nav button{white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:99px;padding:9px 12px;color:var(--muted);font-size:12px}
-.extra-nav button.active{background:var(--green);color:#fff}
-.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.calendar-grid button{border:1px solid var(--line);background:#fff;border-radius:9px;min-height:48px;text-align:left;padding:5px;font-size:12px}
-.calendar-grid button.marked{background:var(--mint);border-color:#b7cbb7}
-.photo-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.photo-grid img{width:100%;height:160px;object-fit:cover;border-radius:12px}
-`;
-document.head.appendChild(extraStyle);
-const extraNav=document.createElement('div');extraNav.className='extra-nav';
-extraNav.innerHTML='<button data-extra="calendar">📅 お世話カレンダー</button><button data-extra="growth">🖼️ 成長写真アルバム</button><button data-extra="identify">📸 写真で植物を調べる</button>';
-document.querySelector('main').insertBefore(extraNav,document.querySelector('main').firstChild);
-const extraWrap=document.createElement('div');extraWrap.innerHTML=`
-<section class="extra-panel" id="extra-calendar"><div class="card"><h2 class="section-title">お世話・成長記録カレンダー</h2><p class="muted">水やり・肥料などのお世話と、成長写真を撮った日がカレンダーに表示されます。</p><div class="row"><button class="btn secondary small" id="calPrev">‹</button><b class="grow" id="calTitle" style="text-align:center"></b><button class="btn secondary small" id="calNext">›</button></div><div class="calendar-grid" id="calGrid" style="margin-top:12px"></div><div id="calInfo" class="muted" style="margin-top:12px">日付をタップすると、その日の記録を確認できます。</div></div></section>
-<section class="extra-panel" id="extra-growth"><div class="card"><h2 class="section-title">成長写真アルバム</h2><p class="muted">植物ごとに写真を日付順で保存。以前と最近の写真を並べて成長を比べられます。</p><label>植物</label><select id="growthSelect"></select><label>成長写真を追加</label><input id="growthFile" type="file" accept="image/*" capture="environment"><input id="growthMemo" placeholder="メモ（新芽が出た、葉が増えた等）"><button class="btn" id="growthSave">写真を保存</button><div id="growthPhotos" style="margin-top:14px"></div><div id="growthCompare"></div></div></section>
-<section class="extra-panel" id="extra-identify"><div class="card"><h2 class="section-title">写真から植物を調べる</h2><p class="muted">葉・茎・株全体が分かる写真を撮影してください。図鑑の特徴と照らし合わせるための補助機能です。</p><input id="identifyFile" type="file" accept="image/*" capture="environment"><div id="identifyPreview"></div><p class="muted" id="identifyGuide"></p><p class="muted"><b>写真のAI自動判定について：</b>このアプリ単体では植物名を画像認識して確定できません。誤判定を避けるため、写真の確認ポイントと図鑑照合を案内します。自動判定を実装するには外部の植物識別APIとの接続が必要です。</p></div></section>`;
-document.querySelector('main').appendChild(extraWrap);
-let calDate=new Date();
-function showExtra(which){
- document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
- document.querySelectorAll('.extra-panel').forEach(x=>x.classList.remove('active'));
- document.querySelectorAll('.extra-nav button').forEach(x=>x.classList.toggle('active',x.dataset.extra===which));
- document.getElementById('extra-'+which).classList.add('active');
- if(which==='calendar')drawCalendar(); if(which==='growth')drawGrowth();
-}
-extraNav.querySelectorAll('button').forEach(b=>b.onclick=()=>showExtra(b.dataset.extra));
-document.getElementById('calPrev').onclick=()=>{calDate.setMonth(calDate.getMonth()-1);drawCalendar()};
-document.getElementById('calNext').onclick=()=>{calDate.setMonth(calDate.getMonth()+1);drawCalendar()};
-function drawCalendar(){
- const y=calDate.getFullYear(),m=calDate.getMonth(),start=(new Date(y,m,1).getDay()+6)%7,days=new Date(y,m+1,0).getDate();
- document.getElementById('calTitle').textContent=`${y}年 ${m+1}月`;
- let out=['月','火','水','木','金','土','日'].map(x=>`<div class="muted" style="text-align:center">${x}</div>`).join('');
- for(let i=0;i<start;i++)out+='<div></div>';
- for(let d=1;d<=days;d++){let ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,rs=(state.records||[]).filter(r=>r.date===ds),photos=(state.growth||[]).filter(g=>g.date===ds);out+=`<button class="${rs.length||photos.length?'marked':''}" data-day="${ds}"><b>${d}</b><br><small>${rs.length?'📝'+rs.length:''} ${photos.length?'📷'+photos.length:''}</small></button>`}
- document.getElementById('calGrid').innerHTML=out;
- document.getElementById('calInfo').innerHTML='📝 お世話記録　📷 成長写真　／ 日付をタップすると内容を確認できます。';
- document.querySelectorAll('#calGrid button[data-day]').forEach(b=>b.onclick=()=>{let rs=(state.records||[]).filter(r=>r.date===b.dataset.day),photos=(state.growth||[]).filter(g=>g.date===b.dataset.day);let detail=rs.length?rs.map(r=>`${esc(r.plantName)}：${esc(r.type)}`).join('<br>'):'お世話記録はありません';let photoHtml=photos.length?'<div class="photo-grid" style="margin-top:8px">'+photos.map(g=>`<div><img src="${g.photo}" style="width:100%;height:110px;object-fit:cover;border-radius:10px"><small>${esc(g.plantName)}</small></div>`).join('')+'</div>':'<br>成長写真はありません';document.getElementById('calInfo').innerHTML=`<b>${b.dataset.day}</b><br>${detail}<br><b>📷 成長写真</b>${photoHtml}`});
-}
-function drawGrowth(){
- let s=document.getElementById('growthSelect'),old=s.value;
- s.innerHTML=state.plants.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
- if(state.plants.some(p=>p.id===old))s.value=old;
- const arr=(state.growth||[]).filter(g=>g.plantId===s.value).sort((a,b)=>a.date.localeCompare(b.date));
- document.getElementById('growthPhotos').innerHTML=arr.length?'<div class="photo-grid">'+arr.map(g=>`<div class="card" style="margin:0;padding:8px"><img src="${g.photo}" alt="${esc(g.plantName)}の成長写真"><b>${g.date}</b><div class="muted">${esc(g.memo||'メモなし')}</div></div>`).join('')+'</div>':'<p class="muted">まだ写真がありません。撮影した写真は、ここに日付順のアルバムとして保存されます。</p>';
- document.getElementById('growthCompare').innerHTML=arr.length>1?`<hr><b>写真を2枚選んで比較</b><div class="grid2"><div><label>以前</label><select id="compareOld">${arr.map(g=>`<option value="${g.id}">${g.date}</option>`).join('')}</select></div><div><label>最近</label><select id="compareNew">${arr.map((g,i)=>`<option value="${g.id}" ${i===arr.length-1?'selected':''}>${g.date}</option>`).join('')}</select></div></div><button class="btn secondary" id="compareBtn">並べて比較</button><div id="compareOutput" class="photo-grid" style="margin-top:12px"></div>`:'';
- let cb=document.getElementById('compareBtn');if(cb)cb.onclick=()=>{let a=arr.find(g=>g.id===document.getElementById('compareOld').value),b=arr.find(g=>g.id===document.getElementById('compareNew').value);document.getElementById('compareOutput').innerHTML=[a,b].map(g=>`<div><img src="${g.photo}"><small>${g.date}</small></div>`).join('')};
-}
-document.getElementById('growthSelect').onchange=drawGrowth;
-document.getElementById('growthSave').onclick=async()=>{
- let id=document.getElementById('growthSelect').value,file=document.getElementById('growthFile').files[0];
- if(!id){alert('先に植物を登録してください');return}if(!file){alert('写真を選んでください');return}
- let data=await new Promise(resolve=>{let r=new FileReader();r.onload=()=>{let im=new Image();im.onload=()=>{let c=document.createElement('canvas'),sc=Math.min(1,700/Math.max(im.width,im.height));c.width=im.width*sc;c.height=im.height*sc;c.getContext('2d').drawImage(im,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.75))};im.src=r.result};r.readAsDataURL(file)});
- let plant=state.plants.find(p=>p.id===id);state.growth.push({id:Date.now().toString(),plantId:id,plantName:plant.name,date:today(),photo:data,memo:document.getElementById('growthMemo').value});
- state.records.push({date:today(),type:'成長写真',plantName:plant.name,note:document.getElementById('growthMemo').value});save();drawGrowth();drawCalendar();document.getElementById('growthFile').value='';document.getElementById('growthMemo').value='';alert('成長写真をアルバムに保存しました');
+const detailSteps={
+1:["鶏肉は厚い部分を開き、幅5mmほどの細切りにします。ピーマンは縦半分に切って種を取り、細切り。たけのこ・玉ねぎも同じくらいの細さにすると火の通りがそろいます。","鶏肉に片栗粉大さじ1をまぶします。肉の表面がうっすら白くなればOK。調味料（しょうゆ・オイスターソース・酒・砂糖）は小さい器で先に混ぜます。","フライパンにごま油を入れ中火で温めます。鶏肉を広げ、重なった部分をほぐしながら炒めます。表面の色が変わるまで約3〜4分。","玉ねぎ、たけのこ、ピーマンの順に加えて2〜3分炒めます。野菜が少ししんなりし、ピーマンの色が鮮やかになれば次へ。","合わせ調味料を回し入れ、全体を1〜2分炒めます。鶏肉の一番厚い部分を切り、中心まで白く火が通っていることを確認。味を見て、必要ならしょうゆを小さじ1ずつ足します。"],
+2:["鶏肉はキッチンペーパーで水気を拭きます。厚い部分に包丁で切り込みを入れて開き、厚みを均一にします。皮に数か所フォークを刺すと縮みにくくなります。","しょうゆ・みりん・酒・砂糖を器で混ぜておきます。調味料を先に用意すると、焼いている途中で慌てません。","フライパンに油を薄くひき、中火で温めます。鶏肉を皮を下にして置き、ヘラで軽く押さえながら5〜6分焼きます。皮にこんがり焼き色がついたら裏返します。","弱火にしてふたをし、さらに5〜7分蒸し焼きにします。厚い部分に竹串を刺し、透明な肉汁が出るか確認。心配な場合は中心温度75℃で1分以上を目安にします。","余分な脂をペーパーで拭き、混ぜた調味料を加えます。中火で煮立て、スプーンで肉にかけながら1〜2分煮詰めます。泡が大きくなり、少しとろみが出たら完成。焦げやすいので目を離しません。"],
+3:["玉ねぎは薄切りにします。豚肉が大きければ食べやすい幅に切り、調味料（しょうゆ・みりん・酒・生姜）を器で混ぜておきます。","フライパンに油を入れて中火で温め、豚肉を広げて炒めます。肉の赤い部分がほぼなくなったら玉ねぎを加えます。","玉ねぎが透き通って少ししんなりするまで2〜3分炒めます。焦げそうなら火を弱めます。","合わせ調味料を加え、全体に絡めながら1〜2分炒めます。肉の中心まで火が通り、汁が少し残る程度で火を止めます。濃ければ水を大さじ1加えます。"],
+4:["じゃがいもは皮をむいて4等分、にんじんは小さめの乱切り、玉ねぎはくし形に切ります。じゃがいもは水に2〜3分さらし、ざるに上げます。","鍋に油少量（分量外）を入れ中火で温め、豚肉を炒めます。肉の色が変わったら玉ねぎ、にんじん、じゃがいもを加えて1〜2分炒めます。","だし、しょうゆ、みりん、砂糖を加えます。煮立ったらアクを取り、しらたきを加えます。","落としぶた（クッキングシートに穴を開けたものでも可）をし、弱めの中火で15〜20分煮ます。ふつふつ小さく泡が出る火加減を保ちます。","竹串をじゃがいもに刺し、すっと通れば火を止めます。煮崩れ防止のため強く混ぜず、鍋を軽く揺すります。10分ほど置くと味がなじみます。"],
+5:["さばの表面の水分をペーパーで拭きます。皮に浅く十字の切り込みを入れます。生姜は薄切りにします。","鍋に水・酒・みりん・砂糖・生姜を入れて中火にかけ、煮立ったらさばを皮を上にして並べます。","再び煮立ったらアクを取り、落としぶたをして弱めの中火で8〜10分煮ます。煮汁が静かにふつふつする状態にします。","みそを小さな器に取り、煮汁を少し加えて溶いてから鍋に戻します。魚に煮汁をスプーンでかけ、さらに3〜5分煮ます。","身の中心まで熱くなり、箸でほぐれる状態なら完成。煮詰めすぎると塩辛くなるので、煮汁が少し残るところで火を止めます。"],
+6:["玉ねぎを細かいみじん切りにします。フライパンで弱めの中火で炒め、透き通ったら皿に広げて冷まします。熱いまま肉に混ぜると脂が溶けるので、必ず冷まします。","パン粉に牛乳を混ぜてしっとりさせます。ボウルにひき肉、冷ました玉ねぎ、卵、パン粉、塩こしょうを入れます。","手を使って粘りが出るまで1〜2分混ぜます。4等分し、両手で数回キャッチボールするように空気を抜き、厚さ2cmほどの小判形に整え、中央を少しくぼませます。","フライパンに油を薄くひき中火で温めます。ハンバーグを並べ、触らず2〜3分焼き、底に焼き色がついたら裏返します。","弱火にしてふたをし、8〜10分蒸し焼きにします。中央に竹串を刺し、透明な肉汁が出るか確認。確実には中心温度75℃で1分以上を目安にします。","ハンバーグを皿に取り出します。同じフライパンにケチャップと中濃ソースを入れ、弱火で30秒ほど混ぜて温め、上からかけます。"],
+7:["鶏肉は一口大、玉ねぎは薄切り、しめじは石づきを落としてほぐします。にんにくはみじん切りにします。","鍋に油を入れて中火で温め、にんにくを炒めます。香りが出たら鶏肉を皮目から焼き、表面に焼き色をつけます。中まで火を通す必要はありません。","玉ねぎとしめじを加えて2分ほど炒めます。玉ねぎが少ししんなりしたらトマト缶、水、コンソメを加えます。","煮立ったら弱火にし、ふたを少しずらして15〜20分煮ます。鍋底が焦げないよう、ときどき底から優しく混ぜます。","鶏肉の一番大きいものを切り、中心まで火が通っていることを確認します。酸味が強ければ砂糖を小さじ1/2ずつ加えて調整します。"],
+8:["玉ねぎはみじん切り、鶏肉は1cm角に切ります。卵は1人2個を目安にボウルで溶き、牛乳を混ぜます。","フライパンにバター半量を溶かし、鶏肉を中火で炒めます。肉の表面の色が変わったら玉ねぎを加え、しんなりするまで炒めます。","ご飯を加えてほぐし、ケチャップをまず分量の7割ほど加えて炒めます。全体が均一な色になったら味見し、必要なら残りを加えて皿に盛ります。","フライパンを軽く拭き、残りのバターを溶かします。卵液を流し入れ、弱めの中火で菜箸を大きく動かしながら半熟状にします。","卵がまだ少し柔らかいところで火を止め、チキンライスにのせます。余熱で固まるので、焼きすぎないのがコツです。"],
+9:["豆腐は2cm角に切ります。長ねぎ、にんにく、生姜はみじん切りにします。片栗粉は水大さじ2（分量外）で溶いておきます。","フライパンにごま油を入れ中火で熱し、にんにく・生姜・ねぎを30秒ほど炒めます。香りが出たら豚ひき肉を加え、そぼろ状になるまで炒めます。","みそ、しょうゆ、鶏ガラスープを加えて混ぜ、豆腐を崩さないように入れます。弱めの中火で3〜4分煮ます。","水溶き片栗粉をもう一度混ぜてから少しずつ回し入れ、優しく混ぜます。ふつふつと1分ほど加熱し、とろみがついたら完成。辛味は食べる人の皿でラー油を足します。"],
+10:["キャベツは一口大、豚肉は食べやすい長さに切ります。麺は袋の口を少し開け、電子レンジで温めるとほぐしやすくなります（袋の表示を確認）。","フライパンに油を入れ中火で熱し、豚肉を炒めます。肉の赤い部分がなくなったらキャベツともやしを加えます。","野菜が少ししんなりしたら麺を加え、水大さじ2を振ってほぐします。無理に引っ張らず、箸で少しずつ分けます。","ソースをまず半量加えて混ぜ、味を見ながら足します。全体が熱くなり、湯気が立ったら完成。"],
+11:["鶏肉は2cm角、玉ねぎは薄切りにします。卵はボウルに割り、白身を切るように軽く混ぜます。混ぜすぎなくて大丈夫です。","フライパンにだし、しょうゆ、みりん、砂糖、玉ねぎを入れ中火にかけます。煮立ったら鶏肉を加えます。","弱めの中火で5〜7分煮ます。鶏肉の大きいものを切り、中心まで火が通ったことを確認します。","溶き卵の2/3を回し入れ、ふたをして弱火で1分。残りの卵を加えて30秒ほど加熱し、ご飯にのせます。半熟が心配な場合は十分に加熱してください。"],
+12:["大根とにんじんはいちょう切り、油揚げは短冊切り、豆腐はさいの目に切ります。乾燥具材を使う場合は袋の表示に従います。","鍋にだし、大根、にんじんを入れて中火にかけます。煮立ったら弱火にし、野菜に竹串が通るまで8〜10分煮ます。","豆腐と油揚げを加えて2分温めます。煮立たせすぎると豆腐が崩れやすいので、静かに温めます。","火を弱めるか止め、みそをお玉に取り、煮汁で溶いてから鍋に戻します。味を見て少しずつ追加します。"],
+13:["乾燥わかめはたっぷりの水に5分ほど浸して戻し、ざるに上げます。きゅうりは薄い輪切りにします。","きゅうりに塩ひとつまみ（分量外）を振って5分置きます。手でぎゅっと絞るかペーパーで包んで水気を取ります。","酢・砂糖・しょうゆをボウルで混ぜ、砂糖が溶けたらきゅうりとわかめを加えます。","全体を和えて5分置き、味を見ます。酸味が強ければ砂糖を少量、薄ければしょうゆを数滴加えます。"],
+14:["大根とにんじんはいちょう切り、ごぼうは斜め薄切りにして水にさらします。こんにゃくはスプーンでちぎり、長ねぎは小口切りにします。","鍋に少量の油を入れ中火で豚肉を炒めます。肉の色が変わったら大根・にんじん・ごぼう・こんにゃくを加えて2分炒めます。","だしを加え、煮立ったらアクを取り、弱めの中火で10〜15分煮ます。野菜に竹串が通ればOKです。","火を弱め、みそをお玉で煮汁に溶いて加えます。長ねぎを入れて1分温め、味を見てみそを調整します。"],
+15:["大きな鍋に湯を沸かし、塩（湯1Lに小さじ1程度・任意）を入れます。スパゲッティを袋の表示時間どおりにゆでます。","玉ねぎとピーマンは薄切り、ウインナーは斜め切りにします。麺がゆで上がったら湯を切ります。","フライパンにバターを溶かし、ウインナー、玉ねぎ、ピーマンを中火で炒めます。玉ねぎが透き通ったらケチャップを加え、30秒ほど炒めます。","麺と牛乳を加えて全体を混ぜます。水分が足りず固いときはゆで汁を大さじ1ずつ加えます。味を見てケチャップを調整します。"],
+16:["じゃがいもは皮をむいて2〜3cm角に切り、にんじんはいちょう切りにします。鍋に入れてかぶる程度の水を加え、柔らかくなるまで10〜15分ゆでます。","きゅうりは薄切りにして塩ひとつまみ（分量外）を振り、5分置いて水気をしっかり絞ります。ハムは短冊切りにします。","じゃがいもに竹串がすっと通ったら湯を捨て、弱火で鍋を揺すって水分を飛ばします。熱いうちに粗くつぶし、酢を混ぜます。","じゃがいもの湯気が落ち着いてから、きゅうり・にんじん・ハム・マヨネーズを混ぜます。塩こしょうで味を整え、冷蔵庫で冷やします。"],
+17:["玉ねぎは薄切り、にんじんとじゃがいもは一口大、豚肉も大きければ切ります。じゃがいもは水にさらして水気を切ります。","鍋に油少量を入れ中火で豚肉を炒めます。色が変わったら玉ねぎ、にんじん、じゃがいもを加えて2分炒めます。","水を加えて煮立て、アクを取ります。弱めの中火で15〜20分煮て、じゃがいもに竹串が通るか確認します。","いったん火を止め、ルウを割り入れて溶かします。溶け残りがないよう底から混ぜます。","再び弱火にかけ、焦げないよう混ぜながら5分ほど煮ます。とろみがついたら完成。ルウは商品表示の水量を優先し、濃さは水で調整します。"],
+18:["玉ねぎは薄切り、しめじは石づきを落としてほぐします。鮭の水気をペーパーで拭き、骨があれば取り除きます。","アルミホイルを大きめに4枚用意します。中央に玉ねぎを敷き、鮭を置き、しめじとバターをのせます。酒を各包みに分けて振ります。","ホイルの上下を合わせて2回折り、左右も折って蒸気が漏れにくい包みにします。","フライパンに包みを並べ、水を100mlほど入れます。ふたをして中火で沸かし、沸いたら弱火で12〜15分蒸します。水がなくならないよう途中で確認します。","包みを開け、鮭の中心まで火が通っているか確認します。熱い蒸気に注意。味が薄ければ食べる直前にポン酢やしょうゆを少量かけます。"],
+19:["ごぼうはよく洗い、包丁の背で表面を軽くこそげます。斜め薄切りにしてから細切りにし、水に2〜3分さらして水気を切ります。にんじんも細切りにします。","フライパンにごま油を入れ中火で温め、ごぼうとにんじんを3〜4分炒めます。ごぼうが少ししんなりすればOKです。","しょうゆ・みりん・砂糖を加え、汁気が少なくなるまで混ぜながら炒めます。焦げそうなら火を弱めます。","火を止めて白ごまを振ります。味が濃い場合は次回しょうゆを少し減らします。"],
+20:["乾燥わかめは水で戻して水気を切ります。卵は器に割り、箸で白身を切るように混ぜます。","鍋に水と鶏ガラスープの素を入れて中火で沸かします。味見をして、塩気が強ければ水を足します。","わかめを加えて30秒ほど煮ます。スープを軽く混ぜながら、溶き卵を細く回し入れます。","卵を入れたらすぐに混ぜず、10秒ほど待ってから大きく一度混ぜます。しょうゆとごま油を加えて火を止めます。"]
 };
-document.getElementById('identifyFile').onchange=e=>{
- let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{document.getElementById('identifyPreview').innerHTML=`<img src="${r.result}" style="width:100%;max-height:240px;object-fit:contain;border-radius:12px">`;document.getElementById('identifyGuide').innerHTML='写真を見ながら、①葉の形・切れ込み ②葉の付き方 ③茎や幹の形 ④株全体の姿を確認。植物図鑑で候補を絞りましょう。写真だけで種類を断定しないでください。'};r.readAsDataURL(f);
-};
-// Moisture-check guidance is added to plant detail without pretending calendar dates guarantee watering.
-const oldShowDetail=showDetail;
-showDetail=function(id){oldShowDetail(id);let body=document.getElementById('modalBody');if(body&&!body.innerHTML.includes('土の乾き具合')){let box=document.createElement('div');box.className='card';box.innerHTML='<b>💧 土の乾き具合チェック</b><p class="muted">指を土に1〜2cm入れて確認。湿っていれば予定日でも水やりを待ち、乾いていれば鉢底から流れるまで与え、受け皿の水を捨てましょう。</p><div class="actions"><button class="btn secondary small" id="soilDry">乾いている</button><button class="btn light small" id="soilWet">まだ湿っている</button></div><p class="muted" id="soilAdvice"></p>';body.insertBefore(box,body.firstChild);document.getElementById('soilDry').onclick=()=>document.getElementById('soilAdvice').textContent='水やりの目安です。鉢底から流れるまでたっぷり与えましょう。';document.getElementById('soilWet').onclick=()=>document.getElementById('soilAdvice').textContent='今日は水やりを見送り、数日後に再確認しましょう。'}}
-;
-// Browser notifications: permission + check when the app is opened. Reliable background alerts require hosted PWA push setup.
-async function askPlantNotifications(){
- if(!('Notification'in window)){alert('このブラウザは通知に対応していません');return}
- let p=await Notification.requestPermission();if(p==='granted'){alert('通知を許可しました。アプリを開いたときに水やり目安日を確認して通知します。');notifyDue()}else alert('通知が許可されませんでした。iPhoneの設定も確認してください。')
-}
-function notifyDue(){
- if(!('Notification'in window)||Notification.permission!=='granted')return;
- let duePlants=state.plants.filter(p=>!p.lastWater||new Date(p.lastWater+'T12:00:00').setDate(new Date(p.lastWater+'T12:00:00').getDate()+Number(p.interval||7))<=new Date(today()+'T12:00:00').getTime());
- let stamp='midori_due_notice_'+today();if(duePlants.length&&!localStorage.getItem(stamp)){new Notification('みどりの手帳｜お世話確認',{body:duePlants.map(p=>p.name).join('、')+' の土の乾き具合を確認しましょう。'});localStorage.setItem(stamp,'1')}
-}
-const notifyCard=document.createElement('div');notifyCard.className='card';notifyCard.innerHTML='<b>🔔 水やりのお知らせ</b><p class="muted">通知を許可すると、アプリを開いた際に水やり目安日の植物をお知らせします。土の状態も確認してください。</p><button class="btn secondary" id="notifyBtn">通知を有効にする</button>';
-document.getElementById('home').appendChild(notifyCard);document.getElementById('notifyBtn').onclick=askPlantNotifications;
-notifyDue();
 
-</script>
-</body></html>
+function render(){let q=$("q").value.trim().toLowerCase(),c=$("category").value;let arr=recipes.filter(r=>(!c||r.c===c)&&(!q||(r.n+" "+r.c+" "+r.ing.map(x=>x[0]).join(" ")).toLowerCase().includes(q)));$("list").innerHTML=arr.length?arr.map(r=>`<div class="recipe"><span class="tag">${r.c}</span><h3 style="margin-top:7px">${r.n}</h3><div class="muted">${r.t}分・4人前の目安 ${r.cost.toLocaleString()}円</div><button class="btn" onclick="openRecipe(${r.id})">レシピを見る</button> <button class="btn" onclick="toggleSave(${r.id})">${saved.includes(r.id)?"★ 保存済み":"☆ お気に入り"}</button></div>`).join(""):"該当するレシピがありません。"}
+$("q").oninput=render;$("category").onchange=render;$("clear").onclick=()=>{$("q").value="";$("category").value="";render()};
+function openRecipe(id){active=recipes.find(r=>r.id===id);let r=active,n=4;$("detail").classList.remove("hidden");$("detail").innerHTML=`<h2>${r.n}</h2><span class="tag">${r.c}</span><p class="muted">基本レシピ・目安 ${r.t}分</p><label>作る人数</label><input id="scale" type="number" min="1" max="20" value="4"><div id="scaled"></div><h3 style="margin-top:16px">作り方（初めてでも安心）</h3><div class="notice">先に材料を全部切り、調味料を量っておくと失敗しにくいよ。火加減はコンロによって違うので、焦げそうなら弱めてね。</div><ol>${(detailSteps[r.id]||r.steps).map((s,i)=>`<li style="margin:10px 0;line-height:1.65"><strong>手順${i+1}</strong><br>${s}</li>`).join("")}</ol><div class="notice">安全のポイント：肉・魚・卵は中心まで十分に加熱してね。生肉を触った手や器具は、ほかの食材に使う前に洗おう。</div><div class="notice">味の調整：${r.tip}</div><h3 style="margin-top:16px">わが家のアレンジを記録</h3><textarea id="variation" rows="3" placeholder="例：しょうゆを少し減らした。家族にはこの味が好評。"></textarea><button class="btn primary" style="width:100%;margin-top:8px" onclick="saveVariation()">アレンジを保存</button>`;let scale=$("scale");scale.oninput=()=>drawScaled(r);drawScaled(r);$("detail").scrollIntoView({behavior:"smooth",block:"start"})}
+function drawScaled(r){let n=Math.max(1,Math.min(20,Number($("scale").value)||4));$("scaled").innerHTML=`<div class="muted" style="margin:9px 0">材料・調味料（${n}人前）</div>`+r.ing.map(([name,qty])=>`<div class="ingredient"><span>${name}</span><strong>${scaleQty(qty,n/4)}</strong></div>`).join("")}
+function scaleQty(q,f){if(f===1)return q;let m=q.match(/^(\d+(?:\.\d+)?)(.*)$/);if(!m)return q+" ×"+f.toFixed(2);let v=Number(m[1])*f;return (Math.round(v*100)/100)+m[2]}
+function toggleSave(id){saved=saved.includes(id)?saved.filter(x=>x!==id):[...saved,id];localStorage.setItem("uchiSaved",JSON.stringify(saved));render()}
+function saveVariation(){let txt=$("variation").value.trim();if(!txt){alert("アレンジ内容を入力してね");return}let a=JSON.parse(localStorage.getItem("uchiVariants")||"[]");a.unshift({id:active.id,name:active.n,text:txt,date:new Date().toLocaleDateString("ja-JP")});localStorage.setItem("uchiVariants",JSON.stringify(a));$("variation").value="";alert("アレンジを保存したよ！")}
+function renderSaved(){let a=JSON.parse(localStorage.getItem("uchiVariants")||"[]");$("savedList").innerHTML=(saved.length?`<h3>お気に入り</h3>`+saved.map(id=>{let r=recipes.find(x=>x.id===id);return `<div class="result"><strong>${r.n}</strong><button class="btn" onclick="openRecipe(${id});showTab('search')">レシピを見る</button></div>`}).join(""):"")+(a.length?`<h3 style="margin-top:16px">アレンジ履歴</h3>`+a.map(v=>`<div class="result"><strong>${v.name} <span class="pill">${v.date}</span></strong>${v.text}</div>`).join(""):"")||"まだ保存したレシピはありません。"}
+function makePlan(){let days=Number($("days").value),people=Math.max(1,Math.min(20,Number($("people").value)||4)),budget=Math.max(100,Number($("budget").value)||2000),limit=Number($("time").value),stock=$("stock").value.toLowerCase().split(/[、,，\s]+/).filter(Boolean);let available=recipes.filter(r=>r.t<=limit);let used=new Set(),out=[];for(let d=0;d<days;d++){let candidates=available.filter(r=>!used.has(r.id));if(!candidates.length){used.clear();candidates=available}candidates.sort((a,b)=>{let am=stock.filter(s=>(a.n+" "+a.ing.map(x=>x[0]).join(" ")).toLowerCase().includes(s)).length,bm=stock.filter(s=>(b.n+" "+b.ing.map(x=>x[0]).join(" ")).toLowerCase().includes(s)).length;return bm-am});let chosen=candidates.find(r=>r.cost*people/4<=budget)||candidates[candidates.length-1];used.add(chosen.id);out.push(chosen)}$("planResult").innerHTML=`<h3 style="margin-top:18px">提案した献立（${people}人・${days}日）</h3>`+out.map((r,i)=>`<div class="result"><strong>${i+1}日目：${r.n}</strong><span class="muted">${r.c}・約${Math.round(r.cost*people/4).toLocaleString()}円・${r.t}分</span><button class="btn" onclick="showTab('search');openRecipe(${r.id})">レシピを見る</button></div>`).join("")+`<p class="muted">概算合計：約${Math.round(out.reduce((s,r)=>s+r.cost*people/4,0)).toLocaleString()}円（主菜・料理1品ずつの提案。副菜・汁物は別途追加できます）</p>`}
+$("makePlan").onclick=makePlan;render();
+</script></main></body></html>

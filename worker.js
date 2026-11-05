@@ -1,7 +1,6 @@
 /**
  * うちのごはん - Cloudflare Worker
  * Secret: GEMINI_API_KEY (Google AI Studio)
- * Secret反映確認用
  * Deploy this Worker, then paste its workers.dev URL into the app.
  */
 const ALLOWED_ORIGIN = "https://kk611025.github.io";
@@ -43,23 +42,36 @@ function parseJson(text) {
 }
 export default {
   async fetch(request, env) {
-    if (request.method === "GET") {
-
-      return json({
-
-        gemini: !!env.GEMINI_API_KEY,
-
-        access: !!env.APP_ACCESS_CODE
-
-      }, 200, "");
-
-    }
-
-    
     const origin = request.headers.get("Origin") || "";
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
     if (request.method !== "POST") return json({ error: "POSTで送信してください。" }, 405, origin);
     if (origin && origin !== ALLOWED_ORIGIN) return json({ error: "許可されていない接続元です。" }, 403, origin);
+    if (request.url.endsWith("/import")) {
+      if (!env.APP_ACCESS_CODE) return json({error:"WorkerにAPP_ACCESS_CODEが設定されていません。"},500,origin);
+      if ((request.headers.get("X-App-Code") || "") !== env.APP_ACCESS_CODE) return json({error:"接続コードが違います。"},401,origin);
+      try {
+        const body = await request.json();
+        const target = new URL(body.url || "");
+        const host = target.hostname.toLowerCase();
+        const blockedHost = host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host === "0.0.0.0" || host === "::1" || /^127\./.test(host) || /^10\./.test(host) || /^192\.168\./.test(host) || /^169\.254\./.test(host) || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host);
+        if (!['http:','https:'].includes(target.protocol) || blockedHost || target.username || target.password) return json({error:"公開されているWebページのURLを入力してね。"},400,origin);
+        const page = await fetch(target.toString(), {headers:{"User-Agent":"Mozilla/5.0 (compatible; UchiNoGohan/1.0)","Accept":"text/html,application/xhtml+xml"}, redirect:"follow"});
+        if (!page.ok) return json({error:"サイトが読み込めませんでした。ログインが必要なページやアクセス制限のあるサイトは取り込めない場合があります。"},422,origin);
+        const html = await page.text();
+        const scripts = [...html.matchAll(/<script[^>]*type=["']application\/ld\\+json["'][^>]*>([\s\\S]*?)<\/script>/gi)];
+        const candidates=[];
+        function walk(v){ if(!v)return; if(Array.isArray(v)){v.forEach(walk);return;} if(typeof v==='object'){const t=v['@type'];if(t==='Recipe'||(Array.isArray(t)&&t.includes('Recipe')))candidates.push(v); if(v['@graph'])walk(v['@graph']);}}
+        for(const m of scripts){try{walk(JSON.parse(m[1].replace(/\u003c/gi,'<')))}catch(_){}}
+        const r=candidates[0];
+        if(!r)return json({error:"このページからレシピ情報を自動取得できませんでした。材料と作り方を入力欄に貼り付けて保存してね。"},422,origin);
+        const flatten=(x)=>{if(!x)return[];if(Array.isArray(x))return x.flatMap(flatten);if(typeof x==='string')return[x];if(typeof x==='object'){if(x.text)return[x.text];if(x.itemListElement)return flatten(x.itemListElement);if(x.name)return[x.name];}return[]};
+        const instructions=flatten(r.recipeInstructions).map(x=>x.replace(/<[^>]*>/g,' ').trim()).filter(Boolean);
+        const ingredients=flatten(r.recipeIngredient);
+        const duration=(r.totalTime||r.cookTime||r.prepTime||'').match(/PT(?:(\d+)H)?(?:(\d+)M)?/i);
+        const minutes=duration?Math.max(1,(Number(duration[1]||0)*60)+Number(duration[2]||0)):30;
+        return json({recipe:{name:r.name||'',description:r.description||'',category:r.recipeCategory||'和食',minutes,ingredients,instructions}},200,origin);
+      } catch(e) { return json({error:e.message||"レシピの読み込みに失敗しました。"},500,origin); }
+    }
     if (!env.GEMINI_API_KEY) return json({ error: "WorkerにGEMINI_API_KEYが設定されていません。" }, 500, origin);
     if (!env.APP_ACCESS_CODE) return json({ error: "WorkerにAPP_ACCESS_CODEが設定されていません。" }, 500, origin);
     if ((request.headers.get("X-App-Code") || "") !== env.APP_ACCESS_CODE) return json({ error: "接続コードが違います。" }, 401, origin);

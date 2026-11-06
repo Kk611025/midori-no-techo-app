@@ -169,13 +169,31 @@ function renderShoppingList(){
 
   const totals=new Map();
 
-  const liquidNames=["しょうゆ","醤油","酒","みりん","酢","ごま油","油","オリーブオイル","サラダ油","だし","水","牛乳","ソース","ケチャップ","マヨネーズ","ドレッシング"];
+  const liquidNames=["しょうゆ","醤油","しょう油","酒","料理酒","みりん","酢","ごま油","オリーブオイル","サラダ油","水","牛乳","ソース","ケチャップ","マヨネーズ","ドレッシング"];
   const gramValues={
     "砂糖":9,"塩":18,"みそ":18,"味噌":18,
     "片栗粉":9,"小麦粉":9,"薄力粉":9,"強力粉":9,
     "顆粒だし":3,"鶏ガラスープの素":3,
     "コンソメ":3,"いり白ごま":9,"白ごま":9
   };
+   const ingredientAliases={
+  "豚こま切れ肉":"豚こま肉",
+  "豚こま肉":"豚こま肉",
+  "豚小間切れ肉":"豚こま肉",
+  "豚こま":"豚こま肉",
+  "人参":"にんじん",
+  "ニンジン":"にんじん",
+  "玉葱":"玉ねぎ",
+  "じゃが芋":"じゃがいも",
+  "馬鈴薯":"じゃがいも",
+  "さけ":"鮭",
+  "サケ":"鮭",
+  "鯖":"さば",
+  "味噌":"みそ",
+  "しょう油":"しょうゆ",
+  "塩こしょう":"塩・こしょう",
+  "塩・こしょう":"塩・こしょう"
+};
    const countStandards={
     "にんじん":{unit:"本",g:150},
     "大根":{unit:"本",g:1000},
@@ -202,31 +220,46 @@ function renderShoppingList(){
     qty=String(qty||"適量").trim();
     if(!qty||qty==="適量")return [{unit:"適量",amount:null,unknown:qty||"適量"}];
 
-    const results=[];
+        const results=[];
     const parts=qty.split(/[・＋+]/);
 
+    function parseAmount(value){
+      const fraction=value.match(/^(\d+)\/(\d+)$/);
+      if(fraction){
+        return Number(fraction[1])/Number(fraction[2]);
+      }
+      return Number(value);
+    }
     for(let part of parts){
       part=part.trim();
       if(!part)continue;
 
-      let m=part.match(/^([\d.]+)\s*(大さじ|大匙|小さじ|小匙)(.*)$/);
+            let m=part.match(/^(?:([\d.]+\/[\d.]+|[\d.]+)\s*(大さじ|大匙|小さじ|小匙)|(大さじ|大匙|小さじ|小匙)\s*([\d.]+\/[\d.]+|[\d.]+))(.*)$/);
+
       if(m){
-        const n=Number(m[1])*factor;
-        const spoon=m[2];
+        const n=parseAmount(m[1]||m[4])*factor;
+const spoon=m[2]||m[3];
         const liquid=liquidNames.some(x=>name.includes(x));
+
         if(liquid){
-          results.push({unit:"ml",amount:n*(spoon.includes("大")?15:5)});
+          results.push({
+            unit:"ml",
+            amount:n*(spoon.includes("大")?15:5)
+          });
         }else{
           const base=gramValues[name]||9;
-          results.push({unit:"g",amount:n*(spoon.includes("大")?base:base/3)});
+          results.push({
+            unit:"g",
+            amount:n*(spoon.includes("大")?base:base/3)
+          });
         }
         continue;
       }
 
-      m=part.match(/^([\d.]+)\s*(kg|g|ml|mL|cc|L|個|本|尾|切れ|枚|丁|袋|パック|かけ|合|人分|杯|缶|株|束|玉|房|片)$/i);
+      m=part.match(/^([\d.]+\/[\d.]+|[\d.]+)\s*(kg|g|ml|mL|cc|L|個|本|尾|切れ|枚|丁|袋|パック|かけ|合|人分|杯|缶|株|束|玉|房|片)$/i);
 
       if(m){
-        let amount=Number(m[1])*factor;
+        let amount=parseAmount(m[1])*factor;
         let unit=m[2];
 
         if(unit==="kg"){amount*=1000;unit="g";}
@@ -235,14 +268,19 @@ function renderShoppingList(){
 
         const standard=countStandards[name];
 
-        if(unit==="g" && standard){
-          results.push({
-            unit:standard.unit,
-            amount:amount/standard.g
-          });
-        }else{
-          results.push({unit,amount});
-        }
+if(unit==="g" && standard){
+  results.push({
+    unit:standard.unit,
+    amount:amount/standard.g
+  });
+}else if(standard && standard.unit==="玉" && unit==="個"){
+  results.push({
+    unit:"玉",
+    amount:amount
+  });
+}else{
+  results.push({unit,amount});
+}
       }else{
         results.push({unit:"適量",amount:null,unknown:part});
       }
@@ -255,9 +293,9 @@ function renderShoppingList(){
     for(const meal of Object.values(day.meals)){
       const recipe=meal.recipe;
       for(const ing of (recipe.ing||[])){
-        const name=String(ing[0]||"").trim();
-        if(!name)continue;
-
+        const rawName=String(ing[0]||"").trim();
+if(!rawName)continue;
+const name=ingredientAliases[rawName]||rawName;
         const factor=day.people/4;
         const converted=convert(name,ing[1],factor);
 

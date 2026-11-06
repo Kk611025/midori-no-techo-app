@@ -149,21 +149,41 @@ ${JSON.stringify(searchResults.slice(0, 24))}
 `;
       // Gemini 3.8 uses the Interactions API. store:false avoids retaining
       // this one-shot meal-planning interaction on the server.
-      const api = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": env.GEMINI_API_KEY
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          input: prompt,
-          store: false
-        })
-      });
-      const raw = await api.json();
+      const models = [
+        MODEL,
+        "gemini-3.6-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite"
+      ];
+
+      let api;
+      let raw;
+
+      for (const model of models) {
+        api = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": env.GEMINI_API_KEY
+          },
+          body: JSON.stringify({
+            model,
+            input: prompt,
+            store: false
+          })
+        });
+
+        raw = await api.json();
+
+        if (api.ok) break;
+
+        if (![429, 500, 502, 503, 504].includes(api.status)) {
+          break;
+        }
+      }
+
       if (!api.ok) {
-        const msg = raw.error?.message || "Gemini APIでエラーが発生しました。";
+        const msg = raw.error?.message || "すべてのAIモデルでエラーが発生しました。";
         return json({ error: msg }, api.status, origin);
       }
       const parsed = parseJson(extractText(raw));

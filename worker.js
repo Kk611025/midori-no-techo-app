@@ -80,6 +80,11 @@ export default {
       const people = Math.max(1, Math.min(8, Number(body.people) || 4));
       const day = Math.max(1, Math.min(7, Number(body.day) || 1));
       const budgets = body.budgets || {};
+      const mealBudgets = {
+  breakfast: Math.max(0, Number(budgets.breakfast) || 0),
+  lunch: Math.max(0, Number(budgets.lunch) || 0),
+  dinner: Math.max(0, Number(budgets.dinner) || 0)
+};
       const existing = (body.existingRecipes || []).slice(0, 100);
       const previous = (body.previousNames || []).slice(-80);
       const pantry = (body.pantry || []).slice(0, 60);
@@ -145,8 +150,7 @@ export default {
 ${JSON.stringify(searchResults.slice(0, 24))}
 
 対象は${people}人家族の${day}日目。
-予算は1人あたり朝食170円、昼食290円、夕食310円です。各食の総予算は「1人あたりの予算×人数」で計算してください。
-
+予算は1人あたり朝食${mealBudgets.breakfast}円、昼食${mealBudgets.lunch}円、夕食${mealBudgets.dinner}円です。各食の総予算は「1人あたりの予算×人数」で計算してください。
 朝食・昼食・夕食それぞれに、必ず次の3品を各1品ずつ作ってください。
 ・主食(staple)
 ・主菜(main)
@@ -240,11 +244,6 @@ ${JSON.stringify(searchResults.slice(0, 24))}
       }
       const parsed = parseJson(extractText(raw));
             // 人数に応じた食事予算を確認する
-      const mealBudgets = {
-        breakfast: 170,
-        lunch: 290,
-        dinner: 310
-      };
 
       for (const mealName of ["breakfast", "lunch", "dinner"]) {
         const dishes = parsed.meals?.[mealName];

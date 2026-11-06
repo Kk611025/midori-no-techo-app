@@ -160,20 +160,31 @@ ${JSON.stringify(searchResults.slice(0, 24))}
       let raw;
 
       for (const model of models) {
-        api = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": env.GEMINI_API_KEY
-          },
-          body: JSON.stringify({
-            model,
-            input: prompt,
-            store: false
-          })
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-        raw = await api.json();
+        try {
+          api = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": env.GEMINI_API_KEY
+            },
+            body: JSON.stringify({
+              model,
+              input: prompt,
+              store: false
+            }),
+            signal: controller.signal
+          });
+
+          raw = await api.json();
+        } catch (error) {
+          api = { ok: false, status: 504 };
+          raw = { error: { message: model + " の応答がタイムアウトしました。" } };
+        } finally {
+          clearTimeout(timeoutId);
+        }
 
         if (api.ok) break;
 

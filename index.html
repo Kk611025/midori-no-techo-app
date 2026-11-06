@@ -191,8 +191,9 @@ function renderShoppingList(){
   "鯖":"さば",
   "味噌":"みそ",
   "しょう油":"しょうゆ",
-  "塩こしょう":"塩・こしょう",
-  "塩・こしょう":"塩・こしょう"
+    "塩こしょう":"塩・こしょう",
+  "塩・こしょう":"塩・こしょう",
+  "溶き卵":"卵"
 };
    const countStandards={
     "にんじん":{unit:"本",g:150},
@@ -311,8 +312,11 @@ const name=ingredientAliases[rawName]||rawName;
           if(item.amount!==null){
             old.amount+=item.amount;
           }else{
-            old.unknown.push(item.unknown);
-          }
+  const unknown=item.unknown||"適量";
+  if(!old.unknown.includes(unknown)){
+    old.unknown.push(unknown);
+  }
+}
 
           totals.set(key,old);
         }
@@ -320,28 +324,40 @@ const name=ingredientAliases[rawName]||rawName;
     }
   }
 
-  const allRows=[...totals.values()].map(x=>{
-    let display="";
+const grouped=new Map();
 
-    if(x.amount>0){
-      const amount=Math.round(x.amount*10)/10;
+for(const x of totals.values()){
+  const old=grouped.get(x.name)||{
+    name:x.name,
+    displays:[]
+  };
 
-      if(x.unit==="ml"){
-        display=amount+"ml";
-      }else if(x.unit==="g"){
-        display=amount+"g";
-      }else{
-        display=amount+x.unit;
-      }
+  if(x.amount>0){
+    const amount=Math.round(x.amount*10)/10;
+    let display=amount+x.unit;
+
+    if(x.unit==="ml"||x.unit==="g"){
+      display=amount+x.unit;
     }
 
-    if(x.unknown.length){
-      display+=(display?" ＋ ":"")+x.unknown.join("・");
+    if(!old.displays.includes(display)){
+      old.displays.push(display);
     }
+  }
 
-    x.display=display||"適量";
-    return x;
-  }).sort((a,b)=>a.name.localeCompare(b.name,"ja"));
+  for(const unknown of x.unknown){
+    if(!old.displays.includes(unknown)){
+      old.displays.push(unknown);
+    }
+  }
+
+  grouped.set(x.name,old);
+}
+
+const allRows=[...grouped.values()].map(x=>({
+  name:x.name,
+  display:x.displays.join("・")||"適量"
+})).sort((a,b)=>a.name.localeCompare(b.name,"ja"));
 
   const ownedRows=allRows.filter(x=>pantryHas(x.name));
   const rows=allRows.filter(x=>!pantryHas(x.name));

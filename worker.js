@@ -36,9 +36,30 @@ function extractText(data) {
 }
 function parseJson(text) {
   const cleaned = text.replace(/```(?:json)?/gi, "").trim();
-  const start = cleaned.indexOf("{"), end = cleaned.lastIndexOf("}");
-  if (start < 0 || end <= start) throw new Error("AIの返答をJSONとして読み取れませんでした。");
-  return JSON.parse(cleaned.slice(start, end + 1));
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+
+  if (start < 0 || end <= start) {
+    throw new Error("AIから正しいJSON形式の返答がありませんでした。");
+  }
+
+  const jsonText = cleaned.slice(start, end + 1);
+
+  try {
+    return JSON.parse(jsonText);
+  } catch (error) {
+    const match = error.message.match(/position (\d+)/);
+    const position = match ? Number(match[1]) : 0;
+    const preview = jsonText.slice(
+      Math.max(0, position - 100),
+      position + 100
+    );
+
+    throw new Error(
+      "AIのJSON形式に問題があります。位置：" +
+      position + "。該当箇所：" + preview
+    );
+  }
 }
 export default {
   async fetch(request, env) {

@@ -77,7 +77,7 @@ export default {
     if ((request.headers.get("X-App-Code") || "") !== env.APP_ACCESS_CODE) return json({ error: "接続コードが違います。" }, 401, origin);
     try {
       const body = await request.json();
-      const people = Math.max(1, Math.min(20, Number(body.people) || 4));
+      const people = Math.max(1, Math.min(8, Number(body.people) || 4));
       const day = Math.max(1, Math.min(7, Number(body.day) || 1));
       const budgets = body.budgets || {};
       const existing = (body.existingRecipes || []).slice(0, 100);
@@ -85,66 +85,107 @@ export default {
       const pantry = (body.pantry || []).slice(0, 60);
       const expiry = body.pantryExpiry || {};
       // Search the public web without a paid search API. Search results are references, not guaranteed full recipe text.
-      const searchTerms = [
-        `${pantry.join(" ")} 人気 レシピ 和食 洋食 中華 韓国料理`,
-        `家庭料理 主菜 副菜 汁物 レシピ ${day}日目`,
-        `簡単 家庭料理 レシピ ${people}人分`
-      ];
+      // ネット検索は1回だけ実行して待ち時間を短縮
       const searchResults = [];
-      for (const term of searchTerms) {
+
+      try {
+        const term = `${pantry.join(" ")} 家庭料理 人気レシピ 和食 洋食 中華`;
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 5000);
+
         try {
           const searchUrl = "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(term);
-          const sr = await fetch(searchUrl, { headers: { "User-Agent": "Mozilla/5.0 (compatible; UchiNoGohan/1.0)", "Accept": "text/html" } });
-          if (!sr.ok) continue;
-          const page = await sr.text();
-          const blocks = [...page.matchAll(/<div class="result[^>]*>[\s\S]*?<a class="result__a" href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?(?:<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>)?[\s\S]*?<\/div>/gi)];
-          for (const m of blocks.slice(0, 8)) {
-            const clean = v => String(v || "").replace(/<[^>]*>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/\s+/g, " ").trim();
-            let link = m[1];
-            try { const u = new URL(link, "https://duckduckgo.com"); const redirected = u.searchParams.get("uddg"); if (redirected) link = decodeURIComponent(redirected); } catch (_) {}
-            if (/^https?:\/\//i.test(link) && !searchResults.some(x => x.url === link)) searchResults.push({ title: clean(m[2]), url: link, snippet: clean(m[3]) });
+          const sr = await fetch(searchUrl, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (compatible; UchiNoGohan/1.0)",
+              "Accept": "text/html"
+            },
+            signal: controller.signal
+          });
+
+          if (sr.ok) {
+            const page = await sr.text();
+            const blocks = [...page.matchAll(/<div class="result[^>]*>[\s\S]*?<a class="result__a" href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?(?:<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>)?[\s\S]*?<\/div>/gi)];
+
+            for (const m of blocks.slice(0, 5)) {
+              const clean = v => String(v || "")
+                .replace(/<[^>]*>/g, " ")
+                .replace(/&amp;/g, "&")
+                .replace(/&quot;/g, '"')
+                .replace(/&#x27;|&#39;/g, "'")
+                .replace(/\s+/g, " ")
+                .trim();
+
+              let link = m[1];
+              try {
+                const u = new URL(link, "https://duckduckgo.com");
+                const redirected = u.searchParams.get("uddg");
+                if (redirected) link = decodeURIComponent(redirected);
+              } catch (_) {}
+
+              if (/^https?:\/\//i.test(link) &&
+                  !searchResults.some(x => x.url === link)) {
+                searchResults.push({
+                  title: clean(m[2]),
+                  url: link,
+                  snippet: clean(m[3])
+                });
+              }
+            }
           }
-        } catch (_) {}
+        } finally {
+          clearTimeout(timer);
+        }
+      } catch (_) {
+        // 検索に失敗してもAIによる献立作成は続ける
       }
       const prompt = `
 あなたは世界各国の家庭料理に詳しい献立作成AIです。以下のネット検索結果を参考に、和食・洋食・中華・韓国料理・エスニックなど幅広いジャンルから献立を組み立ててください。検索結果のURLは実在する参考ページとして該当する料理に紐づけてください。検索結果から材料や分量・作り方が十分に分からない場合は、一般的な料理知識を使って自然で安全なレシピに補完してください。検索結果にないURLを作らないでください。参考URLが見つからない料理はsource_urlを空欄にしてください。
 ネット検索結果:
 ${JSON.stringify(searchResults.slice(0, 24))}
 
-対象は${people}人家族の${day}日目。朝食予算${budgets.breakfast||0}円、昼食予算${budgets.lunch||0}円、夕食予算${budgets.dinner||0}円（各食5品全体の目安）です。
-必ず朝食・昼食・夕食の各食に、主食(staple)、メイン(main)、副菜(side)、汁物(soup)、小鉢(kobachi)を各1品ずつ、合計15品作ってください。
-朝は食べやすく簡単に、昼は満足感があり、夕食は主菜と野菜のバランスを重視。和食・洋食・中華を適度に混ぜ、同じ味付け・食材・調理法が偏らないようにしてください。
+対象は${people}人家族の${day}日目。
+予算は1人あたり朝食170円、昼食290円、夕食310円です。各食の総予算は「1人あたりの予算×人数」で計算してください。
+
+朝食・昼食・夕食それぞれに、必ず次の3品を各1品ずつ作ってください。
+・主食(staple)
+・主菜(main)
+・汁物(soup)
+
+予算に余裕がある場合のみ、副菜(side)を追加してください。さらに余裕がある場合のみ、小鉢(kobachi)を追加してください。
+予算を超える場合は、小鉢、次に副菜の順で省いてください。主食・主菜・汁物は省略しないでください。
+
+各食の食材費は、含まれる料理のcost_for_4を合計し、人数÷4を掛けて計算してください。各食の総予算を超えないようにしてください。
+料理数は各食3〜5品とし、予算内で無理に品数を増やさないでください。
+
+朝は食べやすく簡単に、昼は満足感があり、夕食は主菜と野菜のバランスを重視してください。和食・洋食・中華・韓国料理・エスニックなどを適度に混ぜ、同じ味付け・食材・調理法が偏らないようにしてください。
+
 前日までに使った料理名（重複禁止）: ${JSON.stringify(previous)}
 アプリに登録済みのレシピ（使えるものは優先）: ${JSON.stringify(existing)}
 家にある食材: ${JSON.stringify(pantry)}
 期限情報: ${JSON.stringify(expiry)}
 優先したい食材・避けたい食材の入力: ${JSON.stringify(body.avoid||[])}
-すべてのレシピは4人分の材料量に統一。cost_for_4は4人分の食材費の概算円。各レシピに具体的な材料名と分量、初心者にも分かる4〜7工程の作り方、調理時間、参考にしたレシピのURLを入れてください。主食はご飯・パン・麺などの炭水化物を含む料理にしてください。汁物は汁物、小鉢は少量の和え物・冷奴・酢の物などにしてください。副菜と小鉢を同じ料理にしないでください。
+
+すべてのレシピは4人分の材料量に統一してください。cost_for_4は4人分の食材費の概算円です。各レシピに具体的な材料名と分量、初心者にも分かる3〜5工程の作り方、調理時間、参考にしたレシピのURLを入れてください。主食はご飯・パン・麺などの炭水化物を含む料理にしてください。汁物は必ず汁物にしてください。副菜と小鉢を追加する場合は、同じ料理にしないでください。
 必ず次のJSONだけを返してください。説明文・Markdown・コード囲みは不要です。
 {
- "meals":{
-  "breakfast":[
-   {"course":"staple","name":"料理名","category":"ご飯もの","minutes":15,"cost_for_4":200,"ingredients":[{"name":"米","amount":"2合"}],"steps":["手順1","手順2"],"tip":"コツ","source_url":"https://..."},
-   {"course":"main","name":"料理名","category":"和食","minutes":15,"cost_for_4":300,"ingredients":[{"name":"卵","amount":"4個"}],"steps":["手順1"],"tip":"","source_url":"https://..."},
-   {"course":"side","name":"料理名","category":"サラダ・副菜","minutes":10,"cost_for_4":150,"ingredients":[{"name":"野菜","amount":"適量"}],"steps":["手順1"],"tip":"","source_url":"https://..."},
-   {"course":"soup","name":"料理名","category":"汁物・スープ","minutes":10,"cost_for_4":100,"ingredients":[{"name":"味噌","amount":"大さじ2"}],"steps":["手順1"],"tip":"","source_url":"https://..."},
-   {"course":"kobachi","name":"料理名","category":"サラダ・副菜","minutes":5,"cost_for_4":100,"ingredients":[{"name":"きゅうり","amount":"1本"}],"steps":["手順1"],"tip":"","source_url":"https://..."}
-  ],
-  "lunch":[
-   {"course":"staple","name":"料理名","category":"ご飯もの","minutes":20,"cost_for_4":250,"ingredients":[{"name":"米","amount":"2合"}],"steps":["手順1","手順2"],"tip":"","source_url":"https://..."},
-   {"course":"main","name":"料理名","category":"和食","minutes":20,"cost_for_4":350,"ingredients":[{"name":"豚肉","amount":"300g"}],"steps":["手順1","手順2"],"tip":"","source_url":"https://..."},
-   {"course":"side","name":"料理名","category":"サラダ・副菜","minutes":10,"cost_for_4":150,"ingredients":[{"name":"野菜","amount":"適量"}],"steps":["手順1"],"tip":"","source_url":"https://..."},
-   {"course":"soup","name":"料理名","category":"汁物・スープ","minutes":10,"cost_for_4":100,"ingredients":[{"name":"味噌","amount":"大さじ2"}],"steps":["手順1"],"tip":"","source_url":"https://..."},
-   {"course":"kobachi","name":"料理名","category":"サラダ・副菜","minutes":5,"cost_for_4":100,"ingredients":[{"name":"きゅうり","amount":"1本"}],"steps":["手順1"],"tip":"","source_url":"https://..."}
-  ],
-  "dinner":[
-   {"course":"staple","name":"料理名","category":"ご飯もの","minutes":20,"cost_for_4":250,"ingredients":[{"name":"米","amount":"2合"}],"steps":["手順1","手順2"],"tip":"","source_url":"https://..."},
-   {"course":"main","name":"料理名","category":"和食","minutes":25,"cost_for_4":500,"ingredients":[{"name":"魚","amount":"4切れ"}],"steps":["手順1","手順2"],"tip":"","source_url":"https://..."},
-   {"course":"side","name":"料理名","category":"サラダ・副菜","minutes":10,"cost_for_4":150,"ingredients":[{"name":"野菜","amount":"適量"}],"steps":["手順1"],"tip":"","source_url":"https://..."},
-   {"course":"soup","name":"料理名","category":"汁物・スープ","minutes":10,"cost_for_4":100,"ingredients":[{"name":"味噌","amount":"大さじ2"}],"steps":["手順1"],"tip":"","source_url":"https://..."},
-   {"course":"kobachi","name":"料理名","category":"サラダ・副菜","minutes":5,"cost_for_4":100,"ingredients":[{"name":"わかめ","amount":"適量"}],"steps":["手順1"],"tip":"","source_url":"https://..."}
-  ]
- }
+  "meals": {
+    "breakfast": [
+      {"course":"staple","name":"料理名","category":"ご飯もの","minutes":15,"cost_for_4":200,"ingredients":[{"name":"米","amount":"2合"}],"steps":["手順1","手順2"],"tip":"","source_url":""},
+      {"course":"main","name":"料理名","category":"和食","minutes":15,"cost_for_4":300,"ingredients":[{"name":"卵","amount":"4個"}],"steps":["手順1","手順2"],"tip":"","source_url":""},
+      {"course":"soup","name":"料理名","category":"汁物・スープ","minutes":10,"cost_for_4":100,"ingredients":[{"name":"味噌","amount":"大さじ2"}],"steps":["手順1"],"tip":"","source_url":""}
+    ],
+    "lunch": [
+      {"course":"staple","name":"料理名","category":"麺類","minutes":20,"cost_for_4":250,"ingredients":[{"name":"麺","amount":"4人分"}],"steps":["手順1","手順2"],"tip":"","source_url":""},
+      {"course":"main","name":"料理名","category":"中華","minutes":20,"cost_for_4":350,"ingredients":[{"name":"豚肉","amount":"300g"}],"steps":["手順1","手順2"],"tip":"","source_url":""},
+      {"course":"soup","name":"料理名","category":"汁物・スープ","minutes":10,"cost_for_4":100,"ingredients":[{"name":"野菜","amount":"100g"}],"steps":["手順1"],"tip":"","source_url":""}
+    ],
+    "dinner": [
+      {"course":"staple","name":"料理名","category":"ご飯もの","minutes":20,"cost_for_4":250,"ingredients":[{"name":"米","amount":"2合"}],"steps":["手順1","手順2"],"tip":"","source_url":""},
+      {"course":"main","name":"料理名","category":"和食","minutes":25,"cost_for_4":500,"ingredients":[{"name":"魚","amount":"4切れ"}],"steps":["手順1","手順2"],"tip":"","source_url":""},
+      {"course":"soup","name":"料理名","category":"汁物・スープ","minutes":10,"cost_for_4":100,"ingredients":[{"name":"味噌","amount":"大さじ2"}],"steps":["手順1"],"tip":"","source_url":""}
+    ]
+  }
 }
 `;
       // Gemini 3.8 uses the Interactions API. store:false avoids retaining
@@ -198,6 +239,50 @@ ${JSON.stringify(searchResults.slice(0, 24))}
         return json({ error: msg }, api.status, origin);
       }
       const parsed = parseJson(extractText(raw));
+            // 人数に応じた食事予算を確認する
+      const mealBudgets = {
+        breakfast: 170,
+        lunch: 290,
+        dinner: 310
+      };
+
+      for (const mealName of ["breakfast", "lunch", "dinner"]) {
+        const dishes = parsed.meals?.[mealName];
+
+        if (!Array.isArray(dishes)) {
+          throw new Error(mealName + "の献立が不足しています。");
+        }
+
+        // 必須の3品があるか確認
+        for (const course of ["staple", "main", "soup"]) {
+          if (!dishes.some(d => d.course === course)) {
+            throw new Error(mealName + "に必須料理がありません：" + course);
+          }
+        }
+
+        const budget = mealBudgets[mealName] * people;
+
+        // 4人分の原価を実際の人数に換算
+        const totalCost = () => dishes.reduce(
+          (sum, d) => sum + (Number(d.cost_for_4) || 0) * people / 4,
+          0
+        );
+
+        // 予算を超えたら小鉢、副菜の順に削除
+        for (const course of ["kobachi", "side"]) {
+          if (totalCost() <= budget) break;
+
+          const index = dishes.findIndex(d => d.course === course);
+          if (index !== -1) dishes.splice(index, 1);
+        }
+
+        // 必須3品でも予算を超える場合
+        if (totalCost() > budget) {
+          throw new Error(
+            mealName + "の主食・主菜・汁物だけで予算を超えています。"
+          );
+        }
+      }
       for (const meal of ["breakfast", "lunch", "dinner"]) {
         if (!Array.isArray(parsed.meals?.[meal])) throw new Error(meal + "の献立が不足しています。");
       }

@@ -161,12 +161,174 @@ function makePlanBase(){
  $("planResult").innerHTML=html;renderShoppingList();
 }
 function renderShoppingList(){
- const area=$("shoppingArea");if(!latestMealPlan.length){area.innerHTML="";return}
- const totals=new Map();
- for(const day of latestMealPlan){for(const meal of Object.values(day.meals)){const r=meal.recipe;for(const ing of (r.ing||[])){let name=String(ing[0]||"").trim(),qty=String(ing[1]||"適量").trim();if(!name)continue;let factor=day.people/4,m=qty.match(/^([0-9]+(?:\.[0-9]+)?)(.*)$/),amount=m?Number(m[1])*factor:null,unit=m?m[2].trim():"";let volume={"大さじ":15,"大匙":15,"小さじ":5,"小匙":5,"ml":1,"mL":1,"cc":1};let isVol=Object.prototype.hasOwnProperty.call(volume,unit);let key=name+"|"+(isVol?"__ml":unit);let item=totals.get(key)||{name,unit:isVol?"ml":unit,amount:0,unknown:[]};if(amount!==null){item.amount+=isVol?amount*volume[unit]:amount}else item.unknown.push(qty);totals.set(key,item)}}}
- let allRows=[...totals.values()].map(x=>{if(x.unit==="ml"&&x.amount>0){const amount=Math.round(x.amount*10)/10;x.display=amount>=1000?`${Math.round(amount/10)/100}L`:`${amount}ml`}else{x.display=x.amount>0?(Math.round(x.amount*100)/100)+(x.unit||""):""}return x}).sort((a,b)=>a.name.localeCompare(b.name,"ja"));let ownedRows=allRows.filter(x=>pantryHas(x.name));let rows=allRows.filter(x=>!pantryHas(x.name));
- area.innerHTML=`<section><h3>🛒 買い物リスト（${latestMealPlan.length}日分）</h3><p class="muted">家にある食材リストに登録済みの材料は自動で除外しています。</p>${ownedRows.length?`<div class="notice">🏠 家にあるため買わなくてよいもの：${ownedRows.map(x=>x.name).join("、")}</div>`:""}<div class="actions" style="margin:8px 0"><button class="btn" onclick="toggleShoppingChecks(true)">すべてチェック</button><button class="btn" onclick="toggleShoppingChecks(false)">チェックを外す</button><button class="btn" onclick="copyShoppingList()">リストをコピー</button></div><div id="shoppingItems">${rows.length?rows.map((x,i)=>{let amount=x.display||(x.unknown.join("・")||"適量");return `<label class="ingredient" style="display:flex;gap:10px;align-items:center"><input type="checkbox" class="shopcheck" style="width:auto" data-i="${i}"><span style="flex:1">${x.name}</span><strong>${amount}</strong></label>`}).join(""):`<p class="muted">買い足す食材はありません。</p>`}</div></section>`;
- window.currentShoppingRows=rows;
+  const area=$("shoppingArea");
+  if(!latestMealPlan.length){
+    area.innerHTML="";
+    return;
+  }
+
+  const totals=new Map();
+
+  const liquidNames=["しょうゆ","醤油","酒","みりん","酢","ごま油","油","オリーブオイル","サラダ油","だし","水","牛乳","ソース","ケチャップ","マヨネーズ","ドレッシング"];
+  const gramValues={
+    "砂糖":9,"塩":18,"みそ":18,"味噌":18,
+    "片栗粉":9,"小麦粉":9,"薄力粉":9,"強力粉":9,
+    "顆粒だし":3,"鶏ガラスープの素":3,
+    "コンソメ":3,"いり白ごま":9,"白ごま":9
+  };
+   const countStandards={
+    "にんじん":{unit:"本",g:150},
+    "大根":{unit:"本",g:1000},
+    "玉ねぎ":{unit:"個",g:200},
+    "じゃがいも":{unit:"個",g:150},
+    "さつまいも":{unit:"本",g:250},
+    "きゅうり":{unit:"本",g:100},
+    "なす":{unit:"本",g:80},
+    "ピーマン":{unit:"個",g:35},
+    "トマト":{unit:"個",g:150},
+    "キャベツ":{unit:"玉",g:1000},
+    "白菜":{unit:"玉",g:1500},
+    "長ねぎ":{unit:"本",g:100},
+    "鮭":{unit:"切れ",g:80},
+    "さけ":{unit:"切れ",g:80},
+    "鯖":{unit:"切れ",g:100},
+    "さば":{unit:"切れ",g:100},
+    "ぶり":{unit:"切れ",g:100},
+    "たら":{unit:"切れ",g:100},
+    "あじ":{unit:"尾",g:150}
+  };
+
+  function convert(name,qty,factor){
+    qty=String(qty||"適量").trim();
+    if(!qty||qty==="適量")return [{unit:"適量",amount:null,unknown:qty||"適量"}];
+
+    const results=[];
+    const parts=qty.split(/[・＋+]/);
+
+    for(let part of parts){
+      part=part.trim();
+      if(!part)continue;
+
+      let m=part.match(/^([\d.]+)\s*(大さじ|大匙|小さじ|小匙)(.*)$/);
+      if(m){
+        const n=Number(m[1])*factor;
+        const spoon=m[2];
+        const liquid=liquidNames.some(x=>name.includes(x));
+        if(liquid){
+          results.push({unit:"ml",amount:n*(spoon.includes("大")?15:5)});
+        }else{
+          const base=gramValues[name]||9;
+          results.push({unit:"g",amount:n*(spoon.includes("大")?base:base/3)});
+        }
+        continue;
+      }
+
+      m=part.match(/^([\d.]+)\s*(kg|g|ml|mL|cc|L|個|本|尾|切れ|枚|丁|袋|パック|かけ|合|人分|杯|缶|株|束|玉|房|片)$/i);
+
+      if(m){
+        let amount=Number(m[1])*factor;
+        let unit=m[2];
+
+        if(unit==="kg"){amount*=1000;unit="g";}
+        if(unit==="L"){amount*=1000;unit="ml";}
+        if(unit==="mL"||unit==="cc")unit="ml";
+
+        const standard=countStandards[name];
+
+        if(unit==="g" && standard){
+          results.push({
+            unit:standard.unit,
+            amount:amount/standard.g
+          });
+        }else{
+          results.push({unit,amount});
+        }
+      }else{
+        results.push({unit:"適量",amount:null,unknown:part});
+      }
+     
+    }
+    return results.length?results:[{unit:"適量",amount:null,unknown:qty}];
+  }
+
+  for(const day of latestMealPlan){
+    for(const meal of Object.values(day.meals)){
+      const recipe=meal.recipe;
+      for(const ing of (recipe.ing||[])){
+        const name=String(ing[0]||"").trim();
+        if(!name)continue;
+
+        const factor=day.people/4;
+        const converted=convert(name,ing[1],factor);
+
+        for(const item of converted){
+          const key=name+"|"+item.unit;
+          const old=totals.get(key)||{
+            name,
+            unit:item.unit,
+            amount:0,
+            unknown:[]
+          };
+
+          if(item.amount!==null){
+            old.amount+=item.amount;
+          }else{
+            old.unknown.push(item.unknown);
+          }
+
+          totals.set(key,old);
+        }
+      }
+    }
+  }
+
+  const allRows=[...totals.values()].map(x=>{
+    let display="";
+
+    if(x.amount>0){
+      const amount=Math.round(x.amount*10)/10;
+
+      if(x.unit==="ml"){
+        display=amount+"ml";
+      }else if(x.unit==="g"){
+        display=amount+"g";
+      }else{
+        display=amount+x.unit;
+      }
+    }
+
+    if(x.unknown.length){
+      display+=(display?" ＋ ":"")+x.unknown.join("・");
+    }
+
+    x.display=display||"適量";
+    return x;
+  }).sort((a,b)=>a.name.localeCompare(b.name,"ja"));
+
+  const ownedRows=allRows.filter(x=>pantryHas(x.name));
+  const rows=allRows.filter(x=>!pantryHas(x.name));
+
+  area.innerHTML=`<section>
+    <h3>🛒 買い物リスト（${latestMealPlan.length}日分）</h3>
+    <p class="muted">家にある食材リストに登録済みの材料は自動で除外しています。</p>
+    ${ownedRows.length?`<div class="notice">🏠 家にあるため買わなくてよいもの：${ownedRows.map(x=>x.name).join("、")}</div>`:""}
+    <div class="actions" style="margin:8px 0">
+      <button class="btn" onclick="toggleShoppingChecks(true)">すべてチェック</button>
+      <button class="btn" onclick="toggleShoppingChecks(false)">チェックを外す</button>
+      <button class="btn" onclick="copyShoppingList()">リストをコピー</button>
+    </div>
+    <div id="shoppingItems">
+      ${rows.length?rows.map((x,i)=>`
+        <label class="ingredient" style="display:flex;gap:10px;align-items:center">
+          <input type="checkbox" class="shopcheck" style="width:auto" data-i="${i}">
+          <span style="flex:1">${x.name}</span>
+          <strong>${x.display}</strong>
+        </label>
+      `).join(""):`<p class="muted">買い足す食材はありません。</p>`}
+    </div>
+  </section>`;
+
+  window.currentShoppingRows=rows;
 }
 function toggleShoppingChecks(value){document.querySelectorAll(".shopcheck").forEach(x=>x.checked=value)}
 function copyShoppingList(){let rows=window.currentShoppingRows||[];let text=rows.map((x,i)=>{let amount=x.display||(x.unknown.join("・")||"適量");let checked=document.querySelector(`.shopcheck[data-i="${i}"]`)?.checked;return `${checked?"☑":"□"} ${x.name}：${amount}`}).join("\n");if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>alert("買い物リストをコピーしたよ！")).catch(()=>prompt("このリストをコピーしてね",text))}else prompt("このリストをコピーしてね",text)}

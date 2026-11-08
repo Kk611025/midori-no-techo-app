@@ -198,7 +198,7 @@ ${JSON.stringify(searchResults.slice(0, 24))}
 ・同じ食材を使う場合でも、料理名、味付け、調理方法を変えてください。
 ・主菜の肉料理や魚料理が1日に偏らないようにしてください。
 
-各食の食材費は、含まれる料理のcost_for_4を合計し、人数÷4を掛けて計算してください。各食の総予算を超えないようにしてください。
+各食の食材費は、含まれる料理のcost_for_4を合計し、人数÷4を掛けて計算してください。各食の総予算を目標にしてください。1人あたり50円までの超過は許容します。予算を超えそうな場合は、最初から食材費の安い料理を選び、必須の3品は必ず維持してください。
 料理数は各食3〜5品とし、予算内で無理に品数を増やさないでください。
 
 朝は食べやすく簡単に、昼は満足感があり、夕食は主菜と野菜のバランスを重視してください。和食・洋食・中華・韓国料理・エスニックなどを適度に混ぜ、同じ味付け・食材・調理法が偏らないようにしてください。
@@ -279,17 +279,19 @@ ${JSON.stringify(searchResults.slice(0, 24))}
         const msg = raw.error?.message || "すべてのAIモデルでエラーが発生しました。";
         return json({ error: msg }, api.status, origin);
       }
-      const parsed = parseJson(extractText(raw));
-            // 人数に応じた食事予算を確認する
+            const parsed = parseJson(extractText(raw));
+      const originalParsed = JSON.parse(JSON.stringify(parsed));
+      const retryMeals = [];
 
-      for (const mealName of ["breakfast", "lunch", "dinner"]) {
-        const dishes = parsed.meals?.[mealName];
+      // 食事ごとの予算チェック
+      function checkMeal(meals, mealName) {
+        const dishes = meals[mealName];
 
         if (!Array.isArray(dishes)) {
           throw new Error(mealName + "の献立が不足しています。");
         }
 
-        // 必須の3品があるか確認
+        // 必須料理の確認
         for (const course of ["staple", "main", "soup"]) {
           if (!dishes.some(d => d.course === course)) {
             throw new Error(mealName + "に必須料理がありません：" + course);
@@ -297,34 +299,180 @@ ${JSON.stringify(searchResults.slice(0, 24))}
         }
 
         const budget = mealBudgets[mealName] * people;
+        const allowedBudget = budget + (50 * people);
 
-        // 4人分の原価を実際の人数に換算
         const totalCost = () => dishes.reduce(
           (sum, d) => sum + (Number(d.cost_for_4) || 0) * people / 4,
           0
         );
 
-        // 予算を超えたら小鉢、副菜の順に削除
+        // 小鉢、副菜の順に削除
         for (const course of ["kobachi", "side"]) {
-          if (totalCost() <= budget) break;
+          if (totalCost() <= allowedBudget) break;
 
           const index = dishes.findIndex(d => d.course === course);
           if (index !== -1) dishes.splice(index, 1);
         }
 
-        // 必須3品でも予算を超える場合
-        if (totalCost() > budget) {
-          throw new Error(
-            mealName + "の主食・主菜・汁物だけで予算を超えています。"
-          );
+        return {
+          budget,
+          allowedBudget,
+          cost: totalCost()
+        };
+      }
+
+      // 最初の献立を予算チェック
+      for (const mealName of ["breakfast", "lunch", "dinner"]) {
+        const result = checkMeal(parsed.meals, mealName);
+
+        if (result.cost > result.allowedBudget) {
+          retryMeals.push(mealName);
         }
       }
-      for (const meal of ["breakfast", "lunch", "dinner"]) {
-        if (!Array.isArray(parsed.meals?.[meal])) throw new Error(meal + "の献立が不足しています。");
+
+      // 予算超過した食事だけをまとめて1回再生成
+      if (retryMeals.length > 0) {
+        const retryPrompt = `
+あなたは食材費を抑える献立作成AIです。
+
+次の食事だけを作り直してください。
+対象の食事：${JSON.stringify(retryMeals)}
+
+人数：${people}人
+
+各食の1人あたり予算：
+朝食：${mealBudgets.breakfast}円
+昼食：${mealBudgets.lunch}円
+夕食：${mealBudgets.dinner}円
+
+予算は1人あたり50円までの超過を許容します。
+できるだけ予算内に収めてください。
+
+必ず主食(staple)、主菜(main)、汁物(soup)を各1品ずつ入れてください。
+予算に収まらない場合は小鉢(kobachi)、副菜(side)の順に省いてください。
+料理は食材費の安いものを優先してください。
+材料と分量は4人分で記載してください。
+cost_for_4は4人分の食材費です。
+
+元の献立：
+${JSON.stringify(originalParsed.meals)}
+
+作り直し対象の献立：
+${JSON.stringify(retryMeals.map(name => ({
+  meal: name,
+  dishes: parsed.meals[name]
+})))}
+
+対象の食事だけを次の形式のJSONで返してください。
+説明文やMarkdownは不要です。
+
+{
+  "meals": {
+    "breakfast": [],
+    "lunch": [],
+    "dinner": []
+  }
+}
+
+対象外の食事は空配列にしてください。
+`;
+
+        let retryApi;
+        let retryRaw;
+
+        for (const model of models) {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+          try {
+            retryApi = await fetch(
+              "https://generativelanguage.googleapis.com/v1beta/interactions",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-goog-api-key": env.GEMINI_API_KEY
+                },
+                body: JSON.stringify({
+                  model,
+                  input: retryPrompt,
+                  store: false
+                }),
+                signal: controller.signal
+              }
+            );
+
+            retryRaw = await retryApi.json();
+          } catch (error) {
+            retryApi = { ok: false, status: 504 };
+            retryRaw = {
+              error: {
+                message: "作り直しの応答がタイムアウトしました。"
+              }
+            };
+          } finally {
+            clearTimeout(timeoutId);
+          }
+
+          if (retryApi.ok) break;
+
+          if (![429, 500, 502, 503, 504].includes(retryApi.status)) {
+            break;
+          }
+        }
+
+        // 作り直しに成功した場合だけ比較
+        if (retryApi && retryApi.ok) {
+          try {
+            const retryParsed = parseJson(extractText(retryRaw));
+
+            for (const mealName of retryMeals) {
+              const retryDishes = retryParsed.meals?.[mealName];
+
+              if (!Array.isArray(retryDishes)) continue;
+
+              // 作り直した献立の必須料理を確認
+              const required = ["staple", "main", "soup"];
+              if (!required.every(course =>
+                retryDishes.some(d => d.course === course)
+              )) {
+                continue;
+              }
+
+              const originalResult = checkMeal(parsed.meals, mealName);
+
+              const candidateMeals = {
+                [mealName]: JSON.parse(JSON.stringify(retryDishes))
+              };
+
+              const retryResult = checkMeal(candidateMeals, mealName);
+
+              // 予算との差が小さい方を採用
+              const originalDifference = Math.abs(
+                originalResult.cost - originalResult.budget
+              );
+
+              const retryDifference = Math.abs(
+                retryResult.cost - retryResult.budget
+              );
+
+              if (retryDifference < originalDifference) {
+                parsed.meals[mealName] = candidateMeals[mealName];
+              }
+            }
+          } catch (error) {
+            // 作り直し結果に問題があれば最初の献立を使用
+          }
+        }
       }
+
       return json(parsed, 200, origin);
     } catch (e) {
-      return json({ error: e.message || "処理中にエラーが発生しました。" }, 500, origin);
+      return json(
+        { error: e.message || "処理中にエラーが発生しました。" },
+        500,
+        origin
+      );
     }
   }
 };

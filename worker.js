@@ -233,12 +233,10 @@ ${JSON.stringify(searchResults.slice(0, 24))}
 `;
       // Gemini 3.8 uses the Interactions API. store:false avoids retaining
       // this one-shot meal-planning interaction on the server.
-      const models = [
-        MODEL,
-        "gemini-3.6-flash",
-        "gemini-3.5-flash-lite",
-        "gemini-3.1-flash-lite"
-      ];
+     const models = [
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite"
+];
 
       let api;
       let raw;

@@ -2,5 +2,20 @@
   "name": "purple-snow-67f7uchi-no-gohan-ai",
   "main": "worker.js",
   "compatibility_date": "2026-11-04",
-  "keep_vars": true
+  "keep_vars": true,
+  "observability": {
+    "enabled": false,
+    "logs": {
+      "enabled": false,
+      "invocation_logs": false,
+      "persist": false
+    },
+    "traces": {
+      "enabled": false,
+      "persist": false
+    },
+    "issue_detection": {
+      "enabled": false
+    }
+  }
 }

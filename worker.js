@@ -1,478 +1,748 @@
 /**
  * うちのごはん - Cloudflare Worker
- * Secret: GEMINI_API_KEY (Google AI Studio)
- * Deploy this Worker, then paste its workers.dev URL into the app.
+ * 7日分まとめて献立を作成する修正版
  */
 const ALLOWED_ORIGIN = "https://kk611025.github.io";
-const MODEL = "gemini-3.8-flash";
+const MODELS = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
 
 function cors(origin) {
-  const allow = origin === ALLOWED_ORIGIN ? origin : ALLOWED_ORIGIN;
   return {
-    "Access-Control-Allow-Origin": allow,
+    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, X-App-Code",
     "Vary": "Origin"
   };
 }
+
 function json(data, status, origin) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...cors(origin), "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }
+    headers: {
+      ...cors(origin),
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store"
+    }
   });
 }
+
 function extractText(data) {
   if (data.output_text) return data.output_text;
-  const steps = data.steps || [];
+
   const blocks = [];
-  for (const step of steps) {
+
+  for (const step of (data.steps || [])) {
     if (step.type === "model_output") {
-      for (const c of (step.content || [])) if (c.type === "text" && c.text) blocks.push(c.text);
+      for (const c of (step.content || [])) {
+        if (c.type === "text" && c.text) blocks.push(c.text);
+      }
     }
   }
+
   if (blocks.length) return blocks.join("\n");
-  // Fallback for generateContent-style responses.
-  return data.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("\n") || "";
+
+  return data.candidates?.[0]?.content?.parts
+    ?.map(p => p.text || "").join("\n") || "";
 }
+
 function parseJson(text) {
-  const cleaned = text.replace(/```(?:json)?/gi, "").trim();
+  const cleaned = String(text || "")
+    .replace(/```(?:json)?/gi, "")
+    .trim();
+
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
 
   if (start < 0 || end <= start) {
-    throw new Error("AIから正しいJSON形式の返答がありませんでした。");
+    throw new Error(
+      "AIの返答がJSON形式ではありません。出力が途中で切れた可能性があります。"
+    );
   }
-
-  const jsonText = cleaned.slice(start, end + 1);
 
   try {
-    return JSON.parse(jsonText);
-  } catch (error) {
-    const match = error.message.match(/position (\d+)/);
-    const position = match ? Number(match[1]) : 0;
-    const preview = jsonText.slice(
-      Math.max(0, position - 100),
-      position + 100
-    );
-
+    return JSON.parse(cleaned.slice(start, end + 1));
+  } catch (_) {
     throw new Error(
-      "AIのJSON形式に問題があります。位置：" +
-      position + "。該当箇所：" + preview
+      "AIのJSONが途中で切れています。もう一度試してください。"
     );
   }
+}
+
+function safeArray(value, max) {
+  return Array.isArray(value) ? value.slice(0, max) : [];
+}
+
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function costOf(dishes, people) {
+  return dishes.reduce(
+    (sum, d) => sum + (Number(d.cost_for_4) || 0) * people / 4,
+    0
+  );
+}
+
+function checkMeal(inputDishes, mealName, people, perPersonBudget) {
+  const dishes = clone(inputDishes);
+
+  const budget = Math.max(0, Number(perPersonBudget) || 0) * people;
+  const allowedBudget = budget + 50 * people;
+
+  const totalCost = () => costOf(dishes, people);
+
+  for (const course of ["kobachi", "side"]) {
+    if (totalCost() <= allowedBudget) break;
+
+    const index = dishes.findIndex(d => d.course === course);
+
+    if (index >= 0) dishes.splice(index, 1);
+  }
+
+  const required = ["staple", "main", "soup"];
+
+  const valid = required.every(course =>
+    dishes.some(d => d.course === course)
+  );
+
+  return {
+    dishes,
+    budget,
+    allowedBudget,
+    cost: totalCost(),
+    valid
+  };
+}
+
+function validateMeal(dishes, label) {
+  if (!Array.isArray(dishes)) {
+    throw new Error(label + "の献立がありません。");
+  }
+
+  for (const course of ["staple", "main", "soup"]) {
+    if (!dishes.some(d => d && d.course === course)) {
+      throw new Error(label + "に必須料理がありません：" + course);
+    }
+  }
+}
+function normalizeDays(parsed, days) {
+  let rows = Array.isArray(parsed.days) ? parsed.days : null;
+
+  if (!rows && parsed.meals && days === 1) {
+    rows = [{ day: 1, meals: parsed.meals }];
+  }
+
+  if (!rows || rows.length < days) {
+    throw new Error(
+      "AIから" + days + "日分の献立が返りませんでした。"
+    );
+  }
+
+  const out = [];
+
+  for (let i = 0; i < days; i++) {
+    const row = rows.find(x => Number(x.day) === i + 1) || rows[i];
+
+    if (!row || !row.meals) {
+      throw new Error((i + 1) + "日目の献立がありません。");
+    }
+
+    const meals = {};
+
+    for (const name of ["breakfast", "lunch", "dinner"]) {
+      validateMeal(row.meals[name], (i + 1) + "日目の" + name);
+      meals[name] = row.meals[name];
+    }
+
+    out.push({ day: i + 1, meals });
+  }
+
+  return out;
+}
+
+async function callGemini(env, prompt, maxTokens) {
+  let lastError = "AIとの通信に失敗しました。";
+
+  for (let i = 0; i < MODELS.length; i++) {
+    const model = MODELS[i];
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 90000);
+
+    let response;
+    let raw;
+
+    try {
+      response = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/interactions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": env.GEMINI_API_KEY
+          },
+          body: JSON.stringify({
+            model,
+            input: prompt,
+            store: false,
+            generation_config: {
+              max_output_tokens: maxTokens,
+              thinking_level: "low"
+            }
+          }),
+          signal: controller.signal
+        }
+      );
+
+      raw = await response.json();
+
+    } catch (e) {
+      lastError = e.name === "AbortError"
+        ? "AIの応答が90秒以内に完了しませんでした。"
+        : "AIとの通信に失敗しました。";
+
+      if (e.name === "AbortError") {
+        throw new Error(lastError);
+      }
+
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (response && response.ok) {
+      if (raw.status && raw.status !== "completed") {
+        throw new Error(
+          "AIの返答が未完了です（" + raw.status + "）。"
+        );
+      }
+
+      const text = extractText(raw);
+
+      if (!text) {
+        throw new Error("AIから文章が返りませんでした。");
+      }
+
+      return parseJson(text);
+    }
+
+    const status = response ? response.status : 0;
+
+    lastError = raw?.error?.message ||
+      ("AI APIエラー（HTTP " + status + "）");
+
+    if ([429, 400, 401, 403].includes(status)) break;
+  }
+
+  throw new Error(lastError);
+}
+
+function recipeRules() {
+  return `
+各食に主食(staple)・主菜(main)・汁物(soup)を各1品必ず含める。
+予算内に収まる場合だけ副菜(side)、さらに余裕がある場合だけ小鉢(kobachi)を加える。
+昼食・夕食の主菜は肉または魚。朝食の主菜は卵料理可。
+副菜は野菜中心、小鉢はサラダ・酢の物・和え物など。
+副菜と小鉢は似た料理にしない。
+
+朝は簡単、昼は満足感、夕食は主菜と野菜のバランス重視。
+和洋中韓エスニックを適度に混ぜる。
+料理名の重複を避ける。
+主食はご飯・パン・麺など、汁物は汁物にする。
+
+各料理は4人分の材料量、cost_for_4（4人分の食材費・円）、
+ingredients（材料名と分量）、steps（短い3工程程度）、
+minutes、tip、source_urlを含める。
+
+参考URLは渡された検索結果にあるURLだけを使い、
+なければ空欄にする。
+JSON以外の文章やMarkdownは返さない。
+
+料理オブジェクト形式：
+{"course":"staple","name":"料理名","category":"分類","minutes":15,"cost_for_4":300,"ingredients":[{"name":"材料","amount":"分量"}],"steps":["手順1","手順2","手順3"],"tip":"","source_url":""}
+`;
+}
+function buildWeekPrompt(body, context) {
+  const {
+    days, people, budgets, avoid,
+    existing, previous, pantry, expiry, searchResults
+  } = context;
+
+  return `
+あなたは家庭料理に詳しい献立作成AIです。
+${people}人分の${days}日間の献立を一括作成してください。
+
+【1人あたり予算】
+朝食：${budgets.breakfast}円
+昼食：${budgets.lunch}円
+夕食：${budgets.dinner}円
+
+各食の総予算は1人あたり予算×${people}人です。
+食材費はcost_for_4×人数÷4で計算してください。
+1人50円までの超過は許容します。
+
+${recipeRules()}
+
+【重複禁止の料理名】
+${JSON.stringify(previous)}
+
+【登録済みレシピ】
+${JSON.stringify(existing)}
+
+【家にある食材】
+${JSON.stringify(pantry)}
+
+【期限情報】
+${JSON.stringify(expiry)}
+
+【避けたい食材など】
+${JSON.stringify(avoid)}
+
+【ネット検索結果】
+${JSON.stringify(searchResults)}
+
+【重要】
+1日目から${days}日目まで、朝食・昼食・夕食をすべて作成してください。
+合計${days * 3}食です。
+各食に主食・主菜・汁物を必ず含めてください。
+料理名を重複させないでください。
+予算に無理がある場合は品数を減らしてください。
+材料と作り方は簡潔にしてください。
+
+必ず次の形式のJSONだけを返してください。
+
+{
+  "days": [
+    {
+      "day": 1,
+      "meals": {
+        "breakfast": [],
+        "lunch": [],
+        "dinner": []
+      }
+    }
+  ]
+}
+
+dayの数字を2、3、4と進め、${days}日目まで必ず出力してください。
+`;
+}
+
+function buildRetryPrompt(slots, context) {
+  return `
+あなたは食材費を抑える献立作成AIです。
+
+【作り直す食事】
+${JSON.stringify(slots)}
+
+人数：${context.people}人
+
+【1人あたり予算】
+${JSON.stringify(context.budgets)}
+
+総予算は1人あたり予算×人数です。
+食材費はcost_for_4×人数÷4で計算してください。
+
+${recipeRules()}
+
+登録済みレシピ：
+${JSON.stringify(context.existing)}
+
+家にある食材：
+${JSON.stringify(context.pantry)}
+
+避けたい食材：
+${JSON.stringify(context.avoid)}
+
+対象の食事だけを作り直してください。
+対象外の食事は空配列にしてください。
+必ず主食・主菜・汁物を各1品入れてください。
+予算に収まらない場合は副菜・小鉢を追加しないでください。
+
+次のJSONだけを返してください。
+
+{
+  "days": [
+    {
+      "day": 1,
+      "meals": {
+        "breakfast": [],
+        "lunch": [],
+        "dinner": []
+      }
+    }
+  ]
+}
+`;
 }
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
-    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
-    if (request.method !== "POST") return json({ error: "POSTで送信してください。" }, 405, origin);
-    if (origin && origin !== ALLOWED_ORIGIN) return json({ error: "許可されていない接続元です。" }, 403, origin);
-    if (request.url.endsWith("/import")) {
-      if (!env.APP_ACCESS_CODE) return json({error:"WorkerにAPP_ACCESS_CODEが設定されていません。"},500,origin);
-      if ((request.headers.get("X-App-Code") || "") !== env.APP_ACCESS_CODE) return json({error:"接続コードが違います。"},401,origin);
-      try {
-        const body = await request.json();
-        const target = new URL(body.url || "");
-        const host = target.hostname.toLowerCase();
-        const blockedHost = host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host === "0.0.0.0" || host === "::1" || /^127\./.test(host) || /^10\./.test(host) || /^192\.168\./.test(host) || /^169\.254\./.test(host) || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host);
-        if (!['http:','https:'].includes(target.protocol) || blockedHost || target.username || target.password) return json({error:"公開されているWebページのURLを入力してね。"},400,origin);
-        const page = await fetch(target.toString(), {headers:{"User-Agent":"Mozilla/5.0 (compatible; UchiNoGohan/1.0)","Accept":"text/html,application/xhtml+xml"}, redirect:"follow"});
-        if (!page.ok) return json({error:"サイトが読み込めませんでした。ログインが必要なページやアクセス制限のあるサイトは取り込めない場合があります。"},422,origin);
-        const html = await page.text();
-        const scripts = [...html.matchAll(/<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
-        const candidates=[];
-        function walk(v){ if(!v)return; if(Array.isArray(v)){v.forEach(walk);return;} if(typeof v==='object'){const t=v['@type'];if(t==='Recipe'||(Array.isArray(t)&&t.includes('Recipe')))candidates.push(v); for(const [k,val] of Object.entries(v)){if(k==='@type')continue; if(val&&typeof val==='object')walk(val);}}}
-        for(const m of scripts){try{walk(JSON.parse(m[1].replace(/\u003c/gi,'<')))}catch(_){}}
-        const r=candidates[0];
-        if(!r)return json({error:"このページからレシピ情報を自動取得できませんでした。材料と作り方を入力欄に貼り付けて保存してね。"},422,origin);
-        const flatten=(x)=>{if(!x)return[];if(Array.isArray(x))return x.flatMap(flatten);if(typeof x==='string')return[x];if(typeof x==='object'){if(x.text)return[x.text];if(x.itemListElement)return flatten(x.itemListElement);if(x.name)return[x.name];if(x.description)return[x.description];}return[]};
-        const instructions=flatten(r.recipeInstructions).map(x=>x.replace(/<[^>]*>/g,' ').trim()).filter(Boolean);
-        const ingredients=flatten(r.recipeIngredient);
-        const duration=(r.totalTime||r.cookTime||r.prepTime||'').match(/PT(?:(\d+)H)?(?:(\d+)M)?/i);
-        const minutes=duration?Math.max(1,(Number(duration[1]||0)*60)+Number(duration[2]||0)):30;
-        return json({recipe:{name:r.name||'',description:r.description||'',category:r.recipeCategory||'和食',minutes,ingredients,instructions}},200,origin);
-      } catch(e) { return json({error:e.message||"レシピの読み込みに失敗しました。"},500,origin); }
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          ...cors(origin),
+          "Access-Control-Max-Age": "86400"
+        }
+      });
     }
-    if (!env.GEMINI_API_KEY) return json({ error: "WorkerにGEMINI_API_KEYが設定されていません。" }, 500, origin);
-    if (!env.APP_ACCESS_CODE) return json({ error: "WorkerにAPP_ACCESS_CODEが設定されていません。" }, 500, origin);
-    if ((request.headers.get("X-App-Code") || "") !== env.APP_ACCESS_CODE) return json({ error: "接続コードが違います。" }, 401, origin);
+
+    if (origin && origin !== ALLOWED_ORIGIN) {
+      return json({ error: "許可されていない接続元です。" }, 403, origin);
+    }
+
+    if (request.method !== "POST") {
+      return json({ error: "POSTで送信してください。" }, 405, origin);
+    }
+
     try {
       const body = await request.json();
-      const people = Math.max(1, Math.min(8, Number(body.people) || 4));
-      const day = Math.max(1, Math.min(7, Number(body.day) || 1));
-      const budgets = body.budgets || {};
-      const mealBudgets = {
-  breakfast: Math.max(0, Number(budgets.breakfast) || 0),
-  lunch: Math.max(0, Number(budgets.lunch) || 0),
-  dinner: Math.max(0, Number(budgets.dinner) || 0)
-};
-      const existing = (body.existingRecipes || []).slice(0, 100);
-      const previous = (body.previousNames || []).slice(-80);
-      const pantry = (body.pantry || []).slice(0, 60);
-      const expiry = body.pantryExpiry || {};
-      // Search the public web without a paid search API. Search results are references, not guaranteed full recipe text.
-      // ネット検索は1回だけ実行して待ち時間を短縮
-      const searchResults = [];
 
-      try {
-        const term = `${pantry.join(" ")} 家庭料理 人気レシピ 和食 洋食 中華`;
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 5000);
+      const accessCode = request.headers.get("X-App-Code") ||
+        body.accessCode ||
+        "";
+
+      if (!env.APP_ACCESS_CODE ||
+          accessCode !== env.APP_ACCESS_CODE) {
+        return json({ error: "接続コードが正しくありません。" }, 401, origin);
+      }
+
+      const url = new URL(request.url);
+
+      // レシピ取り込み
+      if (url.pathname.endsWith("/import")) {
+        const recipeUrl = String(body.url || "").trim();
+
+        if (!recipeUrl) {
+          return json({ error: "レシピURLがありません。" }, 400, origin);
+        }
+
+        let parsedUrl;
 
         try {
-          const searchUrl = "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(term);
-          const sr = await fetch(searchUrl, {
+          parsedUrl = new URL(recipeUrl);
+        } catch (_) {
+          return json({ error: "URLの形式が正しくありません。" }, 400, origin);
+        }
+
+        if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+          return json({ error: "このURLは読み込めません。" }, 400, origin);
+        }
+
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 12000);
+
+        try {
+          const page = await fetch(parsedUrl.toString(), {
             headers: {
-              "User-Agent": "Mozilla/5.0 (compatible; UchiNoGohan/1.0)",
+              "User-Agent": "Mozilla/5.0",
               "Accept": "text/html"
             },
             signal: controller.signal
           });
 
-          if (sr.ok) {
-            const page = await sr.text();
-            const blocks = [...page.matchAll(/<div class="result[^>]*>[\s\S]*?<a class="result__a" href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?(?:<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>)?[\s\S]*?<\/div>/gi)];
+          if (!page.ok) {
+            throw new Error("レシピページを取得できませんでした。");
+          }
 
-            for (const m of blocks.slice(0, 5)) {
-              const clean = v => String(v || "")
-                .replace(/<[^>]*>/g, " ")
-                .replace(/&amp;/g, "&")
-                .replace(/&quot;/g, '"')
-                .replace(/&#x27;|&#39;/g, "'")
-                .replace(/\s+/g, " ")
-                .trim();
+          const html = await page.text();
 
-              let link = m[1];
-              try {
-                const u = new URL(link, "https://duckduckgo.com");
-                const redirected = u.searchParams.get("uddg");
-                if (redirected) link = decodeURIComponent(redirected);
-              } catch (_) {}
+          const scripts = [
+            ...html.matchAll(
+              /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi
+            )
+          ];
 
-              if (/^https?:\/\//i.test(link) &&
-                  !searchResults.some(x => x.url === link)) {
-                searchResults.push({
-                  title: clean(m[2]),
-                  url: link,
-                  snippet: clean(m[3])
-                });
+          let recipe = null;
+
+          function findRecipe(value) {
+            if (!value) return null;
+
+            if (Array.isArray(value)) {
+              for (const item of value) {
+                const found = findRecipe(item);
+                if (found) return found;
+              }
+            }
+
+            if (typeof value !== "object") return null;
+
+            const type = value["@type"];
+            const types = Array.isArray(type) ? type : [type];
+
+            if (types.some(t =>
+              String(t).toLowerCase() === "recipe"
+            )) {
+              return value;
+            }
+
+            if (value["@graph"]) {
+              return findRecipe(value["@graph"]);
+            }
+
+            return null;
+          }
+
+          for (const match of scripts) {
+            try {
+              const data = JSON.parse(match[1]);
+              recipe = findRecipe(data);
+              if (recipe) break;
+            } catch (_) {}
+          }
+
+          if (!recipe) {
+            return json({
+              error: "このページからレシピ情報を見つけられませんでした。"
+            }, 422, origin);
+          }
+
+          const ingredients = safeArray(
+            recipe.recipeIngredient, 100
+          ).map(item => ({
+            name: String(item),
+            amount: ""
+          }));
+
+          const instructions = [];
+
+          function collectSteps(value) {
+            if (!value) return;
+
+            if (typeof value === "string") {
+              instructions.push(value);
+              return;
+            }
+
+            if (Array.isArray(value)) {
+              value.forEach(collectSteps);
+              return;
+            }
+
+            if (typeof value === "object") {
+              if (value.text) instructions.push(String(value.text));
+              else if (value.name) instructions.push(String(value.name));
+
+              if (value.itemListElement) {
+                collectSteps(value.itemListElement);
               }
             }
           }
+
+          collectSteps(recipe.recipeInstructions);
+
+          const imported = {
+            name: recipe.name || "読み込んだレシピ",
+            description: recipe.description || "",
+            ingredients,
+            steps: instructions,
+            source_url: parsedUrl.toString(),
+            minutes: recipe.totalTime || "",
+            image: Array.isArray(recipe.image)
+              ? recipe.image[0]
+              : (typeof recipe.image === "string"
+                ? recipe.image
+                : recipe.image?.url || "")
+          };
+
+          return json({ recipe: imported }, 200, origin);
+
         } finally {
           clearTimeout(timer);
         }
-      } catch (_) {
-        // 検索に失敗してもAIによる献立作成は続ける
       }
-      const prompt = `
-あなたは世界各国の家庭料理に詳しい献立作成AIです。以下のネット検索結果を参考に、和食・洋食・中華・韓国料理・エスニックなど幅広いジャンルから献立を組み立ててください。検索結果のURLは実在する参考ページとして該当する料理に紐づけてください。検索結果から材料や分量・作り方が十分に分からない場合は、一般的な料理知識を使って自然で安全なレシピに補完してください。検索結果にないURLを作らないでください。参考URLが見つからない料理はsource_urlを空欄にしてください。
-ネット検索結果:
-${JSON.stringify(searchResults.slice(0, 24))}
 
-対象は${people}人家族の${day}日目。
-予算は1人あたり朝食${mealBudgets.breakfast}円、昼食${mealBudgets.lunch}円、夕食${mealBudgets.dinner}円です。各食の総予算は「1人あたりの予算×人数」で計算してください。
-朝食・昼食・夕食それぞれに、必ず次の3品を各1品ずつ作ってください。
-・主食(staple)
-・主菜(main)
-・汁物(soup)
+      if (!env.GEMINI_API_KEY) {
+        return json({
+          error: "Gemini APIキーが設定されていません。"
+        }, 500, origin);
+      }
 
-予算に余裕がある場合のみ、副菜(side)を追加してください。さらに余裕がある場合のみ、小鉢(kobachi)を追加してください。
-予算を超える場合は、小鉢、次に副菜の順で省いてください。主食・主菜・汁物は省略しないでください。
-【献立の構成ルール】
-・朝食の主菜（main）は卵料理でも構いません。
-・朝食の肉料理は、ウインナー炒めやボイルウインナーなど、簡単に作れるものを優先してください。
-・昼食と夕食の主菜（main）は必ず肉料理または魚料理にしてください。
-・昼食と夕食の主菜にサラダ、野菜だけの料理、卵料理、豆腐料理を選ばないでください。
-・肉料理は鶏肉、豚肉、牛肉、ひき肉、ウインナーなどを使ってください。
-・魚料理は鮭、さば、たら、ぶり、あじなどを使ってください。
-・副菜（side）は野菜を中心とした料理にしてください。
-・小鉢（kobachi）はサラダ、酢の物、和え物などにしてください。
-・副菜と小鉢で同じ料理や似た料理を重複させないでください。
-・サラダが副菜と小鉢の両方に入らないようにしてください。
+      const days = Math.min(
+        7,
+        Math.max(1, Number(body.days) || 7)
+      );
 
-【料理の重複防止】
-・朝食、昼食、夕食で同じ料理名を使わないでください。
-・同じ日に同じ料理を別の食事に出さないでください。
-・前日までに使った料理名も重複させないでください。
-・同じ食材を使う場合でも、料理名、味付け、調理方法を変えてください。
-・主菜の肉料理や魚料理が1日に偏らないようにしてください。
+      const people = Math.min(
+        40,
+        Math.max(1, Number(body.people) || 8)
+      );
 
-各食の食材費は、含まれる料理のcost_for_4を合計し、人数÷4を掛けて計算してください。各食の総予算を目標にしてください。1人あたり50円までの超過は許容します。予算を超えそうな場合は、最初から食材費の安い料理を選び、必須の3品は必ず維持してください。
-料理数は各食3〜5品とし、予算内で無理に品数を増やさないでください。
+      const budgets = {
+        breakfast: Math.max(0, Number(body.budgets?.breakfast) || 0),
+        lunch: Math.max(0, Number(body.budgets?.lunch) || 0),
+        dinner: Math.max(0, Number(body.budgets?.dinner) || 0)
+      };
 
-朝は食べやすく簡単に、昼は満足感があり、夕食は主菜と野菜のバランスを重視してください。和食・洋食・中華・韓国料理・エスニックなどを適度に混ぜ、同じ味付け・食材・調理法が偏らないようにしてください。
+      const context = {
+        days,
+        people,
+        budgets,
+        avoid: safeArray(body.avoid, 100),
+        existing: safeArray(body.existing, 200),
+        previous: safeArray(body.previous, 200),
+        pantry: safeArray(body.pantry, 100),
+        expiry: safeArray(body.expiry, 100),
+        searchResults: []
+      };
 
-前日までに使った料理名（重複禁止）: ${JSON.stringify(previous)}
-アプリに登録済みのレシピ（使えるものは優先）: ${JSON.stringify(existing)}
-家にある食材: ${JSON.stringify(pantry)}
-期限情報: ${JSON.stringify(expiry)}
-優先したい食材・避けたい食材の入力: ${JSON.stringify(body.avoid||[])}
+      // ネット検索は短時間だけ試す
+      const searchWords = [
+        "家庭料理 節約 献立 レシピ",
+        "簡単 朝食 昼食 夕食 レシピ"
+      ];
 
-すべてのレシピは4人分の材料量に統一してください。cost_for_4は4人分の食材費の概算円です。各レシピに具体的な材料名と分量、初心者にも分かる3〜5工程の作り方、調理時間、参考にしたレシピのURLを入れてください。主食はご飯・パン・麺などの炭水化物を含む料理にしてください。汁物は必ず汁物にしてください。副菜と小鉢を追加する場合は、同じ料理にしないでください。
-必ず次のJSONだけを返してください。説明文・Markdown・コード囲みは不要です。
-{
-  "meals": {
-    "breakfast": [
-      {"course":"staple","name":"料理名","category":"ご飯もの","minutes":15,"cost_for_4":200,"ingredients":[{"name":"米","amount":"2合"}],"steps":["手順1","手順2"],"tip":"","source_url":""},
-      {"course":"main","name":"料理名","category":"和食","minutes":15,"cost_for_4":300,"ingredients":[{"name":"卵","amount":"4個"}],"steps":["手順1","手順2"],"tip":"","source_url":""},
-      {"course":"soup","name":"料理名","category":"汁物・スープ","minutes":10,"cost_for_4":100,"ingredients":[{"name":"味噌","amount":"大さじ2"}],"steps":["手順1"],"tip":"","source_url":""}
-    ],
-    "lunch": [
-      {"course":"staple","name":"料理名","category":"麺類","minutes":20,"cost_for_4":250,"ingredients":[{"name":"麺","amount":"4人分"}],"steps":["手順1","手順2"],"tip":"","source_url":""},
-      {"course":"main","name":"料理名","category":"中華","minutes":20,"cost_for_4":350,"ingredients":[{"name":"豚肉","amount":"300g"}],"steps":["手順1","手順2"],"tip":"","source_url":""},
-      {"course":"soup","name":"料理名","category":"汁物・スープ","minutes":10,"cost_for_4":100,"ingredients":[{"name":"野菜","amount":"100g"}],"steps":["手順1"],"tip":"","source_url":""}
-    ],
-    "dinner": [
-      {"course":"staple","name":"料理名","category":"ご飯もの","minutes":20,"cost_for_4":250,"ingredients":[{"name":"米","amount":"2合"}],"steps":["手順1","手順2"],"tip":"","source_url":""},
-      {"course":"main","name":"料理名","category":"和食","minutes":25,"cost_for_4":500,"ingredients":[{"name":"魚","amount":"4切れ"}],"steps":["手順1","手順2"],"tip":"","source_url":""},
-      {"course":"soup","name":"料理名","category":"汁物・スープ","minutes":10,"cost_for_4":100,"ingredients":[{"name":"味噌","amount":"大さじ2"}],"steps":["手順1"],"tip":"","source_url":""}
-    ]
-  }
-}
-`;
-      // Gemini 3.8 uses the Interactions API. store:false avoids retaining
-      // this one-shot meal-planning interaction on the server.
-     const models = [
-  "gemini-3.5-flash-lite",
-  "gemini-3.1-flash-lite"
-];
+      const searchController = new AbortController();
+      const searchTimer = setTimeout(
+        () => searchController.abort(),
+        4500
+      );
 
-      let api;
-      let raw;
-
-      for (const model of models) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-        try {
-          api = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
-            method: "POST",
+      try {
+        const query = encodeURIComponent(searchWords.join(" "));
+        const searchResponse = await fetch(
+          "https://html.duckduckgo.com/html/?q=" + query,
+          {
             headers: {
-              "Content-Type": "application/json",
-              "x-goog-api-key": env.GEMINI_API_KEY
+              "User-Agent": "Mozilla/5.0"
             },
-            body: JSON.stringify({
-              model,
-              input: prompt,
-              store: false
-            }),
-            signal: controller.signal
-          });
-
-          raw = await api.json();
-        } catch (error) {
-          api = { ok: false, status: 504 };
-          raw = { error: { message: model + " の応答がタイムアウトしました。" } };
-        } finally {
-          clearTimeout(timeoutId);
-        }
-
-        if (api.ok) break;
-
-        if (![429, 500, 502, 503, 504].includes(api.status)) {
-          break;
-        }
-      }
-
-      if (!api.ok) {
-        const msg = raw.error?.message || "すべてのAIモデルでエラーが発生しました。";
-        return json({ error: msg }, api.status, origin);
-      }
-            const parsed = parseJson(extractText(raw));
-      const originalParsed = JSON.parse(JSON.stringify(parsed));
-      const retryMeals = [];
-
-      // 食事ごとの予算チェック
-      function checkMeal(meals, mealName) {
-        const dishes = meals[mealName];
-
-        if (!Array.isArray(dishes)) {
-          throw new Error(mealName + "の献立が不足しています。");
-        }
-
-        // 必須料理の確認
-        for (const course of ["staple", "main", "soup"]) {
-          if (!dishes.some(d => d.course === course)) {
-            throw new Error(mealName + "に必須料理がありません：" + course);
+            signal: searchController.signal
           }
-        }
-
-        const budget = mealBudgets[mealName] * people;
-        const allowedBudget = budget + (50 * people);
-
-        const totalCost = () => dishes.reduce(
-          (sum, d) => sum + (Number(d.cost_for_4) || 0) * people / 4,
-          0
         );
 
-        // 小鉢、副菜の順に削除
-        for (const course of ["kobachi", "side"]) {
-          if (totalCost() <= allowedBudget) break;
+        if (searchResponse.ok) {
+          const html = await searchResponse.text();
 
-          const index = dishes.findIndex(d => d.course === course);
-          if (index !== -1) dishes.splice(index, 1);
+          context.searchResults = [
+            ...html.matchAll(
+              /class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi
+            )
+          ].slice(0, 8).map(match => ({
+            url: match[1],
+            title: match[2].replace(/<[^>]+>/g, "").trim()
+          }));
         }
-
-        return {
-          budget,
-          allowedBudget,
-          cost: totalCost()
-        };
+      } catch (_) {
+        // 検索に失敗しても献立作成は続ける
+      } finally {
+        clearTimeout(searchTimer);
       }
 
-      // 最初の献立を予算チェック
-      for (const mealName of ["breakfast", "lunch", "dinner"]) {
-        const result = checkMeal(parsed.meals, mealName);
+      const prompt = buildWeekPrompt(body, context);
+      const generated = await callGemini(
+        env,
+        prompt,
+        16000
+      );
 
-        if (result.cost > result.allowedBudget) {
-          retryMeals.push(mealName);
+      const week = normalizeDays(generated, days);
+            // 21食（7日×3食）の予算を確認
+      const overBudget = [];
+
+      for (const row of week) {
+        for (const mealName of ["breakfast", "lunch", "dinner"]) {
+          const checked = checkMeal(
+            row.meals[mealName],
+            mealName,
+            people,
+            budgets[mealName]
+          );
+
+          row.meals[mealName] = checked.dishes;
+
+          if (!checked.valid) {
+            throw new Error(
+              row.day + "日目の" + mealName +
+              "に主食・主菜・汁物がそろっていません。"
+            );
+          }
+
+          if (checked.cost > checked.allowedBudget) {
+            overBudget.push({
+              day: row.day,
+              meal: mealName,
+              original: clone(checked.dishes),
+              originalCost: checked.cost,
+              budget: checked.budget,
+              allowedBudget: checked.allowedBudget
+            });
+          }
         }
       }
 
-      // 予算超過した食事だけをまとめて1回再生成
-      if (retryMeals.length > 0) {
-        const retryPrompt = `
-あなたは食材費を抑える献立作成AIです。
+      let retryUsed = false;
 
-次の食事だけを作り直してください。
-対象の食事：${JSON.stringify(retryMeals)}
+      // 予算オーバーの食事だけをまとめて1回作り直す
+      if (overBudget.length > 0) {
+        retryUsed = true;
 
-人数：${people}人
+        const retryPrompt = buildRetryPrompt(
+          overBudget,
+          context
+        );
 
-各食の1人あたり予算：
-朝食：${mealBudgets.breakfast}円
-昼食：${mealBudgets.lunch}円
-夕食：${mealBudgets.dinner}円
+        const retryResult = await callGemini(
+          env,
+          retryPrompt,
+          10000
+        );
 
-予算は1人あたり50円までの超過を許容します。
-できるだけ予算内に収めてください。
+        const retryRows = Array.isArray(retryResult.days)
+  ? retryResult.days
+  : [];
+        for (const slot of overBudget) {
+  const retryRow = retryRows.find(
+    row => Number(row.day) === slot.day
+  );
+          const candidate = retryRow?.meals?.[slot.meal];
 
-必ず主食(staple)、主菜(main)、汁物(soup)を各1品ずつ入れてください。
-予算に収まらない場合は小鉢(kobachi)、副菜(side)の順に省いてください。
-料理は食材費の安いものを優先してください。
-材料と分量は4人分で記載してください。
-cost_for_4は4人分の食材費です。
-
-元の献立：
-${JSON.stringify(originalParsed.meals)}
-
-作り直し対象の献立：
-${JSON.stringify(retryMeals.map(name => ({
-  meal: name,
-  dishes: parsed.meals[name]
-})))}
-
-対象の食事だけを次の形式のJSONで返してください。
-説明文やMarkdownは不要です。
-
-{
-  "meals": {
-    "breakfast": [],
-    "lunch": [],
-    "dinner": []
-  }
-}
-
-対象外の食事は空配列にしてください。
-`;
-
-        let retryApi;
-        let retryRaw;
-
-        for (const model of models) {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000);
+          if (!Array.isArray(candidate)) continue;
 
           try {
-            retryApi = await fetch(
-              "https://generativelanguage.googleapis.com/v1beta/interactions",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "x-goog-api-key": env.GEMINI_API_KEY
-                },
-                body: JSON.stringify({
-                  model,
-                  input: retryPrompt,
-                  store: false
-                }),
-                signal: controller.signal
-              }
+            validateMeal(
+              candidate,
+              slot.day + "日目の" + slot.meal
             );
 
-            retryRaw = await retryApi.json();
-          } catch (error) {
-            retryApi = { ok: false, status: 504 };
-            retryRaw = {
-              error: {
-                message: "作り直しの応答がタイムアウトしました。"
-              }
-            };
-          } finally {
-            clearTimeout(timeoutId);
-          }
+            const checked = checkMeal(
+              candidate,
+              slot.meal,
+              people,
+              budgets[slot.meal]
+            );
 
-          if (retryApi.ok) break;
+            const originalDifference = Math.abs(
+              slot.originalCost - slot.budget
+            );
 
-          if (![429, 500, 502, 503, 504].includes(retryApi.status)) {
-            break;
-          }
-        }
+            const retryDifference = Math.abs(
+              checked.cost - slot.budget
+            );
 
-        // 作り直しに成功した場合だけ比較
-        if (retryApi && retryApi.ok) {
-          try {
-            const retryParsed = parseJson(extractText(retryRaw));
-
-            for (const mealName of retryMeals) {
-              const retryDishes = retryParsed.meals?.[mealName];
-
-              if (!Array.isArray(retryDishes)) continue;
-
-              // 作り直した献立の必須料理を確認
-              const required = ["staple", "main", "soup"];
-              if (!required.every(course =>
-                retryDishes.some(d => d.course === course)
-              )) {
-                continue;
-              }
-
-              const originalResult = checkMeal(parsed.meals, mealName);
-
-              const candidateMeals = {
-                [mealName]: JSON.parse(JSON.stringify(retryDishes))
-              };
-
-              const retryResult = checkMeal(candidateMeals, mealName);
-
-              // 予算との差が小さい方を採用
-              const originalDifference = Math.abs(
-                originalResult.cost - originalResult.budget
-              );
-
-              const retryDifference = Math.abs(
-                retryResult.cost - retryResult.budget
-              );
-
-              if (retryDifference < originalDifference) {
-                parsed.meals[mealName] = candidateMeals[mealName];
-              }
+            // 予算に近い方を採用する
+            if (retryDifference < originalDifference) {
+              week[slot.day - 1].meals[slot.meal] =
+                checked.dishes;
             }
-          } catch (error) {
-            // 作り直し結果に問題があれば最初の献立を使用
+          } catch (_) {
+            // 作り直しに失敗した食事は元の献立を残す
           }
         }
       }
 
-      return json(parsed, 200, origin);
-    } catch (e) {
-      return json(
-        { error: e.message || "処理中にエラーが発生しました。" },
-        500,
-        origin
-      );
+      return json({
+        days: week,
+        meta: {
+          days,
+          people,
+          retryUsed,
+          retrySlots: overBudget.length
+        }
+      }, 200, origin);
+
+    } catch (error) {
+      return json({
+        error: error.message || "献立の作成に失敗しました。"
+      }, 500, origin);
     }
   }
 };

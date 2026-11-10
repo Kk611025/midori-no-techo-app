@@ -161,87 +161,84 @@ function normalizeDays(parsed, days) {
 
 async function callGemini(env, prompt, maxTokens) {
   let lastError = "AIとの通信に失敗しました。";
-
   for (let i = 0; i < MODELS.length; i++) {
     const model = MODELS[i];
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 90000);
-
-    let response;
-    let raw;
-
-    try {
-      response = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/interactions",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": env.GEMINI_API_KEY
-          },
-          body: JSON.stringify({
-            model,
-            input: prompt,
-            store: false,
-            generation_config: {
-              max_output_tokens: maxTokens,
-              thinking_level: "low"
-            }
-          }),
-          signal: controller.signal
+    // 503の場合は最大1回だけ再試行
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 90000);
+      let response;
+      let raw;
+      try {
+        response = await fetch(
+          "https://generativelanguage.googleapis.com/v1beta/interactions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": env.GEMINI_API_KEY
+            },
+            body: JSON.stringify({
+              model,
+              input: prompt,
+              store: false,
+              generation_config: {
+                max_output_tokens: maxTokens,
+                thinking_level: "low"
+              }
+            }),
+            signal: controller.signal
+          }
+        );
+        raw = await response.json();
+      } catch (e) {
+        lastError = e.name === "AbortError"
+          ? "AIの応答が90秒以内に完了しませんでした。"
+          : "AIとの通信に失敗しました。";
+        if (e.name === "AbortError") {
+          throw new Error(lastError);
         }
-      );
-
-      raw = await response.json();
-
-    } catch (e) {
-      lastError = e.name === "AbortError"
-        ? "AIの応答が90秒以内に完了しませんでした。"
-        : "AIとの通信に失敗しました。";
-
-      if (e.name === "AbortError") {
+      } finally {
+        clearTimeout(timeout);
+      }
+      if (response && response.ok) {
+        if (raw.status !== "completed") {
+          if (
+            raw.status === "incomplete" ||
+            raw.status === "budget_exceeded"
+          ) {
+            throw new Error(
+              "AIの回答が途中で切れました。献立の量を減らすか、もう一度試してください。"
+            );
+          }
+          throw new Error(
+            "AIの処理が正常に完了しませんでした（" +
+            (raw.status || "状態不明") + "）。"
+          );
+        }
+        const text = extractText(raw);
+        if (!text) {
+          throw new Error("AIから文章が返りませんでした。");
+        }
+        return parseJson(text);
+      }
+      const status = response ? response.status : 0;
+      lastError = raw?.error?.message ||
+        ("AI APIエラー（HTTP " + status + "）");
+      // 503だけ、1秒待って同じモデルを再試行
+      if (status === 503 && attempt === 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        continue;
+      }
+      // 認証・設定エラーは再試行しない
+      if ([400, 401, 403].includes(status)) {
         throw new Error(lastError);
       }
-
-    } finally {
-      clearTimeout(timeout);
+      break;
     }
-
-    if (response && response.ok) {
-  if (raw.status !== "completed") {
-    if (raw.status === "incomplete" ||
-        raw.status === "budget_exceeded") {
-      throw new Error(
-        "AIの回答が途中で切れました。献立の量を減らすか、もう一度試してください。"
-      );
-    }
-
-    throw new Error(
-      "AIの処理が正常に完了しませんでした（" +
-      (raw.status || "状態不明") + "）。"
-    );
   }
-
-  const text = extractText(raw);
-
-  if (!text) {
-    throw new Error("AIから文章が返りませんでした。");
-  }
-
-  return parseJson(text);
-}
-
-    const status = response ? response.status : 0;
-
-    lastError = raw?.error?.message ||
-      ("AI APIエラー（HTTP " + status + "）");
-
-    if ([429, 400, 401, 403].includes(status)) break;
-  }
-
   throw new Error(lastError);
 }
-
 function recipeRules() {
   return `
 各食に主食(staple)・主菜(main)・汁物(soup)を各1品必ず含める。

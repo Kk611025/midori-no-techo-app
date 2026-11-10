@@ -497,17 +497,57 @@ function normalizeAIRecipe(x,idx){
  const steps=Array.isArray(x.steps)?x.steps.map(String).filter(Boolean):[];
  return {id:Date.now()+Math.floor(Math.random()*100000)+idx,n:String(x.name||x.n||"AI作成レシピ"),c:String(x.category||x.c||"和食"),t:Math.max(5,Number(x.minutes||x.t)||30),cost:Math.max(0,Number(x.cost_for_4||x.cost)||0),ing,steps,tip:String(x.tip||""),source:String(x.source_url||x.source||""),custom:true,aiImported:true};
 }
-async function generateAIDay(dayNo,days,people,budgets,avoid,previousNames){
- const endpoint=(localStorage.getItem(AI_ENDPOINT_KEY)||"").trim();
- if(!endpoint)throw new Error("AI連携URLが未設定です。献立画面の「AI・ネット自動検索の接続」にWorker URLを保存してください。");
- const local=allRecipes().map(r=>({name:r.n,category:r.c,ingredients:(r.ing||[]).map(x=>x[0])})).slice(0,100);
+async function generateAIWeek(days,people,budgets,avoid,previousNames){
+ const endpoint=(localStorage.getItem(AI_ENDPOINT_KEY)||"").trim().replace(/\/+$/,"");
+
+ if(!endpoint){
+  throw new Error("AI連携URLが未設定です。Worker URLを保存してください。");
+ }
+
+ const local=allRecipes().map(r=>({
+  name:r.n,
+  category:r.c,
+  ingredients:(r.ing||[]).map(x=>x[0])
+ })).slice(0,100);
+
  const pantry=Array.isArray(pantryItems)?pantryItems:[];
  const expiry=typeof pantryMeta==="object"?pantryMeta:{};
- const payload={day:dayNo,totalDays:days,people,budgets,avoid,pantry,pantryExpiry:expiry,existingRecipes:local,previousNames};
- const res=await fetch(endpoint+"/plan",{method:"POST",headers:{"Content-Type":"application/json","X-App-Code":localStorage.getItem("uchiAiAccessCode")||""},body:JSON.stringify(payload)});
- if(!res.ok){let msg="AI献立の作成に失敗しました（"+res.status+"）。ネットレシピのURL取り込みとは別の機能です。";try{const e=await res.json();msg=e.error||msg;}catch(_){}throw new Error(msg);}
+
+ const payload={
+  days,
+  people,
+  budgets,
+  avoid,
+  previous:previousNames,
+  existing:local,
+  pantry,
+  expiry
+ };
+
+ const res=await fetch(endpoint+"/plan",{
+  method:"POST",
+  headers:{
+   "Content-Type":"application/json",
+   "X-App-Code":localStorage.getItem("uchiAiAccessCode")||""
+  },
+  body:JSON.stringify(payload)
+ });
+
+ if(!res.ok){
+  let msg="AI献立の作成に失敗しました（"+res.status+"）。";
+  try{
+   const e=await res.json();
+   msg=e.error||msg;
+  }catch(_){}
+  throw new Error(msg);
+ }
+
  const data=await res.json();
- if(!data.meals)throw new Error("AIから献立データを受け取れませんでした。");
+
+ if(!Array.isArray(data.days)||data.days.length<days){
+  throw new Error("AIから必要な日数分の献立を受け取れませんでした。");
+ }
+
  return data;
 }
 function saveCurrentMealPlan(){
@@ -524,71 +564,193 @@ function saveCurrentMealPlan(){
 function renderSavedMealPlans(){const box=$("savedMealPlans");if(!box)return;const history=JSON.parse(localStorage.getItem("uchiSavedMealPlans")||"[]");box.innerHTML=history.length?history.map((plan,i)=>`<div class="result"><strong>${plan.date||"保存した献立"}</strong><p>${plan.days.length}日分・${plan.days[0]?.people||""}人分</p>${plan.days.map(day=>`<div><b>${day.day}日目</b>${Object.entries(day.meals).map(([k,v])=>`<div>${({staple:"主食",main:"主菜",side:"副菜",soup:"汁物",kobachi:"小鉢"})[k.split("_").pop()]||k}：${v.recipe?.n||""}</div>`).join("")}</div>`).join("")}<button class="btn" onclick="deleteSavedMealPlan(${plan.id})">この記録を削除</button></div>`).join(""):'<span class="muted">まだ保存した献立はありません。「この献立を記録に保存」を押すと残せます。</span>';}
 function deleteSavedMealPlan(id){let history=JSON.parse(localStorage.getItem("uchiSavedMealPlans")||"[]").filter(x=>x.id!==id);localStorage.setItem("uchiSavedMealPlans",JSON.stringify(history));renderSavedMealPlans();}
 async function makePlanWithAI(){
- const btn=document.getElementById("makePlan"),box=document.getElementById("planResult");
+ const btn=document.getElementById("makePlan");
+ const box=document.getElementById("planResult");
+
  const days=Math.max(1,Math.min(7,Number($("days").value)||7));
  const people=Math.max(1,Math.min(8,Number($("people").value)||4));
- const budgets={breakfast:Math.max(0,Number($("breakfastBudget").value)||0),lunch:Math.max(0,Number($("lunchBudget").value)||0),dinner:Math.max(0,Number($("dinnerBudget").value)||0)};
- const avoid=($("stock").value||"").split(/[、,，\s]+/).map(x=>x.trim()).filter(Boolean);
- btn.disabled=true;btn.textContent="ネット検索で献立を作っています…";
- latestMealPlan=[];let imported=[],previousNames=[],grand=0;
- box.innerHTML='<div class="notice">ネット検索でレシピを探し、AIが材料・分量・作り方を補っています。日数によって少し時間がかかります。</div>';
+
+ const budgets={
+  breakfast:Math.max(0,Number($("breakfastBudget").value)||0),
+  lunch:Math.max(0,Number($("lunchBudget").value)||0),
+  dinner:Math.max(0,Number($("dinnerBudget").value)||0)
+ };
+
+ const avoid=($("stock").value||"")
+  .split(/[、,，\s]+/)
+  .map(x=>x.trim())
+  .filter(Boolean);
+
+ btn.disabled=true;
+ btn.textContent="7日分の献立を作成しています…";
+
+ latestMealPlan=[];
+ let imported=[];
+ let previousNames=[];
+ let grand=0;
+
+ box.innerHTML='<div class="notice">🔎 7日分の献立をまとめて作成しています。少し時間がかかります。</div>';
+
  try{
-  let html=`<h3 style="margin-top:18px">${people}人分・${days}日間の献立</h3><p class="muted">朝・昼・夕すべて、主食・メイン・副菜・汁物・小鉢の5品構成です。</p>`;
+  const data=await generateAIWeek(
+   days,
+   people,
+   budgets,
+   avoid,
+   previousNames
+  );
+
+  let html=`<h3 style="margin-top:18px">${people}人分・${days}日間の献立</h3>
+  <p class="muted">朝・昼・夕の献立です。各食の予算を確認しています。</p>`;
+
   for(let d=1;d<=days;d++){
-   box.innerHTML=`<div class="notice">🔎 ${d}/${days}日目を検索中…（料理を探して、レシピを補完しています）</div>`;
-   const data=await generateAIDay(d,days,people,budgets,avoid,previousNames);
-   const day={day:d,people,meals:{}};
-   html+=`<section class="result"><h3>${d}日目</h3>`;
-   for(const [meal,label] of [["breakfast","🌅 朝食"],["lunch","☀️ 昼食"],["dinner","🌙 夕食"]]){
-    const mealData=data.meals[meal]||data[meal]||[];
-    const arr=Array.isArray(mealData)?mealData:(mealData&&typeof mealData==="object"?Object.entries(mealData).map(([course,value])=>({...value,course:value.course||course})):[]);
-    html+=`<h4 style="margin:14px 0 6px">${label}</h4><div class="notice">`;
-    let mealCost=0;
-for(const course of ["staple","main","soup","kobachi","side"]){
-     const aliases={staple:["staple","主食","ご飯","ごはん","パン","麺"],main:["main","主菜","メイン","おかず"],side:["side","副菜"],soup:["soup","汁物","スープ","味噌汁"],kobachi:["kobachi","小鉢","もう一品"]};
-     let raw=arr.find(x=>aliases[course].includes(String(x.course||x.category_type||x.type||"").toLowerCase())||aliases[course].includes(String(x.course||x.category_type||x.type||"")));
-     if(!raw)raw=arr.find(x=>aliases[course].some(a=>String(x.name||x.n||"").includes(a)));
-     let r;
-     if(raw){r=normalizeAIRecipe(raw,imported.length);}
-     else{
-      const localPool=allRecipes().filter(z=>course==="staple"?/ご飯|ごはん|米|パン|麺|おにぎり|うどん|そば/.test(z.n+" "+z.c):course==="soup"?/汁|スープ|味噌汁/.test(z.n+" "+z.c):course==="main"?!/汁|スープ|サラダ|和え|漬物/.test(z.n+" "+z.c):/サラダ|副菜|和え|漬物|冷奴/.test(z.n+" "+z.c));
-      const fallback=localPool.length?localPool:allRecipes();
-      const pick=fallback.length?fallback[(d+({staple:0,main:1,side:2,soup:3,kobachi:4}[course]))%fallback.length]:null;
-      if(!pick){html+=`<p><strong>${courseLabelAI(course)}：</strong>レシピがありません</p>`;continue;}
-      r=pick;
-     }
-     const match=allRecipes().find(z=>String(z.n).trim()===r.n.trim());
-     if(match)r=match;
-     else imported.push(r);
-     const cost=Math.round((Number(r.cost)||0)*people/4);
- if(mealCost+cost>budgets[meal]*people&&(course==="kobachi"||course==="side"))continue;
-     mealCost+=cost;
-day.meals[meal+"_"+course]={recipe:r,cost,budget:budgets[meal]*people};
-     previousNames.push(r.n);
-     html+=`<p style="margin:7px 0"><strong>${courseLabelAI(course)}：</strong>${r.n} <span class="muted">（約${cost.toLocaleString()}円）</span><button class="btn" onclick="showTab('search');openRecipe(${Number(r.id)})">レシピを見る</button></p>`;
-    }
-    grand+=mealCost;
-    html+=`<p class="muted">この食事の概算：約${mealCost.toLocaleString()}円 ／ 予算：${(budgets[meal]*people).toLocaleString()}円${mealCost>budgets[meal]*people?' ⚠️ 必須メニューだけで予算を超えています':''}</p></div>`;
+   const row=data.days.find(x=>Number(x.day)===d)||data.days[d-1];
+
+   if(!row||!row.meals){
+    throw new Error(d+"日目の献立が見つかりません。");
    }
+
+   const day={day:d,people,meals:{}};
+
+   html+=`<section class="result"><h3>${d}日目</h3>`;
+
+   for(const [meal,label] of [
+    ["breakfast","🌅 朝食"],
+    ["lunch","☀️ 昼食"],
+    ["dinner","🌙 夕食"]
+   ]){
+    const arr=Array.isArray(row.meals[meal])
+     ?row.meals[meal]:[];
+
+    if(!arr.length){
+     throw new Error(d+"日目の"+label+"が空になっています。");
+    }
+
+    html+=`<h4 style="margin:14px 0 6px">${label}</h4><div class="notice">`;
+
+    let mealCost=0;
+
+    for(const course of ["staple","main","soup","side","kobachi"]){
+     const raw=arr.find(x=>x&&x.course===course);
+
+     if(!raw){
+      if(course==="staple"||course==="main"||course==="soup"){
+       throw new Error(d+"日目の"+label+"に"+course+"がありません。");
+      }
+      continue;
+     }
+
+     const r=normalizeAIRecipe(raw,imported.length);
+
+     const match=allRecipes().find(
+      z=>String(z.n).trim()===r.n.trim()
+     );
+
+     if(match){
+      r={...match,source:r.source||match.source};
+     }else{
+      imported.push(r);
+     }
+
+     const cost=Math.round((Number(r.cost)||0)*people/4);
+
+     mealCost+=cost;
+
+     day.meals[meal+"_"+course]={
+      recipe:r,
+      cost,
+      budget:budgets[meal]*people
+     };
+
+     previousNames.push(r.n);
+
+     html+=`<p style="margin:7px 0">
+      <strong>${courseLabelAI(course)}：</strong>
+      ${r.n}
+      <span class="muted">（約${cost.toLocaleString()}円）</span>
+      <button class="btn" onclick="showTab('search');openRecipe(${Number(r.id)})">レシピを見る</button>
+     </p>`;
+    }
+
+    grand+=mealCost;
+
+    const mealBudget=budgets[meal]*people;
+
+    html+=`<p class="muted">
+     この食事の概算：約${mealCost.toLocaleString()}円 ／
+     予算：${mealBudget.toLocaleString()}円
+     ${mealCost>mealBudget?' ⚠️ 予算を超えています':''}
+    </p></div>`;
+   }
+
    html+="</section>";
+
    latestMealPlan.push(day);
-   box.innerHTML=html+`<p class="muted">${d}/${days}日目まで完成</p>`;
+
+   box.innerHTML=html+
+    `<p class="muted">${d}/${days}日目まで表示しました。</p>`;
   }
+
   if(imported.length){
-   const saved=JSON.parse(localStorage.getItem("uchiCustomRecipes")||"[]");
-   const seen=new Set(saved.map(r=>String(r.n).trim()));
-   const unique=imported.filter(r=>!seen.has(String(r.n).trim()));
-   localStorage.setItem("uchiCustomRecipes",JSON.stringify(unique.concat(saved)));
+   const saved=JSON.parse(
+    localStorage.getItem("uchiCustomRecipes")||"[]"
+   );
+
+   const seen=new Set(
+    saved.map(r=>String(r.n).trim())
+   );
+
+   const unique=imported.filter(
+    r=>!seen.has(String(r.n).trim())
+   );
+
+   localStorage.setItem(
+    "uchiCustomRecipes",
+    JSON.stringify(unique.concat(saved))
+   );
+
    imported=unique;
   }
-  html+=`<p><strong>期間合計の概算：約${grand.toLocaleString()}円</strong></p><p class="muted">AIが検索・補完したレシピ ${imported.length}品をアプリに保存しました。次回から登録レシピとして利用できます。材料は4人分基準で保存し、人数に応じて買い物リストで換算します。</p>`;
-  box.innerHTML=html+`<div class="actions" style="margin-top:12px"><button class="btn primary" id="saveMealPlanBtn">📌 この献立を記録に保存</button></div>`;renderShoppingList();render();
-  localStorage.setItem("uchiLastMealPlan",JSON.stringify({date:new Date().toLocaleDateString("ja-JP"),days:latestMealPlan.map(d=>({day:d.day,meals:Object.fromEntries(Object.entries(d.meals).map(([k,v])=>[k,v.recipe.n]))}))}));
-  document.getElementById("saveMealPlanBtn").onclick=saveCurrentMealPlan;
+
+  html+=`<p><strong>期間合計の概算：約${grand.toLocaleString()}円</strong></p>
+  <p class="muted">AIが作成した新しいレシピ ${imported.length}品を保存しました。材料は4人分基準です。</p>`;
+
+  box.innerHTML=html+
+   `<div class="actions" style="margin-top:12px">
+    <button class="btn primary" id="saveMealPlanBtn">📌 この献立を記録に保存</button>
+   </div>`;
+
+  renderShoppingList();
+  render();
+
+  localStorage.setItem(
+   "uchiLastMealPlan",
+   JSON.stringify({
+    date:new Date().toLocaleDateString("ja-JP"),
+    days:latestMealPlan.map(d=>({
+     day:d.day,
+     meals:Object.fromEntries(
+      Object.entries(d.meals).map(
+       ([k,v])=>[k,v.recipe.n]
+      )
+     )
+    }))
+   })
+  );
+
+  document.getElementById("saveMealPlanBtn").onclick=
+   saveCurrentMealPlan;
+
  }catch(e){
-  box.innerHTML=`<div class="notice">⚠️ ${String(e.message||e)}<br>接続先URL・Workerの設定・AI APIの利用上限を確認してね。</div>`;
- }finally{btn.disabled=false;btn.textContent="無料で献立を作る";}
+  box.innerHTML=`<div class="notice">
+   ⚠️ ${String(e.message||e)}
+   <br>Workerの設定・接続コード・AI APIの利用状況を確認してください。
+  </div>`;
+ }finally{
+  btn.disabled=false;
+  btn.textContent="無料で献立を作る";
+ }
 }
 document.getElementById("makePlan").onclick=makePlanWithAI;
-
+ 
 </script></main></body></html>

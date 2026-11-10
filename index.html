@@ -752,40 +752,5 @@ async function makePlanWithAI(){
  }
 }
 document.getElementById("makePlan").onclick=makePlanWithAI;
-// AI接続先の保存
-const AI_ENDPOINT_KEY = "uchiAiWorkerEndpoint";
-const AI_ACCESS_CODE_KEY = "uchiAiAccessCode";
 
-const aiEndpointInput = document.getElementById("aiEndpoint");
-const aiAccessCodeInput = document.getElementById("aiAccessCode");
-const aiStatus = document.getElementById("aiEndpointStatus");
-const saveAiButton = document.getElementById("saveAiEndpoint");
-
-// 保存済みの設定を読み込む
-aiEndpointInput.value =
-  localStorage.getItem(AI_ENDPOINT_KEY) || "";
-
-aiAccessCodeInput.value =
-  localStorage.getItem(AI_ACCESS_CODE_KEY) || "";
-
-// 保存ボタン
-saveAiButton.onclick = () => {
-  const endpoint = aiEndpointInput.value.trim().replace(/\/+$/, "");
-  const code = aiAccessCodeInput.value.trim();
-
-  if (!endpoint.startsWith("https://")) {
-    aiStatus.textContent = "HTTPSから始まるURLを入力してください。";
-    return;
-  }
-
-  if (code.length < 12) {
-    aiStatus.textContent = "接続コードを確認してください。";
-    return;
-  }
-
-  localStorage.setItem(AI_ENDPOINT_KEY, endpoint);
-  localStorage.setItem(AI_ACCESS_CODE_KEY, code);
-
-  aiStatus.textContent = "✅ 接続先と接続コードを保存しました。";
-};
 </script></main></body></html>

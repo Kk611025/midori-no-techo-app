@@ -208,20 +208,28 @@ async function callGemini(env, prompt, maxTokens) {
     }
 
     if (response && response.ok) {
-      if (raw.status && raw.status !== "completed") {
-        throw new Error(
-          "AIの返答が未完了です（" + raw.status + "）。"
-        );
-      }
-
-      const text = extractText(raw);
-
-      if (!text) {
-        throw new Error("AIから文章が返りませんでした。");
-      }
-
-      return parseJson(text);
+  if (raw.status !== "completed") {
+    if (raw.status === "incomplete" ||
+        raw.status === "budget_exceeded") {
+      throw new Error(
+        "AIの回答が途中で切れました。献立の量を減らすか、もう一度試してください。"
+      );
     }
+
+    throw new Error(
+      "AIの処理が正常に完了しませんでした（" +
+      (raw.status || "状態不明") + "）。"
+    );
+  }
+
+  const text = extractText(raw);
+
+  if (!text) {
+    throw new Error("AIから文章が返りませんでした。");
+  }
+
+  return parseJson(text);
+}
 
     const status = response ? response.status : 0;
 
@@ -581,7 +589,9 @@ export default {
         existing: safeArray(body.existing, 200),
         previous: safeArray(body.previous, 200),
         pantry: safeArray(body.pantry, 100),
-        expiry: safeArray(body.expiry, 100),
+        expiry: body.expiry && typeof body.expiry === "object"
+  ? body.expiry
+  : {},
         searchResults: []
       };
 

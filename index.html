@@ -640,7 +640,7 @@ async function makePlanWithAI(){
       continue;
      }
 
-     const r=normalizeAIRecipe(raw,imported.length);
+     let r=normalizeAIRecipe(raw,imported.length);
 
      const match=allRecipes().find(
       z=>String(z.n).trim()===r.n.trim()

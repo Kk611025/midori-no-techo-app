@@ -51,7 +51,22 @@
 <div class="import-box" style="border:1px solid #d9c8b7;border-radius:14px;padding:14px;margin:14px 0;background:#fffaf4"><h3 style="margin:0 0 8px">🌐 ネットのレシピをそのまま取り込む</h3><p class="muted" style="margin:0 0 8px">Safariで見つけたレシピページのURLを貼って「読み込んで保存」を押すだけ。料理名・材料・作り方を自動入力して保存するよ。</p><label>レシピページのURL</label><input id="importUrl" type="url" inputmode="url" placeholder="https://..."><button class="btn primary" id="importRecipeBtn" type="button" style="width:100%;margin-top:8px">URLから読み込んで保存</button><div id="importStatus" class="fieldhint" aria-live="polite"></div></div>
 <label>元のレシピサイトURL</label><input id="newSource" type="url" placeholder="https://..."><label>メモ・味付けのポイント</label><textarea id="newTip" rows="2" placeholder="次回はしょうゆを少なめにする など"></textarea>
 <button class="btn primary" id="saveNewRecipe" style="width:100%;margin-top:12px">このレシピを保存</button><div class="notice">URL取り込みに対応していないサイトでは、下の入力欄に材料と作り方を貼り付けて保存できます。元サイトのURLも一緒に記録します。</div></section></div>
-<div id="saved" class="hidden"><section><h2>⭐ お気に入り・アレンジ記録</h2><div id="savedList" class="muted">まだ保存したレシピはありません。</div><h3 style="margin-top:20px">📅 保存した献立の記録</h3><div id="savedMealPlans" class="muted">まだ保存した献立はありません。</div><h3 style="margin-top:20px">🍳 作った料理・献立の履歴</h3><div id="mealHistory" class="muted">まだ調理履歴はありません。</div></section></div>
+<div id="saved" class="hidden"><section><h2>⭐ お気に入り・アレンジ記録</h2><div id="savedList" class="muted">まだ保存したレシピはありません。</div><h3 style="margin-top:20px">📅 献立カレンダー</h3>
+
+<div class="actions" style="margin:10px 0">
+  <button class="btn" type="button" onclick="changeCalendarView('week')">週間</button>
+  <button class="btn" type="button" onclick="changeCalendarView('month')">月間</button>
+  <button class="btn" type="button" onclick="changeCalendarView('year')">年間</button>
+</div>
+
+<div class="actions" style="margin:10px 0">
+  <button class="btn" type="button" onclick="moveCalendar(-1)">◀ 前へ</button>
+  <input id="calendarDate" type="date" style="flex:1;min-width:130px" onchange="renderMealCalendar()">
+  <button class="btn" type="button" onclick="moveCalendar(1)">次へ ▶</button>
+</div>
+
+<div id="calendarTitle" style="font-weight:bold;margin:12px 0"></div>
+<div id="mealCalendar"></div><h3 style="margin-top:20px">📅 保存した献立の記録</h3><div id="savedMealPlans" class="muted">まだ保存した献立はありません。</div><h3 style="margin-top:20px">🍳 作った料理・献立の履歴</h3><div id="mealHistory" class="muted">まだ調理履歴はありません。</div></section></div>
 </main>
 <script>
 const recipes=[
@@ -551,19 +566,282 @@ async function generateAIWeek(days,people,budgets,avoid,previousNames){
  return data;
 }
 function saveCurrentMealPlan(){
- if(!latestMealPlan.length){alert("保存する献立がありません。先に献立を作ってね。");return;}
+ if(!latestMealPlan.length){
+  alert("保存する献立がありません。先に献立を作ってね。");
+  return;
+ }
  try{
-  const history=JSON.parse(localStorage.getItem("uchiSavedMealPlans")||"[]");
-  // 写真データは保存せず、献立表示・買い物集計に必要な情報だけを記録する
-  const days=latestMealPlan.map(day=>({day:day.day,people:day.people,meals:Object.fromEntries(Object.entries(day.meals||{}).map(([k,v])=>[k,{cost:v.cost||0,budget:v.budget||0,recipe:{id:v.recipe?.id,n:v.recipe?.n||"料理名未設定",c:v.recipe?.c||"",t:v.recipe?.t||0,cost:v.recipe?.cost||0,ing:Array.isArray(v.recipe?.ing)?v.recipe.ing:[],steps:Array.isArray(v.recipe?.steps)?v.recipe.steps:[],source:v.recipe?.source||""}}]))}));
-  history.unshift({id:Date.now(),date:new Date().toLocaleString("ja-JP"),days});
-  localStorage.setItem("uchiSavedMealPlans",JSON.stringify(history.slice(0,50)));
-  renderSavedMealPlans();alert("献立を記録に保存したよ！「お気に入り・アレンジ」から見返せるよ。");
- }catch(e){alert("保存できませんでした。iPhoneの空き容量を確認して、もう一度試してね。");}
+  const history=JSON.parse(
+   localStorage.getItem("uchiSavedMealPlans")||"[]"
+  );
+
+  const today=new Date();
+
+  const formatDate=d=>{
+   const y=d.getFullYear();
+   const m=String(d.getMonth()+1).padStart(2,"0");
+   const day=String(d.getDate()).padStart(2,"0");
+   return `${y}-${m}-${day}`;
+  };
+
+  const startDate=new Date(
+   today.getFullYear(),
+   today.getMonth(),
+   today.getDate()
+  );
+
+  const days=latestMealPlan.map((day,index)=>{
+   const date=new Date(startDate);
+   date.setDate(date.getDate()+index);
+
+   return {
+    day:day.day,
+    date:formatDate(date),
+    people:day.people,
+    meals:Object.fromEntries(
+     Object.entries(day.meals||{}).map(([k,v])=>[
+      k,{
+       cost:v.cost||0,
+       budget:v.budget||0,
+       recipe:{
+        id:v.recipe?.id,
+        n:v.recipe?.n||"料理名未設定",
+        c:v.recipe?.c||"",
+        t:v.recipe?.t||0,
+        cost:v.recipe?.cost||0,
+        ing:Array.isArray(v.recipe?.ing)?v.recipe.ing:[],
+        steps:Array.isArray(v.recipe?.steps)?v.recipe.steps:[],
+        source:v.recipe?.source||""
+       }
+      }
+     ])
+    )
+   };
+  });
+
+  history.unshift({
+   id:Date.now(),
+   date:new Date().toLocaleString("ja-JP"),
+   startDate:formatDate(startDate),
+   days
+  });
+
+  localStorage.setItem(
+   "uchiSavedMealPlans",
+   JSON.stringify(history.slice(0,50))
+  );
+
+  renderSavedMealPlans();
+  renderMealCalendar();
+
+  alert("献立をカレンダーに保存したよ！");
+
+ }catch(e){
+  console.error(e);
+  alert("保存できませんでした。もう一度試してね。");
+ }
 }
 function renderSavedMealPlans(){const box=$("savedMealPlans");if(!box)return;const history=JSON.parse(localStorage.getItem("uchiSavedMealPlans")||"[]");box.innerHTML=history.length?history.map((plan,i)=>`<div class="result"><strong>${plan.date||"保存した献立"}</strong><p>${plan.days.length}日分・${plan.days[0]?.people||""}人分</p>${plan.days.map(day=>`<div><b>${day.day}日目</b>${Object.entries(day.meals).map(([k,v])=>`<div>${({staple:"主食",main:"主菜",side:"副菜",soup:"汁物",kobachi:"小鉢"})[k.split("_").pop()]||k}：${v.recipe?.n||""}</div>`).join("")}</div>`).join("")}<button class="btn" onclick="deleteSavedMealPlan(${plan.id})">この記録を削除</button></div>`).join(""):'<span class="muted">まだ保存した献立はありません。「この献立を記録に保存」を押すと残せます。</span>';}
 function deleteSavedMealPlan(id){let history=JSON.parse(localStorage.getItem("uchiSavedMealPlans")||"[]").filter(x=>x.id!==id);localStorage.setItem("uchiSavedMealPlans",JSON.stringify(history));renderSavedMealPlans();}
-async function makePlanWithAI(){
+// ===== 献立カレンダー =====
+let calendarView="week";
+let calendarCurrentDate=new Date();
+
+function calendarFormatDate(d){
+ const y=d.getFullYear();
+ const m=String(d.getMonth()+1).padStart(2,"0");
+ const day=String(d.getDate()).padStart(2,"0");
+ return `${y}-${m}-${day}`;
+}
+
+function changeCalendarView(view){
+ calendarView=view;
+ renderMealCalendar();
+}
+
+function moveCalendar(amount){
+ const d=new Date(calendarCurrentDate);
+
+ if(calendarView==="week"){
+  d.setDate(d.getDate()+amount*7);
+ }else if(calendarView==="month"){
+  d.setMonth(d.getMonth()+amount);
+ }else{
+  d.setFullYear(d.getFullYear()+amount);
+ }
+
+ calendarCurrentDate=d;
+ const input=$("calendarDate");
+ if(input)input.value=calendarFormatDate(d);
+ renderMealCalendar();
+}
+
+function toggleCalendarCooked(date,meal){
+ const key="uchiCalendarCooked";
+ const data=JSON.parse(localStorage.getItem(key)||"{}");
+ const id=date+"_"+meal;
+
+ data[id]=!data[id];
+ localStorage.setItem(key,JSON.stringify(data));
+ renderMealCalendar();
+}
+
+function selectCalendarDate(date){
+ const p=date.split("-").map(Number);
+ calendarCurrentDate=new Date(p[0],p[1]-1,p[2]);
+ calendarView="week";
+
+ const input=$("calendarDate");
+ if(input)input.value=date;
+
+ renderMealCalendar();
+}
+
+function renderMealCalendar(){
+ const box=$("mealCalendar");
+ if(!box)return;
+
+ const input=$("calendarDate");
+
+ if(input&&input.value){
+  const p=input.value.split("-").map(Number);
+  calendarCurrentDate=new Date(p[0],p[1]-1,p[2]);
+ }else if(input){
+  input.value=calendarFormatDate(calendarCurrentDate);
+ }
+
+ const d=new Date(calendarCurrentDate);
+ const y=d.getFullYear();
+ const m=d.getMonth();
+ const weekday=["日","月","火","水","木","金","土"];
+
+ let start,end;
+
+ if(calendarView==="week"){
+  start=new Date(d);
+  start.setDate(d.getDate()-d.getDay());
+  end=new Date(start);
+  end.setDate(start.getDate()+6);
+ }else if(calendarView==="month"){
+  start=new Date(y,m,1);
+  end=new Date(y,m+1,0);
+ }else{
+  start=new Date(y,0,1);
+  end=new Date(y,11,31);
+ }
+
+ const title=$("calendarTitle");
+ if(title){
+  title.textContent=calendarView==="week"
+   ?`${calendarFormatDate(start)} ～ ${calendarFormatDate(end)}`
+   :calendarView==="month"
+   ?`${y}年${m+1}月`
+   :`${y}年`;
+ }
+
+ const history=JSON.parse(
+  localStorage.getItem("uchiSavedMealPlans")||"[]"
+ );
+ const cooked=JSON.parse(
+  localStorage.getItem("uchiCalendarCooked")||"{}"
+ );
+
+ const plansByDate={};
+
+ history.forEach(plan=>{
+  (plan.days||[]).forEach(day=>{
+   if(!day.date)return;
+   if(!plansByDate[day.date])plansByDate[day.date]=[];
+   plansByDate[day.date].push(day);
+  });
+ });
+
+ const mealNames={
+  breakfast:"朝食",
+  lunch:"昼食",
+  dinner:"夕食"
+ };
+ const courseNames={
+  staple:"主食",
+  main:"主菜",
+  side:"副菜",
+  soup:"汁物",
+  kobachi:"小鉢"
+ };
+
+ let html="";
+
+ if(calendarView==="year"){
+  for(let month=0;month<12;month++){
+   const last=new Date(y,month+1,0);
+   html+=`<h3>${month+1}月</h3>`;
+   html+='<div class="actions" style="flex-wrap:wrap;gap:5px">';
+
+   for(let day=1;day<=last.getDate();day++){
+    const date=new Date(y,month,day);
+    const key=calendarFormatDate(date);
+    html+=`<button class="btn" type="button"
+     style="min-width:42px;padding:8px"
+     onclick="selectCalendarDate('${key}')">
+     ${day}${plansByDate[key]?" ●":""}
+    </button>`;
+   }
+
+   html+="</div>";
+  }
+ }else{
+  let current=new Date(start);
+
+  while(current<=end){
+   const key=calendarFormatDate(current);
+   const days=plansByDate[key]||[];
+
+   html+=`<div class="result" style="margin:10px 0">
+    <strong>${current.getMonth()+1}月${current.getDate()}日（${weekday[current.getDay()]}）</strong>`;
+
+   if(!days.length){
+    html+='<p class="muted">献立の保存はありません</p>';
+   }
+
+   days.forEach(day=>{
+    ["breakfast","lunch","dinner"].forEach(meal=>{
+     const entries=Object.entries(day.meals||{})
+      .filter(([k])=>k.startsWith(meal+"_"));
+
+     if(!entries.length)return;
+
+     const id=key+"_"+meal;
+     const done=!!cooked[id];
+
+     html+=`<div style="border-top:1px solid #ddd;padding:8px 0">
+      <label>
+       <input type="checkbox"
+        ${done?"checked":""}
+        onchange="toggleCalendarCooked('${key}','${meal}')">
+       <b>${mealNames[meal]}</b>
+       ${done?"✅ 作成済み":"未作成"}
+      </label>`;
+
+     entries.forEach(([k,v])=>{
+      const course=k.split("_").pop();
+      html+=`<div style="margin-left:24px">
+       ${courseNames[course]||course}：
+       ${v.recipe?.n||"料理名未設定"}
+      </div>`;
+     });
+
+     html+="</div>";
+    });
+   });
+
+   html+="</div>";
+   current.setDate(current.getDate()+1);
+  }
+ }
+
+ box.innerHTML=html;
+}
+ async function makePlanWithAI(){
  const btn=document.getElementById("makePlan");
  const box=document.getElementById("planResult");
 

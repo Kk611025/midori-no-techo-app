@@ -13,131 +13,163 @@
 @media(max-width:480px){.grid{grid-template-columns:1fr 1fr}main{padding:14px 12px 36px}}
  .brand{display:flex;align-items:center;gap:12px}.brand-icon{width:54px;height:54px;border-radius:15px;box-shadow:0 2px 8px #30201422} 
 .photo{width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin:8px 0;background:#f0ede5}.photo-thumb{width:100%;height:130px;object-fit:cover;border-radius:10px;background:#f0ede5}.photo-empty{height:130px;border-radius:10px;background:linear-gradient(135deg,#eee9dd,#dce5d4);display:flex;align-items:center;justify-content:center;color:#777;font-size:13px;margin:8px 0}.recipe-card{display:grid;grid-template-columns:112px 1fr;gap:12px;align-items:center}.recipe-card .photo-thumb,.recipe-card .photo-empty{height:100px;margin:0}.tabwide{white-space:nowrap}.fieldhint{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* 月間献立カレンダー */
+.mealcal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:10px 0}
+.mealcal-head button{min-height:42px}
+.mealcal-title{font-size:19px;font-weight:700;text-align:center;flex:1}
+.mealcal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line);border-radius:10px;overflow:hidden}
+.mealcal-weekday,.mealcal-day{min-width:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:5px 3px}
+.mealcal-weekday{text-align:center;background:#f2f0e9;font-size:12px;font-weight:700}
+.mealcal-day{background:#fffefa;min-height:94px;text-align:left;cursor:pointer}
+.mealcal-day.other{background:#f7f6f2;color:#aaa}
+.mealcal-day.today{background:#f0f5eb}
+.mealcal-day.selected{outline:2px solid var(--accent);outline-offset:-2px;background:#edf3e8}
+.mealcal-num{font-size:13px;font-weight:700;display:inline-flex;width:24px;height:24px;align-items:center;justify-content:center;border-radius:50%}
+.mealcal-day.today .mealcal-num{background:var(--accent);color:white}
+.mealcal-chip{display:block;font-size:10px;line-height:1.35;padding:2px 3px;margin-top:3px;border-radius:4px;background:#eef2e9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mealcal-chip.lunch{background:#fff1dc}.mealcal-chip.dinner{background:#e9eef8}
+.mealcal-more{font-size:10px;color:var(--muted);margin-top:2px}
+.mealcal-detail{margin-top:12px}
+@media(max-width:520px){.mealcal-day{min-height:72px;padding:3px 2px}.mealcal-chip{font-size:9px;padding:2px 1px}.mealcal-weekday{font-size:11px;padding:5px 1px}.mealcal-num{width:21px;height:21px}}
 </style></head><body><main>
-<header class="head"><div class="brand"><img class="brand-icon" src="icon-192.png" alt="木目調の料理アイコン"><div><h1>うちのごはん</h1><div class="sub">基本のレシピから、わが家の味を育てる料理帳</div></div></div></header>
-<nav class="tabs" aria-label="メニュー"><button class="active" data-tab="search">レシピを探す</button><button data-tab="plan">献立を考える</button><button data-tab="bento" class="tabwide">🍱 お弁当</button><button data-tab="add" class="tabwide">＋ レシピ追加</button><button data-tab="saved">お気に入り・アレンジ</button></nav>
+<header class="head"><div class="brand"><div class="brand-icon" style="display:grid;place-items:center;background:#657b59;color:white;font-size:28px">🍚</div><div><h1>うちのごはん</h1><div class="sub">毎日のごはんを、もっと楽しく。</div></div></div></header>
+<nav class="tabs" aria-label="メニュー"><button class="active" data-tab="calendar">📅 カレンダー</button><button data-tab="plan">献立を作る</button><button data-tab="search">レシピ検索</button><button data-tab="bento" class="tabwide">🍱 お弁当</button><button data-tab="add" class="tabwide">＋ レシピ追加</button><button data-tab="saved">お気に入り</button></nav>
+
+<div id="calendar">
+<section>
+ <h2>📅 わが家の月間献立カレンダー</h2>
+ <p class="muted">日付を押すと、その日の朝食・昼食・夕食を確認できます。献立を作成して「この献立を記録に保存」すると、ここに反映されます。</p>
+ <div class="mealcal-head">
+  <button class="btn" type="button" onclick="moveMealMonth(-1)">◀ 前月</button>
+  <div id="mealMonthTitle" class="mealcal-title" aria-live="polite"></div>
+  <button class="btn" type="button" onclick="moveMealMonth(1)">次月 ▶</button>
+  <button class="btn" type="button" onclick="goMealToday()">今日</button>
+ </div>
+ <div id="mealMonthGrid"></div>
+ <div id="mealDayDetail" class="mealcal-detail" aria-live="polite"></div>
+ <div class="actions" style="margin-top:12px">
+  <button class="btn primary" type="button" onclick="showTab('plan')">🍽 献立を作る</button>
+  <button class="btn" type="button" onclick="showTab('saved')">保存した献立を見る</button>
+ </div>
+</section>
+<section>
+ <h3>🧾 最近の献立記録</h3>
+ <div id="calendarRecentPlans" class="muted">まだ献立の記録はありません。</div>
+</section>
+</div>
+
 <div id="search">
-<section><h2>🔎 レシピ検索</h2><input id="q" placeholder="料理名・食材で検索（例：鶏肉、玉ねぎ）"><div class="row" style="margin-top:9px"><select id="category"><option value="">すべてのジャンル</option><option>和食</option><option>洋食</option><option>中華</option><option>麺類</option><option>ご飯もの</option><option>汁物・スープ</option><option>サラダ・副菜</option></select><button class="btn" id="clear">クリア</button></div><div class="row" style="margin-top:10px"><button class="btn primary" id="webSearch" style="width:100%">🌐 インターネットでレシピを検索</button></div><div class="fieldhint">検索結果から気に入ったレシピを開き、「レシピ追加」から材料・作り方・元サイトURLを保存できます。</div></section>
-<section><h2>📖 レシピ一覧</h2><div class="muted">基本は4人前・控えめな味付け。材料の分量は人数に合わせて計算できます。</div><div class="notice">写真がない基本レシピには、料理の盛り付け参考写真（イメージ）を表示します。実際の完成写真とは異なる場合があります。</div><div id="list"></div></section>
-<section id="detail" class="hidden"></section>
+<section><h2>🔎 レシピを探す</h2><div class="row"><input id="searchInput" placeholder="料理名・食材で検索"><button class="btn primary" id="searchButton">検索</button></div><div id="searchResults"></div></section>
 </div>
+
 <div id="plan" class="hidden">
-<section><h2>🍽 朝食・昼食・夕食の献立</h2><p class="muted">食事ごとに予算を別々に設定して、人数に合わせた献立を提案します。</p>
-<div class="result" style="margin:12px 0">
- <strong>🤖 AI・ネット自動検索の接続</strong>
- <p class="muted">ネット検索で和食・洋食・中華・韓国料理・エスニックなど幅広いレシピを探し、AIが材料・分量・作り方の不足を補って献立にします。無料枠を利用するため、利用上限に達したときは時間をおいて再試行してください。</p>
- <label for="aiEndpoint">AI連携URL（Cloudflare WorkerのURL）</label>
- <input id="aiEndpoint" type="url" placeholder="https://your-worker.your-subdomain.workers.dev">
- <label for="aiAccessCode" style="margin-top:8px">接続コード</label>
- <input id="aiAccessCode" type="password" autocomplete="off" placeholder="Cloudflareに登録した接続コード">
- <button class="btn" id="saveAiEndpoint" type="button" style="margin-top:8px">接続先を保存</button>
- <span id="aiEndpointStatus" class="fieldhint" aria-live="polite"></span>
-</div>
-<div class="grid"><div><label for="days">何日分？</label><select id="days"><option value="1">今日だけ</option><option value="3">3日分</option><option value="7">1週間分</option></select></div><div><label for="people">食べる人数</label><input id="people" type="number" min="1" max="8" value="4"></div><div><label for="breakfastBudget">🌅 朝食の予算（1人分）</label><input id="breakfastBudget" type="number" min="0" step="10" value="170"></div><div><label for="lunchBudget">☀️ 昼食の予算（1人分）</label><input id="lunchBudget" type="number" min="0" step="10" value="290"></div><div><label for="dinnerBudget">🌙 夕食の予算（1人分）</label><input id="dinnerBudget" type="number" min="0" step="10" value="310"></div><div><label for="time">1品あたりの調理時間</label><select id="time"><option value="30">30分以内</option><option value="45">45分以内</option><option value="60">60分以内</option></select></div></div><label for="stock">優先して使いたい食材（任意）</label><textarea id="stock" rows="2" placeholder="例：鶏肉、玉ねぎ"></textarea><div class="result"><h3>🏠 家にある食材リスト</h3><p class="muted">ここに登録した食材は、買い物リストから自動で除外します。</p><div class="row"><input id="pantryInput" placeholder="食材名（例：卵、玉ねぎ）"><input id="pantryExpiry" type="date" aria-label="賞味期限・消費期限"><button class="btn" id="addPantry">食材を追加</button></div><div class="fieldhint">期限を入力すると、期限が近い食材を優先して献立に使います。期限が不明なら空欄でOK。</div><div id="pantryItems" class="row" style="margin-top:8px"></div></div><button class="btn primary" id="makePlan" style="width:100%;margin-top:12px">無料で献立を作る</button><div id="planResult" aria-live="polite"></div><div id="shoppingArea"></div><div class="notice">🥗 栄養バランスは材料名から主食・たんぱく源・野菜の有無を確認する簡易目安です。カロリーや栄養素の実測値ではありません。</div><div class="notice">予算は食事ごとに設定します。登録レシピの価格を4人前基準で人数換算した概算です。価格情報がないレシピは金額に含まれない場合があります。実際の価格は地域・季節・購入店で変わります。</div></section>
-</div>
-<div id="bento" class="hidden">
-<section><h2>🍱 お弁当の献立</h2><p class="muted">主菜・副菜・卵料理を組み合わせて、平日5日分のお弁当案を作れます。</p><div class="grid"><div><label>何日分？</label><select id="bentoDays"><option value="1">1日分</option><option value="3">3日分</option><option value="5" selected>平日5日分</option></select></div><div><label>苦手・避けたい食材</label><input id="bentoAvoid" placeholder="例：魚、きのこ"></div></div><button class="btn primary" id="makeBento" style="width:100%;margin-top:12px">お弁当の献立を作る</button><div id="bentoResult"></div><div class="notice">お弁当向けの提案です。汁気をよく切り、十分に冷ましてから詰め、保冷剤を使ってください。生もの・半熟卵は避けてください。</div></section>
-</div>
-<div id="add" class="hidden"><section><h2>＋ レシピを追加</h2><p class="muted">自分で作った料理も、ネットで見つけたレシピも、ここにまとめて保存できます。</p>
-<label>料理名</label><input id="newName" placeholder="例：鶏肉の甘酢炒め">
-<div class="grid"><div><label>ジャンル</label><select id="newCategory"><option>和食</option><option>洋食</option><option>中華</option><option>麺類</option><option>ご飯もの</option><option>汁物・スープ</option><option>サラダ・副菜</option><option>お弁当</option></select></div><div><label>調理時間（分）</label><input id="newTime" type="number" min="1" value="20"></div></div>
-<label>材料（1行に1つ。例：鶏もも肉 300g）</label><textarea id="newIngredients" rows="5" placeholder="鶏もも肉 300g
-しょうゆ 大さじ1
-砂糖 小さじ1"></textarea>
-<label>作り方（1行に1手順）</label><textarea id="newSteps" rows="5" placeholder="材料を食べやすく切る
-フライパンで炒める
-調味料を加えて仕上げる"></textarea>
-<label>出来上がり写真</label><input id="newPhoto" type="file" accept="image/*"><div class="fieldhint">写真は自動で小さくして保存します。写真がなくても登録できます。</div><img id="photoPreview" class="photo hidden" alt="写真プレビュー">
-<div class="import-box" style="border:1px solid #d9c8b7;border-radius:14px;padding:14px;margin:14px 0;background:#fffaf4"><h3 style="margin:0 0 8px">🌐 ネットのレシピをそのまま取り込む</h3><p class="muted" style="margin:0 0 8px">Safariで見つけたレシピページのURLを貼って「読み込んで保存」を押すだけ。料理名・材料・作り方を自動入力して保存するよ。</p><label>レシピページのURL</label><input id="importUrl" type="url" inputmode="url" placeholder="https://..."><button class="btn primary" id="importRecipeBtn" type="button" style="width:100%;margin-top:8px">URLから読み込んで保存</button><div id="importStatus" class="fieldhint" aria-live="polite"></div></div>
-<label>元のレシピサイトURL</label><input id="newSource" type="url" placeholder="https://..."><label>メモ・味付けのポイント</label><textarea id="newTip" rows="2" placeholder="次回はしょうゆを少なめにする など"></textarea>
-<button class="btn primary" id="saveNewRecipe" style="width:100%;margin-top:12px">このレシピを保存</button><div class="notice">URL取り込みに対応していないサイトでは、下の入力欄に材料と作り方を貼り付けて保存できます。元サイトのURLも一緒に記録します。</div></section></div>
-<div id="saved" class="hidden"><section><h2>⭐ お気に入り・アレンジ記録</h2><div id="savedList" class="muted">まだ保存したレシピはありません。</div><h3 style="margin-top:20px">📅 献立カレンダー</h3>
-
-<div class="actions" style="margin:10px 0">
-  <button class="btn" type="button" onclick="changeCalendarView('week')">週間</button>
-  <button class="btn" type="button" onclick="changeCalendarView('month')">月間</button>
-  <button class="btn" type="button" onclick="changeCalendarView('year')">年間</button>
+<section><h2>🍽 献立を考える</h2>
+<div class="grid"><div><label>何日分？</label><input id="planDays" type="number" min="1" max="14" value="7"></div><div><label>何人分？</label><input id="people" type="number" min="1" max="20" value="4"></div></div>
+<div class="grid"><div><label>1人1日あたりの予算（円）</label><input id="dailyBudget" type="number" min="0" value="800"></div><div><label>開始日</label><input id="planStartDate" type="date"></div></div>
+<div class="grid"><div><label>朝食の予算（1人分）</label><input id="breakfastBudget" type="number" value="200"></div><div><label>昼食の予算（1人分）</label><input id="lunchBudget" type="number" value="250"></div><div><label>夕食の予算（1人分）</label><input id="dinnerBudget" type="number" value="350"></div></div>
+<label>使いたい食材・希望</label><textarea id="planRequest" rows="2" placeholder="例：鶏むね肉、キャベツを使いたい。和食中心。"></textarea>
+<div class="actions"><button class="btn primary" id="makePlan">献立を作る</button><button class="btn" id="makePlanLocal">登録レシピから作る</button></div>
+<div id="planStatus" class="notice hidden"></div><div id="planResult"></div>
+</section>
+<section><h2>🛒 買い物リスト</h2><div id="shoppingArea"></div></section>
+<section><h2>🥬 冷蔵庫・食品在庫</h2>
+<div class="grid"><div><label>食材名</label><input id="inventoryName" placeholder="例：玉ねぎ"></div><div><label>数量</label><input id="inventoryQty" type="number" min="0" step="0.1" value="1"></div><div><label>単位</label><input id="inventoryUnit" placeholder="個・g・本など" value="個"></div><div><label>賞味期限</label><input id="inventoryExpiry" type="date"></div></div>
+<button class="btn primary" id="addInventory">在庫に追加</button><div id="inventoryList"></div>
+</section>
 </div>
 
-<div class="actions" style="margin:10px 0">
-  <button class="btn" type="button" onclick="moveCalendar(-1)">◀ 前へ</button>
-  <input id="calendarDate" type="date" style="flex:1;min-width:130px" onchange="renderMealCalendar()">
-  <button class="btn" type="button" onclick="moveCalendar(1)">次へ ▶</button>
-</div>
+<div id="bento" class="hidden"><section><h2>🍱 お弁当</h2>
+<div class="grid"><div><label>人数（1〜8人）</label><input id="bentoPeople" type="number" min="1" max="8" value="4"></div><div><label>1人あたりの予算（円）</label><input id="bentoBudget" type="number" min="0" value="400"></div></div>
+<button class="btn primary" id="makeBento">お弁当のおかずを考える</button><div id="bentoResult"></div>
+</section></div>
 
-<div id="calendarTitle" style="font-weight:bold;margin:12px 0"></div>
-<div id="mealCalendar"></div><h3 style="margin-top:20px">📅 保存した献立の記録</h3><div id="savedMealPlans" class="muted">まだ保存した献立はありません。</div><h3 style="margin-top:20px">🍳 作った料理・献立の履歴</h3><div id="mealHistory" class="muted">まだ調理履歴はありません。</div></section></div>
-</main>
+<div id="add" class="hidden"><section><h2>＋ レシピを追加</h2>
+<label>料理名</label><input id="newName" placeholder="料理名">
+<label>カテゴリー</label><select id="newCategory"><option value="主菜">主菜</option><option value="副菜">副菜</option><option value="主食">主食</option><option value="汁物">汁物</option><option value="小鉢">小鉢</option><option value="お弁当">お弁当</option></select>
+<label>材料（1人分ずつ改行）</label><textarea id="newIngredients" rows="5" placeholder="鶏むね肉 100g&#10;醤油 大さじ1&#10;砂糖 小さじ1"></textarea>
+<label>作り方</label><textarea id="newSteps" rows="5"></textarea>
+<label>元のレシピサイトURL</label><input id="newSource" type="url" placeholder="https://...">
+<label>メモ・味付けのポイント</label><textarea id="newTip" rows="2"></textarea>
+<button class="btn primary" id="saveRecipe">レシピを保存</button>
+<div id="addStatus" class="notice hidden"></div>
+</section></div>
+
+<div id="saved" class="hidden"><section><h2>⭐ お気に入り・アレンジ</h2><div id="savedRecipes"></div><h3>📅 保存した献立</h3><div id="savedMealPlans"></div></section></div>
+
 <script>
-const recipes=[
-{id:1,n:"鶏肉のチンジャオロース",c:"中華",t:25,cost:850,ing:[["鶏もも肉","300g"],["ピーマン","5個"],["たけのこ水煮","150g"],["玉ねぎ","1/2個"],["しょうゆ","大さじ1.5"],["オイスターソース","大さじ1"],["酒","大さじ1"],["砂糖","小さじ1"],["片栗粉","大さじ1"],["ごま油","大さじ1"]],steps:["鶏肉は細切りにして片栗粉をまぶす。","野菜は細切りにする。","フライパンに油を熱し、鶏肉を炒める。","野菜を加えて火を通し、調味料を加えて全体に絡める。"],tip:"味を見て、しょうゆを少量ずつ足す。"},
-{id:2,n:"鶏の照り焼き",c:"和食",t:25,cost:900,ing:[["鶏もも肉","2枚（約600g）"],["しょうゆ","大さじ2"],["みりん","大さじ2"],["酒","大さじ2"],["砂糖","大さじ1"],["油","小さじ1"]],steps:["鶏肉の厚い部分を開いて厚みをそろえる。","皮目から焼き、焼き色がついたら裏返す。","ふたをして弱めの中火で火を通す。","余分な脂を拭き、調味料を加えて煮絡める。"],tip:"甘さは砂糖で、塩味はしょうゆで少しずつ調整。"},
-{id:3,n:"豚肉の生姜焼き",c:"和食",t:20,cost:800,ing:[["豚こま切れ肉","400g"],["玉ねぎ","1個"],["しょうゆ","大さじ2"],["みりん","大さじ2"],["酒","大さじ2"],["おろし生姜","大さじ1"],["油","小さじ1"]],steps:["玉ねぎを薄切りにする。","豚肉を炒め、色が変わったら玉ねぎを加える。","調味料を混ぜて加え、汁気が少なくなるまで炒める。"],tip:"生姜を増やすと香りが立ち、しょうゆを足すと塩味が強くなる。"},
-{id:4,n:"肉じゃが",c:"和食",t:40,cost:950,ing:[["豚こま肉","250g"],["じゃがいも","4個"],["玉ねぎ","1個"],["にんじん","1本"],["しらたき","1袋"],["だし","300ml"],["しょうゆ","大さじ2"],["みりん","大さじ2"],["砂糖","大さじ1"]],steps:["野菜を食べやすい大きさに切る。","鍋で肉と野菜を軽く炒める。","だしと調味料を加え、落としぶたをして煮る。","じゃがいもが柔らかくなったら火を止め、少し置いて味を含ませる。"],tip:"煮詰めすぎると濃くなるので、最後に味を確認。"},
-{id:5,n:"さばの味噌煮",c:"和食",t:30,cost:900,ing:[["さば切り身","4切れ"],["生姜","1かけ"],["水","150ml"],["酒","100ml"],["みそ","大さじ2"],["みりん","大さじ2"],["砂糖","大さじ1"]],steps:["生姜を薄切りにする。","鍋に水・酒・みりん・砂糖を煮立て、さばを入れる。","落としぶたをして煮る。","みそを煮汁で溶いて加え、煮汁をかけながら仕上げる。"],tip:"みその塩分に差があるため、みそは控えめから。"},
-{id:6,n:"ハンバーグ",c:"洋食",t:40,cost:1100,ing:[["合いびき肉","500g"],["玉ねぎ","1個"],["卵","1個"],["パン粉","大さじ6"],["牛乳","大さじ3"],["塩","小さじ1/3"],["こしょう","少々"],["ケチャップ","大さじ3"],["中濃ソース","大さじ2"]],steps:["玉ねぎをみじん切りにして炒め、冷ます。","ひき肉・卵・パン粉・牛乳・調味料と混ぜる。","4等分して空気を抜き、中央をくぼませる。","両面を焼き、ふたをして中まで火を通す。","ケチャップとソースを温めてかける。"],tip:"ソースは別添えにすると各自で濃さを調整できる。"},
-{id:7,n:"鶏肉のトマト煮",c:"洋食",t:35,cost:950,ing:[["鶏もも肉","500g"],["玉ねぎ","1個"],["カットトマト","1缶"],["しめじ","1袋"],["にんにく","1かけ"],["コンソメ","小さじ2"],["水","100ml"],["油","小さじ2"]],steps:["鶏肉を一口大、野菜を食べやすく切る。","鍋でにんにくと鶏肉を焼く。","玉ねぎ・きのこ・トマト・水・コンソメを加える。","ふたをして15〜20分煮る。"],tip:"酸味が強いときは砂糖を少量加える。"},
-{id:8,n:"オムライス",c:"洋食",t:30,cost:750,ing:[["ご飯","茶碗4杯分"],["鶏肉","200g"],["玉ねぎ","1/2個"],["卵","8個"],["ケチャップ","大さじ6"],["牛乳","大さじ2"],["バター","20g"]],steps:["鶏肉と玉ねぎを炒め、ご飯を加える。","ケチャップで味付けして皿に盛る。","卵に牛乳を混ぜ、バターで半熟に焼く。","チキンライスに卵をのせる。"],tip:"ケチャップは控えめに入れ、食べるときに追加できる。"},
-{id:9,n:"麻婆豆腐",c:"中華",t:20,cost:650,ing:[["木綿豆腐","2丁"],["豚ひき肉","200g"],["長ねぎ","1/2本"],["にんにく","1かけ"],["生姜","1かけ"],["みそ","大さじ1"],["しょうゆ","大さじ1"],["鶏ガラスープ","200ml"],["片栗粉","大さじ1"],["ごま油","小さじ2"]],steps:["豆腐を角切り、ねぎ・にんにく・生姜を刻む。","ひき肉と香味野菜を炒める。","みそ・しょうゆ・スープを加え、豆腐を煮る。","水溶き片栗粉でとろみをつける。"],tip:"辛味を足したい場合は取り分け後にラー油を加える。"},
-{id:10,n:"焼きそば",c:"麺類",t:15,cost:550,ing:[["焼きそば麺","4玉"],["豚こま肉","200g"],["キャベツ","1/4個"],["もやし","1袋"],["焼きそばソース","適量"],["油","小さじ2"]],steps:["肉と野菜を食べやすく切る。","肉、野菜の順に炒める。","麺を加え、水少量を振ってほぐす。","ソースを少しずつ加えて味を整える。"],tip:"ソースは商品ごとに塩分が違うので味見しながら。"},
-{id:11,n:"親子丼",c:"ご飯もの",t:20,cost:700,ing:[["鶏もも肉","300g"],["玉ねぎ","1個"],["卵","6個"],["だし","200ml"],["しょうゆ","大さじ2"],["みりん","大さじ2"],["砂糖","小さじ2"],["ご飯","4人分"]],steps:["鶏肉を一口大、玉ねぎを薄切りにする。","だしと調味料で玉ねぎと鶏肉を煮る。","溶き卵を回し入れ、好みの半熟加減で火を止める。","ご飯にのせる。"],tip:"つゆは薄味にして、食べるときに調整できる。"},
-{id:12,n:"具だくさん味噌汁",c:"汁物・スープ",t:20,cost:350,ing:[["豆腐","1丁"],["大根","150g"],["にんじん","1/2本"],["油揚げ","1枚"],["だし","800ml"],["みそ","大さじ2〜3"]],steps:["野菜と油揚げを食べやすく切る。","だしで火の通りにくい野菜から煮る。","豆腐と油揚げを加える。","火を弱め、みそを溶き入れる。"],tip:"みそは大さじ2から溶き、味を見て足す。"},
-{id:13,n:"きゅうりとわかめの酢の物",c:"サラダ・副菜",t:15,cost:300,ing:[["きゅうり","2本"],["乾燥わかめ","5g"],["酢","大さじ2"],["砂糖","大さじ1"],["しょうゆ","小さじ1/2"]],steps:["わかめを戻す。","きゅうりを薄切りにして軽く塩もみし、水気を絞る。","調味料を混ぜ、具材と和える。"],tip:"酸味や甘さは少しずつ調整。"},
-{id:14,n:"豚汁",c:"汁物・スープ",t:30,cost:650,ing:[["豚こま肉","200g"],["大根","150g"],["にんじん","1/2本"],["ごぼう","1/2本"],["こんにゃく","1/2枚"],["長ねぎ","1/2本"],["だし","800ml"],["みそ","大さじ2〜3"]],steps:["具材を食べやすく切る。","鍋で豚肉を炒め、野菜を加える。","だしを注ぎ、具材が柔らかくなるまで煮る。","みそを溶き入れ、ねぎを加える。"],tip:"みそは最後に味を見ながら調整。"},
-{id:15,n:"ナポリタン",c:"麺類",t:20,cost:600,ing:[["スパゲッティ","400g"],["ウインナー","6本"],["玉ねぎ","1個"],["ピーマン","2個"],["ケチャップ","大さじ6"],["牛乳","大さじ2"],["バター","15g"]],steps:["麺を表示時間通りにゆでる。","具材を切ってバターで炒める。","ケチャップを加えて軽く炒め、麺と牛乳を加えて和える。"],tip:"ケチャップは少なめから加え、最後に調整。"},
-{id:16,n:"ポテトサラダ",c:"サラダ・副菜",t:30,cost:500,ing:[["じゃがいも","4個"],["きゅうり","1本"],["にんじん","1/3本"],["ハム","4枚"],["マヨネーズ","大さじ4"],["酢","小さじ1"],["塩こしょう","少々"]],steps:["じゃがいもとにんじんをゆでる。","じゃがいもをつぶし、酢を混ぜて冷ます。","きゅうりは薄切りにして水気を絞る。","具材とマヨネーズを混ぜる。"],tip:"マヨネーズは最初少なめにして調整。"},
-{id:17,n:"カレーライス",c:"ご飯もの",t:40,cost:1000,ing:[["豚肉","300g"],["玉ねぎ","2個"],["にんじん","1本"],["じゃがいも","3個"],["カレールウ","4〜5皿分"],["水","700ml"],["ご飯","4人分"]],steps:["肉と野菜を食べやすく切る。","鍋で肉と野菜を炒め、水を加えて煮る。","具材が柔らかくなったら火を止めてルウを溶かす。","弱火でとろみがつくまで煮る。"],tip:"ルウは少なめに溶かして味を見て追加。"},
-{id:18,n:"鮭のホイル焼き",c:"和食",t:25,cost:950,ing:[["生鮭","4切れ"],["玉ねぎ","1/2個"],["しめじ","1袋"],["バター","20g"],["酒","大さじ2"],["塩こしょう","少々"]],steps:["玉ねぎを薄切り、しめじをほぐす。","アルミホイルに玉ねぎ、鮭、しめじをのせる。","酒とバターを加えて包む。","フライパンに並べ、水を少量入れてふたをし、蒸し焼きにする。"],tip:"しょうゆやポン酢は食べる直前に少量ずつ。"},
-{id:19,n:"きんぴらごぼう",c:"サラダ・副菜",t:20,cost:350,ing:[["ごぼう","1本"],["にんじん","1/2本"],["ごま油","大さじ1"],["しょうゆ","大さじ1"],["みりん","大さじ1"],["砂糖","小さじ2"],["白ごま","適量"]],steps:["ごぼうとにんじんを細切りにする。","ごま油で炒める。","調味料を加え、汁気がなくなるまで炒める。","白ごまを振る。"],tip:"しょうゆは控えめから。"},
-{id:20,n:"卵とわかめのスープ",c:"汁物・スープ",t:10,cost:250,ing:[["卵","2個"],["乾燥わかめ","4g"],["水","800ml"],["鶏ガラスープの素","小さじ2"],["しょうゆ","小さじ1"],["ごま油","少々"]],steps:["鍋に水と鶏ガラスープの素を入れて沸かす。","わかめを加える。","溶き卵を細く流し入れる。","しょうゆとごま油で整える。"],tip:"鶏ガラスープの素は商品によって塩分が異なるので控えめに。"}
+ const recipes=[
+{id:1,n:"鶏肉のチンジャオロース",c:"中華",t:25,cost:850,ing:[["鶏もも肉","300g"],["ピーマン","5個"],["たけのこ水煮","150g"],["玉ねぎ","1/2個"],["しょうゆ","大さじ1.5"],["オイスターソース","大さじ1"],["酒","大さじ1"],["砂糖","小さじ1"],["片栗粉","大さじ1"],["ごま油","大さじ1"]],steps:["鶏肉は細切りにして片栗粉をまぶす。","野菜は細切りにする。","フライパンに油を熱し、鶏肉を炒める。","野菜を加えて炒め、調味料を加えて全体に絡める。"]},
+{id:2,n:"鶏むね肉の照り焼き",c:"和食",t:20,cost:600,ing:[["鶏むね肉","2枚"],["しょうゆ","大さじ2"],["みりん","大さじ2"],["砂糖","大さじ1"],["酒","大さじ1"],["片栗粉","適量"]],steps:["鶏肉を食べやすい大きさに切る。","片栗粉を薄くまぶす。","フライパンで両面を焼く。","調味料を加えて煮絡める。"]},
+{id:3,n:"豚の生姜焼き",c:"和食",t:20,cost:700,ing:[["豚こま肉","300g"],["玉ねぎ","1個"],["しょうゆ","大さじ2"],["みりん","大さじ2"],["酒","大さじ1"],["砂糖","小さじ2"],["生姜","大さじ1"]],steps:["玉ねぎを薄切りにする。","豚肉を炒める。","玉ねぎを加えて炒める。","調味料を加えて絡める。"]},
+{id:4,n:"さばの味噌煮",c:"和食",t:30,cost:650,ing:[["さば","4切れ"],["水","150ml"],["味噌","大さじ3"],["砂糖","大さじ2"],["みりん","大さじ2"],["酒","100ml"],["生姜","適量"]],steps:["さばに熱湯をかけて臭みを取る。","鍋に調味料を入れて煮立てる。","さばと生姜を入れる。","落とし蓋をして煮汁をかけながら煮る。"]},
+{id:5,n:"鶏肉とキャベツの炒め物",c:"中華",t:15,cost:500,ing:[["鶏むね肉","300g"],["キャベツ","1/4玉"],["にんにく","1片"],["しょうゆ","大さじ1"],["酒","大さじ1"],["塩こしょう","少々"],["ごま油","大さじ1"]],steps:["鶏肉をそぎ切りにする。","キャベツをざく切りにする。","鶏肉を炒めて火を通す。","キャベツを加えて炒め、調味料で味付けする。"]},
+{id:6,n:"肉じゃが",c:"和食",t:35,cost:750,ing:[["豚こま肉","200g"],["じゃがいも","4個"],["玉ねぎ","1個"],["にんじん","1本"],["醤油","大さじ3"],["砂糖","大さじ2"],["みりん","大さじ2"],["水","300ml"]],steps:["野菜を食べやすく切る。","肉を炒め、野菜を加える。","水と調味料を加えて煮る。","具材が柔らかくなるまで煮込む。"]},
+{id:7,n:"キャベツのお好み焼き",c:"主食",t:25,cost:500,ing:[["キャベツ","1/2玉"],["小麦粉","200g"],["卵","2個"],["水","150ml"],["顆粒だし","小さじ2"],["豚肉","150g"],["ソース","適量"]],steps:["キャベツを細かく刻む。","小麦粉、卵、水、顆粒だしを混ぜる。","キャベツを加えて混ぜる。","フライパンで豚肉と生地を焼き、両面を焼く。"]},
+{id:8,n:"鶏肉のチキン南蛮",c:"洋食",t:30,cost:800,ing:[["鶏むね肉","2枚"],["卵","2個"],["小麦粉","適量"],["酢","大さじ3"],["醤油","大さじ2"],["砂糖","大さじ2"],["マヨネーズ","大さじ4"]],steps:["鶏肉をそぎ切りにして小麦粉をまぶす。","溶き卵をつけて揚げ焼きにする。","酢、醤油、砂糖を煮立てて甘酢だれを作る。","鶏肉に絡め、マヨネーズを添える。"]},
+{id:9,n:"ほうれん草のおひたし",c:"副菜",t:10,cost:250,ing:[["ほうれん草","1束"],["醤油","小さじ2"],["顆粒だし","小さじ1/2"]],steps:["ほうれん草を茹でて冷水に取る。","水気を絞って食べやすく切る。","醤油とだしで和える。"]},
+{id:10,n:"きゅうりとわかめの酢の物",c:"副菜",t:10,cost:200,ing:[["きゅうり","2本"],["乾燥わかめ","5g"],["酢","大さじ2"],["砂糖","大さじ1"],["塩","少々"]],steps:["わかめを戻す。","きゅうりを薄切りにして塩もみする。","酢と砂糖を混ぜて和える。"]},
+{id:11,n:"大根とツナのサラダ",c:"副菜",t:10,cost:300,ing:[["大根","1/3本"],["ツナ缶","1缶"],["マヨネーズ","大さじ2"],["醤油","小さじ1"]],steps:["大根を千切りにする。","ツナの油を切る。","調味料と混ぜ合わせる。"]},
+{id:12,n:"豆腐とわかめの味噌汁",c:"汁物",t:10,cost:180,ing:[["豆腐","1/2丁"],["乾燥わかめ","3g"],["味噌","大さじ2"],["顆粒だし","小さじ1"],["水","600ml"]],steps:["鍋に水とだしを入れて沸かす。","豆腐とわかめを加える。","火を弱めて味噌を溶く。"]},
+{id:13,n:"卵焼き",c:"副菜",t:10,cost:250,ing:[["卵","3個"],["砂糖","小さじ2"],["醤油","小さじ1"],["水","大さじ1"]],steps:["材料を混ぜる。","卵焼き器で数回に分けて巻きながら焼く。"]},
+{id:14,n:"きんぴらごぼう",c:"副菜",t:15,cost:300,ing:[["ごぼう","1本"],["にんじん","1/2本"],["醤油","大さじ1"],["みりん","大さじ1"],["砂糖","小さじ2"],["ごま油","大さじ1"]],steps:["ごぼうとにんじんを細切りにする。","ごま油で炒める。","調味料を加えて汁気がなくなるまで炒める。"]},
+{id:15,n:"ポテトサラダ",c:"副菜",t:20,cost:350,ing:[["じゃがいも","3個"],["きゅうり","1本"],["にんじん","1/3本"],["ハム","3枚"],["マヨネーズ","大さじ3"],["塩こしょう","少々"]],steps:["じゃがいもを茹でて潰す。","きゅうりとにんじんを切り、下処理する。","ハムと野菜を混ぜる。","マヨネーズで和える。"]},
+{id:16,n:"鮭の塩焼き",c:"和食",t:15,cost:700,ing:[["鮭","4切れ"],["塩","少々"]],steps:["鮭に塩を振る。","魚焼きグリルで両面を焼く。"]},
+{id:17,n:"麻婆豆腐",c:"中華",t:20,cost:600,ing:[["豆腐","2丁"],["豚ひき肉","200g"],["長ねぎ","1/2本"],["味噌","大さじ1"],["醤油","大さじ1"],["豆板醤","小さじ1"],["片栗粉","大さじ1"]],steps:["豆腐を角切りにする。","ひき肉とねぎを炒める。","調味料と水を加える。","豆腐を加えて煮て、水溶き片栗粉でとろみをつける。"]},
+{id:18,n:"豚汁",c:"汁物",t:25,cost:450,ing:[["豚こま肉","150g"],["大根","1/4本"],["にんじん","1/2本"],["ごぼう","1/2本"],["こんにゃく","1/2枚"],["味噌","大さじ3"],["水","800ml"]],steps:["具材を食べやすく切る。","豚肉と野菜を炒める。","水を加えて煮る。","具材が柔らかくなったら味噌を溶く。"]},
+{id:19,n:"ツナと玉ねぎのパスタ",c:"洋食",t:20,cost:450,ing:[["パスタ","300g"],["ツナ缶","1缶"],["玉ねぎ","1/2個"],["にんにく","1片"],["醤油","大さじ1"],["オリーブ油","大さじ1"]],steps:["パスタを茹でる。","玉ねぎとにんにくを炒める。","ツナを加えて炒める。","パスタと醤油を加えて和える。"]},
+{id:20,n:"もやしナムル",c:"副菜",t:8,cost:150,ing:[["もやし","1袋"],["ごま油","大さじ1"],["醤油","小さじ1"],["鶏ガラスープの素","小さじ1/2"]],steps:["もやしを茹でて水気を切る。","調味料と和える。"]},
+{id:21,n:"わかめの和風サラダ",c:"副菜",t:8,cost:150,ing:[["乾燥わかめ","5g"],["マヨネーズ","大さじ1"],["ポン酢","大さじ1"],["からし","少々"]],steps:["わかめを戻して水気を切る。","マヨネーズ、ポン酢、からしを混ぜて和える。"]},
+{id:22,n:"鰯の蒲焼",c:"和食",t:20,cost:550,ing:[["いわし","4尾"],["醤油","大さじ2"],["みりん","大さじ2"],["砂糖","大さじ1"],["酒","大さじ1"],["片栗粉","適量"]],steps:["いわしを開いて水気を拭く。","片栗粉をまぶして焼く。","調味料を加えて煮絡める。"]},
+{id:23,n:"鶏胸肉のチキンソテー",c:"洋食",t:20,cost:500,ing:[["鶏むね肉","1枚"],["塩こしょう","少々"],["にんにく","1片"],["オリーブ油","大さじ1"]],steps:["鶏肉の厚みを均一にする。","塩こしょうを振る。","皮目から焼いて裏返し、火を通す。"]},
+{id:24,n:"キャベツの塩昆布和え",c:"副菜",t:5,cost:150,ing:[["キャベツ","1/4玉"],["塩昆布","10g"],["ごま油","小さじ1"]],steps:["キャベツをざく切りにする。","塩昆布とごま油で和える。"]},
+{id:25,n:"にんじんしりしり",c:"副菜",t:10,cost:200,ing:[["にんじん","1本"],["卵","1個"],["ツナ缶","1/2缶"],["醤油","小さじ1"]],steps:["にんじんを千切りにする。","炒めてツナを加える。","卵を加えて炒め、醤油で味付けする。"]},
+{id:26,n:"冷ややっこ",c:"副菜",t:5,cost:180,ing:[["豆腐","1丁"],["ねぎ","適量"],["生姜","適量"],["醤油","適量"]],steps:["豆腐を器に盛る。","薬味をのせて醤油をかける。"]},
+{id:27,n:"きのこのバター醤油炒め",c:"副菜",t:10,cost:300,ing:[["しめじ","1袋"],["えのき","1袋"],["バター","10g"],["醤油","小さじ2"]],steps:["きのこをほぐす。","バターで炒める。","醤油を加えて味付けする。"]},
+{id:28,n:"わかめスープ",c:"汁物",t:8,cost:150,ing:[["乾燥わかめ","5g"],["鶏ガラスープの素","小さじ2"],["ごま油","少々"],["水","600ml"]],steps:["水を沸かして鶏ガラスープの素を溶く。","わかめを加える。","ごま油を垂らす。"]},
+{id:29,n:"親子丼",c:"主食",t:15,cost:550,ing:[["鶏もも肉","250g"],["玉ねぎ","1/2個"],["卵","4個"],["醤油","大さじ2"],["みりん","大さじ2"],["砂糖","小さじ2"],["ご飯","4杯"]],steps:["鶏肉と玉ねぎを切る。","調味料と水を煮立て、鶏肉と玉ねぎを煮る。","溶き卵を回し入れて半熟にする。","ご飯にのせる。"]},
+{id:30,n:"カレーライス",c:"主食",t:35,cost:700,ing:[["豚こま肉","250g"],["じゃがいも","3個"],["にんじん","1本"],["玉ねぎ","2個"],["カレールウ","1/2箱"],["水","700ml"],["ご飯","4杯"]],steps:["具材を切る。","肉と野菜を炒める。","水を加えて煮る。","火を止めてルウを溶かし、再び煮込む。"]}
 ];
-let saved=JSON.parse(localStorage.getItem("uchiSaved")||"[]"), active=null;
+let userRecipes=JSON.parse(localStorage.getItem("uchiRecipes")||"[]");
+let favorites=JSON.parse(localStorage.getItem("uchiFavorites")||"[]");
+let variations=JSON.parse(localStorage.getItem("uchiVariations")||"{}");
+let mealPlans=JSON.parse(localStorage.getItem("uchiMealPlans")||"[]");
+let pantryItems=JSON.parse(localStorage.getItem("uchiPantry")||"[]");
+let currentRecipe=null;
 const $=id=>document.getElementById(id);
-function showTab(tab){["search","plan","saved","bento","add"].forEach(x=>$(x).classList.toggle("hidden",x!==tab));document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));if(tab==="saved")renderSaved()}
-document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
-
-const detailSteps={
-1:["鶏肉は厚い部分を開き、幅5mmほどの細切りにします。ピーマンは縦半分に切って種を取り、細切り。たけのこ・玉ねぎも同じくらいの細さにすると火の通りがそろいます。","鶏肉に片栗粉大さじ1をまぶします。肉の表面がうっすら白くなればOK。調味料（しょうゆ・オイスターソース・酒・砂糖）は小さい器で先に混ぜます。","フライパンにごま油を入れ中火で温めます。鶏肉を広げ、重なった部分をほぐしながら炒めます。表面の色が変わるまで約3〜4分。","玉ねぎ、たけのこ、ピーマンの順に加えて2〜3分炒めます。野菜が少ししんなりし、ピーマンの色が鮮やかになれば次へ。","合わせ調味料を回し入れ、全体を1〜2分炒めます。鶏肉の一番厚い部分を切り、中心まで白く火が通っていることを確認。味を見て、必要ならしょうゆを小さじ1ずつ足します。"],
-2:["鶏肉はキッチンペーパーで水気を拭きます。厚い部分に包丁で切り込みを入れて開き、厚みを均一にします。皮に数か所フォークを刺すと縮みにくくなります。","しょうゆ・みりん・酒・砂糖を器で混ぜておきます。調味料を先に用意すると、焼いている途中で慌てません。","フライパンに油を薄くひき、中火で温めます。鶏肉を皮を下にして置き、ヘラで軽く押さえながら5〜6分焼きます。皮にこんがり焼き色がついたら裏返します。","弱火にしてふたをし、さらに5〜7分蒸し焼きにします。厚い部分に竹串を刺し、透明な肉汁が出るか確認。心配な場合は中心温度75℃で1分以上を目安にします。","余分な脂をペーパーで拭き、混ぜた調味料を加えます。中火で煮立て、スプーンで肉にかけながら1〜2分煮詰めます。泡が大きくなり、少しとろみが出たら完成。焦げやすいので目を離しません。"],
-3:["玉ねぎは薄切りにします。豚肉が大きければ食べやすい幅に切り、調味料（しょうゆ・みりん・酒・生姜）を器で混ぜておきます。","フライパンに油を入れて中火で温め、豚肉を広げて炒めます。肉の赤い部分がほぼなくなったら玉ねぎを加えます。","玉ねぎが透き通って少ししんなりするまで2〜3分炒めます。焦げそうなら火を弱めます。","合わせ調味料を加え、全体に絡めながら1〜2分炒めます。肉の中心まで火が通り、汁が少し残る程度で火を止めます。濃ければ水を大さじ1加えます。"],
-4:["じゃがいもは皮をむいて4等分、にんじんは小さめの乱切り、玉ねぎはくし形に切ります。じゃがいもは水に2〜3分さらし、ざるに上げます。","鍋に油少量（分量外）を入れ中火で温め、豚肉を炒めます。肉の色が変わったら玉ねぎ、にんじん、じゃがいもを加えて1〜2分炒めます。","だし、しょうゆ、みりん、砂糖を加えます。煮立ったらアクを取り、しらたきを加えます。","落としぶた（クッキングシートに穴を開けたものでも可）をし、弱めの中火で15〜20分煮ます。ふつふつ小さく泡が出る火加減を保ちます。","竹串をじゃがいもに刺し、すっと通れば火を止めます。煮崩れ防止のため強く混ぜず、鍋を軽く揺すります。10分ほど置くと味がなじみます。"],
-5:["さばの表面の水分をペーパーで拭きます。皮に浅く十字の切り込みを入れます。生姜は薄切りにします。","鍋に水・酒・みりん・砂糖・生姜を入れて中火にかけ、煮立ったらさばを皮を上にして並べます。","再び煮立ったらアクを取り、落としぶたをして弱めの中火で8〜10分煮ます。煮汁が静かにふつふつする状態にします。","みそを小さな器に取り、煮汁を少し加えて溶いてから鍋に戻します。魚に煮汁をスプーンでかけ、さらに3〜5分煮ます。","身の中心まで熱くなり、箸でほぐれる状態なら完成。煮詰めすぎると塩辛くなるので、煮汁が少し残るところで火を止めます。"],
-6:["玉ねぎを細かいみじん切りにします。フライパンで弱めの中火で炒め、透き通ったら皿に広げて冷まします。熱いまま肉に混ぜると脂が溶けるので、必ず冷まします。","パン粉に牛乳を混ぜてしっとりさせます。ボウルにひき肉、冷ました玉ねぎ、卵、パン粉、塩こしょうを入れます。","手を使って粘りが出るまで1〜2分混ぜます。4等分し、両手で数回キャッチボールするように空気を抜き、厚さ2cmほどの小判形に整え、中央を少しくぼませます。","フライパンに油を薄くひき中火で温めます。ハンバーグを並べ、触らず2〜3分焼き、底に焼き色がついたら裏返します。","弱火にしてふたをし、8〜10分蒸し焼きにします。中央に竹串を刺し、透明な肉汁が出るか確認。確実には中心温度75℃で1分以上を目安にします。","ハンバーグを皿に取り出します。同じフライパンにケチャップと中濃ソースを入れ、弱火で30秒ほど混ぜて温め、上からかけます。"],
-7:["鶏肉は一口大、玉ねぎは薄切り、しめじは石づきを落としてほぐします。にんにくはみじん切りにします。","鍋に油を入れて中火で温め、にんにくを炒めます。香りが出たら鶏肉を皮目から焼き、表面に焼き色をつけます。中まで火を通す必要はありません。","玉ねぎとしめじを加えて2分ほど炒めます。玉ねぎが少ししんなりしたらトマト缶、水、コンソメを加えます。","煮立ったら弱火にし、ふたを少しずらして15〜20分煮ます。鍋底が焦げないよう、ときどき底から優しく混ぜます。","鶏肉の一番大きいものを切り、中心まで火が通っていることを確認します。酸味が強ければ砂糖を小さじ1/2ずつ加えて調整します。"],
-8:["玉ねぎはみじん切り、鶏肉は1cm角に切ります。卵は1人2個を目安にボウルで溶き、牛乳を混ぜます。","フライパンにバター半量を溶かし、鶏肉を中火で炒めます。肉の表面の色が変わったら玉ねぎを加え、しんなりするまで炒めます。","ご飯を加えてほぐし、ケチャップをまず分量の7割ほど加えて炒めます。全体が均一な色になったら味見し、必要なら残りを加えて皿に盛ります。","フライパンを軽く拭き、残りのバターを溶かします。卵液を流し入れ、弱めの中火で菜箸を大きく動かしながら半熟状にします。","卵がまだ少し柔らかいところで火を止め、チキンライスにのせます。余熱で固まるので、焼きすぎないのがコツです。"],
-9:["豆腐は2cm角に切ります。長ねぎ、にんにく、生姜はみじん切りにします。片栗粉は水大さじ2（分量外）で溶いておきます。","フライパンにごま油を入れ中火で熱し、にんにく・生姜・ねぎを30秒ほど炒めます。香りが出たら豚ひき肉を加え、そぼろ状になるまで炒めます。","みそ、しょうゆ、鶏ガラスープを加えて混ぜ、豆腐を崩さないように入れます。弱めの中火で3〜4分煮ます。","水溶き片栗粉をもう一度混ぜてから少しずつ回し入れ、優しく混ぜます。ふつふつと1分ほど加熱し、とろみがついたら完成。辛味は食べる人の皿でラー油を足します。"],
-10:["キャベツは一口大、豚肉は食べやすい長さに切ります。麺は袋の口を少し開け、電子レンジで温めるとほぐしやすくなります（袋の表示を確認）。","フライパンに油を入れ中火で熱し、豚肉を炒めます。肉の赤い部分がなくなったらキャベツともやしを加えます。","野菜が少ししんなりしたら麺を加え、水大さじ2を振ってほぐします。無理に引っ張らず、箸で少しずつ分けます。","ソースをまず半量加えて混ぜ、味を見ながら足します。全体が熱くなり、湯気が立ったら完成。"],
-11:["鶏肉は2cm角、玉ねぎは薄切りにします。卵はボウルに割り、白身を切るように軽く混ぜます。混ぜすぎなくて大丈夫です。","フライパンにだし、しょうゆ、みりん、砂糖、玉ねぎを入れ中火にかけます。煮立ったら鶏肉を加えます。","弱めの中火で5〜7分煮ます。鶏肉の大きいものを切り、中心まで火が通ったことを確認します。","溶き卵の2/3を回し入れ、ふたをして弱火で1分。残りの卵を加えて30秒ほど加熱し、ご飯にのせます。半熟が心配な場合は十分に加熱してください。"],
-12:["大根とにんじんはいちょう切り、油揚げは短冊切り、豆腐はさいの目に切ります。乾燥具材を使う場合は袋の表示に従います。","鍋にだし、大根、にんじんを入れて中火にかけます。煮立ったら弱火にし、野菜に竹串が通るまで8〜10分煮ます。","豆腐と油揚げを加えて2分温めます。煮立たせすぎると豆腐が崩れやすいので、静かに温めます。","火を弱めるか止め、みそをお玉に取り、煮汁で溶いてから鍋に戻します。味を見て少しずつ追加します。"],
-13:["乾燥わかめはたっぷりの水に5分ほど浸して戻し、ざるに上げます。きゅうりは薄い輪切りにします。","きゅうりに塩ひとつまみ（分量外）を振って5分置きます。手でぎゅっと絞るかペーパーで包んで水気を取ります。","酢・砂糖・しょうゆをボウルで混ぜ、砂糖が溶けたらきゅうりとわかめを加えます。","全体を和えて5分置き、味を見ます。酸味が強ければ砂糖を少量、薄ければしょうゆを数滴加えます。"],
-14:["大根とにんじんはいちょう切り、ごぼうは斜め薄切りにして水にさらします。こんにゃくはスプーンでちぎり、長ねぎは小口切りにします。","鍋に少量の油を入れ中火で豚肉を炒めます。肉の色が変わったら大根・にんじん・ごぼう・こんにゃくを加えて2分炒めます。","だしを加え、煮立ったらアクを取り、弱めの中火で10〜15分煮ます。野菜に竹串が通ればOKです。","火を弱め、みそをお玉で煮汁に溶いて加えます。長ねぎを入れて1分温め、味を見てみそを調整します。"],
-15:["大きな鍋に湯を沸かし、塩（湯1Lに小さじ1程度・任意）を入れます。スパゲッティを袋の表示時間どおりにゆでます。","玉ねぎとピーマンは薄切り、ウインナーは斜め切りにします。麺がゆで上がったら湯を切ります。","フライパンにバターを溶かし、ウインナー、玉ねぎ、ピーマンを中火で炒めます。玉ねぎが透き通ったらケチャップを加え、30秒ほど炒めます。","麺と牛乳を加えて全体を混ぜます。水分が足りず固いときはゆで汁を大さじ1ずつ加えます。味を見てケチャップを調整します。"],
-16:["じゃがいもは皮をむいて2〜3cm角に切り、にんじんはいちょう切りにします。鍋に入れてかぶる程度の水を加え、柔らかくなるまで10〜15分ゆでます。","きゅうりは薄切りにして塩ひとつまみ（分量外）を振り、5分置いて水気をしっかり絞ります。ハムは短冊切りにします。","じゃがいもに竹串がすっと通ったら湯を捨て、弱火で鍋を揺すって水分を飛ばします。熱いうちに粗くつぶし、酢を混ぜます。","じゃがいもの湯気が落ち着いてから、きゅうり・にんじん・ハム・マヨネーズを混ぜます。塩こしょうで味を整え、冷蔵庫で冷やします。"],
-17:["玉ねぎは薄切り、にんじんとじゃがいもは一口大、豚肉も大きければ切ります。じゃがいもは水にさらして水気を切ります。","鍋に油少量を入れ中火で豚肉を炒めます。色が変わったら玉ねぎ、にんじん、じゃがいもを加えて2分炒めます。","水を加えて煮立て、アクを取ります。弱めの中火で15〜20分煮て、じゃがいもに竹串が通るか確認します。","いったん火を止め、ルウを割り入れて溶かします。溶け残りがないよう底から混ぜます。","再び弱火にかけ、焦げないよう混ぜながら5分ほど煮ます。とろみがついたら完成。ルウは商品表示の水量を優先し、濃さは水で調整します。"],
-18:["玉ねぎは薄切り、しめじは石づきを落としてほぐします。鮭の水気をペーパーで拭き、骨があれば取り除きます。","アルミホイルを大きめに4枚用意します。中央に玉ねぎを敷き、鮭を置き、しめじとバターをのせます。酒を各包みに分けて振ります。","ホイルの上下を合わせて2回折り、左右も折って蒸気が漏れにくい包みにします。","フライパンに包みを並べ、水を100mlほど入れます。ふたをして中火で沸かし、沸いたら弱火で12〜15分蒸します。水がなくならないよう途中で確認します。","包みを開け、鮭の中心まで火が通っているか確認します。熱い蒸気に注意。味が薄ければ食べる直前にポン酢やしょうゆを少量かけます。"],
-19:["ごぼうはよく洗い、包丁の背で表面を軽くこそげます。斜め薄切りにしてから細切りにし、水に2〜3分さらして水気を切ります。にんじんも細切りにします。","フライパンにごま油を入れ中火で温め、ごぼうとにんじんを3〜4分炒めます。ごぼうが少ししんなりすればOKです。","しょうゆ・みりん・砂糖を加え、汁気が少なくなるまで混ぜながら炒めます。焦げそうなら火を弱めます。","火を止めて白ごまを振ります。味が濃い場合は次回しょうゆを少し減らします。"],
-20:["乾燥わかめは水で戻して水気を切ります。卵は器に割り、箸で白身を切るように混ぜます。","鍋に水と鶏ガラスープの素を入れて中火で沸かします。味見をして、塩気が強ければ水を足します。","わかめを加えて30秒ほど煮ます。スープを軽く混ぜながら、溶き卵を細く回し入れます。","卵を入れたらすぐに混ぜず、10秒ほど待ってから大きく一度混ぜます。しょうゆとごま油を加えて火を止めます。"]
-};
-
-function allRecipes(){return recipes.concat(JSON.parse(localStorage.getItem("uchiCustomRecipes")||"[]"))}
-const samplePhotos={
-  "和食":"https://images.unsplash.com/photo-1547592180-85f173990554?w=640&auto=format&fit=crop&q=75",
-  "中華":"https://images.unsplash.com/photo-1563245362-1e1d7c0ba8f3?w=640&auto=format&fit=crop&q=75",
-  "洋食":"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=640&auto=format&fit=crop&q=75",
-  "ご飯もの":"https://images.unsplash.com/photo-1512058564366-18510be2db19?w=640&auto=format&fit=crop&q=75",
-  "麺類":"https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=640&auto=format&fit=crop&q=75",
-  "汁物・スープ":"https://images.unsplash.com/photo-1547592180-85f173990554?w=640&auto=format&fit=crop&q=75",
-  "サラダ・副菜":"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=640&auto=format&fit=crop&q=75"
-};
-function photoMarkup(r,cls="photo-thumb"){
- if(r.photo)return `<img class="${cls}" src="${r.photo}" alt="${r.n}の完成写真">`;
- const url=samplePhotos[r.c];
- return url?`<div><img class="${cls}" src="${url}" alt="${r.n}の盛り付け参考写真" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="photo-empty" style="display:none">📷 完成写真を登録できます</div><div class="small muted">※完成イメージ（参考写真）</div></div>`:`<div class="photo-empty">📷 完成写真を登録できます</div>`;
+function normIngredient(s){return String(s||"").replace(/[ 　]/g,"").replace(/しょうゆ/g,"醤油").replace(/鶏むね/g,"鶏胸").toLowerCase();}
+function allRecipes(){return [...recipes,...userRecipes];}
+function saveUserRecipes(){localStorage.setItem("uchiRecipes",JSON.stringify(userRecipes));}
+function showTab(tab){["calendar","search","plan","saved","bento","add"].forEach(x=>$(x).classList.toggle("hidden",x!==tab));document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));if(tab==="saved")renderSaved();if(tab==="calendar")renderHomeMealCalendar()}
+document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.tab)));
+function parseIngredientLine(line){
+ let m=line.trim().match(/^(.+?)\s+(.+)$/);
+ if(!m)return {name:line.trim(),amount:1,unit:"個"};
+ let name=m[1].trim(),q=m[2].trim(),num=q.match(/[\d.]+/);
+ return {name,amount:num?Number(num[0]):1,unit:q.replace(/[\d.\/]/g,"").trim()||"個"};
 }
-function render(){let q=$("q").value.trim().toLowerCase(),c=$("category").value;let arr=allRecipes().filter(r=>(!c||r.c===c)&&(!q||(r.n+" "+r.c+" "+(r.ing||[]).map(x=>x[0]).join(" ")).toLowerCase().includes(q)));$("list").innerHTML=arr.length?arr.map(r=>`<div class="recipe recipe-card">${photoMarkup(r)}<div><span class="tag">${r.c}</span><h3 style="margin-top:7px">${r.n}</h3><div class="muted">${r.t}分・${r.custom?"登録レシピ":"基本レシピ"}</div><button class="btn" onclick="openRecipe(${r.id},'plan')">レシピを見る</button> <button class="btn" onclick="toggleSave(${r.id})">${saved.includes(r.id)?"★ 保存済み":"☆ お気に入り"}</button></div></div>`).join(""):"該当するレシピがありません。"}
-$("q").oninput=render;$("category").onchange=render;$("clear").onclick=()=>{$("q").value="";$("category").value="";render()};
-function openRecipe(id,returnTab="search"){active=allRecipes().find(r=>r.id===id);let r=active,n=4;$("detail").classList.remove("hidden");$("detail").innerHTML=`<button class="btn" onclick="showTab('${returnTab}')">← 戻る</button><h2>${r.n}</h2><span class="tag">${r.c}</span><p class="muted">${r.custom?"自分の登録レシピ":"基本レシピ"}・目安 ${r.t}分</p>${r.photo?`<img class="photo" src="${r.photo}" alt="${r.n}の完成写真">`:samplePhotos[r.c]?`<img class="photo" src="${samplePhotos[r.c]}" alt="${r.n}の盛り付け参考写真"><div class="small muted">※料理ジャンルの完成イメージ参考写真です。実際の料理とは異なる場合があります。</div>`:''}${r.source?`<p><a href="${r.source}" target="_blank" rel="noopener">元のレシピサイトを開く ↗</a></p>`:''}<label>作る人数</label><input id="scale" type="number" min="1" max="8" value="4"><div id="scaled"></div><h3 style="margin-top:16px">作り方（初めてでも安心）</h3><div class="notice">先に材料を全部切り、調味料を量っておくと失敗しにくいよ。火加減はコンロによって違うので、焦げそうなら弱めてね。</div><ol>${(detailSteps[r.id]||r.steps||[]).map((s,i)=>`<li style="margin:10px 0;line-height:1.65"><strong>手順${i+1}</strong><br>${s}</li>`).join("")}</ol><div class="notice">安全のポイント：肉・魚・卵は中心まで十分に加熱してね。生肉を触った手や器具は、ほかの食材に使う前に洗おう。</div><div class="notice">味の調整：${r.tip}</div><h3 style="margin-top:16px">わが家のアレンジを記録</h3><textarea id="variation" rows="3" placeholder="例：しょうゆを少し減らした。家族にはこの味が好評。"></textarea><button class="btn primary" style="width:100%;margin-top:8px" onclick="saveVariation()">アレンジを保存</button>`;let scale=$("scale");scale.oninput=()=>drawScaled(r);drawScaled(r);$("detail").scrollIntoView({behavior:"smooth",block:"start"})}
-function drawScaled(r){let n=Math.max(1,Math.min(8,Number($("scale").value)||4));$("scaled").innerHTML=`<div class="muted" style="margin:9px 0">材料・調味料（${n}人前）</div>`+r.ing.map(([name,qty])=>`<div class="ingredient"><span>${name}</span><strong>${scaleQty(qty,n/4)}</strong></div>`).join("")}
+function pantryHas(name){return pantryItems.some(x=>normIngredient(x.name||x)===normIngredient(name));}
+function renderSearch(list=allRecipes()){
+ $("searchResults").innerHTML=list.map(r=>`<div class="recipe"><div class="recipe-card">${r.photo?`<img class="photo-thumb" src="${r.photo}">`:'<div class="photo-empty">🍳</div>'}<div><strong>${r.n}</strong><div class="muted">${r.c||""} ・ ${r.t||""}分 ・ 約${r.cost||0}円</div><button class="btn" onclick="openRecipe(${r.id})">詳細を見る</button></div></div></div>`).join("")||'<p class="muted">レシピが見つかりません。</p>';
+}
+function searchRecipes(){let q=$("searchInput").value.trim();renderSearch(allRecipes().filter(r=>(r.n+r.c+(r.ing||[]).flat().join("")).includes(q)));}
+$("searchButton").onclick=searchRecipes;$("searchInput").addEventListener("keydown",e=>{if(e.key==="Enter")searchRecipes();});
+function openRecipe(id){let r=allRecipes().find(x=>x.id===id);if(!r)return;currentRecipe=r;showRecipeDetail(r);}
+function showRecipeDetail(r){
+ let box=$("searchResults");box.innerHTML=`<section><button class="btn" onclick="renderSearch()">← 戻る</button><h2>${r.n}</h2><p class="muted">${r.c||""} ・ ${r.t||""}分 ・ 約${r.cost||0}円</p>${r.photo?`<img class="photo" src="${r.photo}">`:""}<h3>材料</h3>${(r.ing||[]).map(x=>`<div class="ingredient"><span>${x[0]}</span><span>${x[1]}</span></div>`).join("")}<h3 style="margin-top:12px">作り方</h3><ol>${(r.steps||[]).map(x=>`<li>${x}</li>`).join("")}</ol>${r.tip?`<p class="notice">${r.tip}</p>`:""}${r.source?`<p><a href="${r.source}" target="_blank" rel="noopener">元のレシピを見る</a></p>`:""}<div class="actions"><button class="btn" onclick="toggleFavorite(${r.id})">⭐ お気に入り</button><button class="btn" onclick="addVariation(${r.id})">アレンジを記録</button></div></section>`;
+}
+function toggleFavorite(id){favorites.includes(id)?favorites=favorites.filter(x=>x!==id):favorites.push(id);localStorage.setItem("uchiFavorites",JSON.stringify(favorites));}
+function addVariation(id){let r=allRecipes().find(x=>x.id===id);let memo=prompt("今回のアレンジ・味付けの変更を入力");if(!memo)return;(variations[id]||=[]).push({date:new Date().toLocaleDateString("ja-JP"),memo});localStorage.setItem("uchiVariations",JSON.stringify(variations));alert("アレンジを保存しました");}
+function renderSaved(){
+ $("savedRecipes").innerHTML=allRecipes().filter(r=>favorites.includes(r.id)).map(r=>`<div class="recipe"><strong>${r.n}</strong><button class="btn" onclick="openRecipe(${r.id});showTab('search')">見る</button></div>`).join("")||'<p class="muted">お気に入りはまだありません。</p>';
+ renderSavedMealPlans();
+}
+function renderSavedMealPlans(){
+ let saved=JSON.parse(localStorage.getItem("uchiSavedMealPlans")||"[]");
+ $("savedMealPlans").innerHTML=saved.map((p,i)=>`<div class="result"><strong>${p.startDate||"献立"}</strong><span class="muted">${(p.days||[]).length}日分</span><button class="btn" onclick="deleteSavedMealPlan(${i})">削除</button></div>`).join("")||'<p class="muted">保存した献立はありません。</p>';
+}
+function deleteSavedMealPlan(i){let a=JSON.parse(localStorage.getItem("uchiSavedMealPlans")||"[]");a.splice(i,1);localStorage.setItem("uchiSavedMealPlans",JSON.stringify(a));renderSavedMealPlans();renderHomeMealCalendar();}
+ function drawScaled(r){let n=Math.max(1,Math.min(8,Number($("scale").value)||4));$("scaled").innerHTML=`<div class="muted" style="margin:9px 0">材料・調味料（${n}人前）</div>`+r.ing.map(([name,qty])=>`<div class="ingredient"><span>${name}</span><strong>${scaleQty(qty,n/4)}</strong></div>`).join("")}
 function scaleQty(q,f){if(f===1)return q;let m=q.match(/^(\d+(?:\.\d+)?)(.*)$/);if(!m)return q+" ×"+f.toFixed(2);let v=Number(m[1])*f;return (Math.round(v*100)/100)+m[2]}
 function toggleSave(id){saved=saved.includes(id)?saved.filter(x=>x!==id):[...saved,id];localStorage.setItem("uchiSaved",JSON.stringify(saved));render()}
 function saveVariation(){let txt=$("variation").value.trim();if(!txt){alert("アレンジ内容を入力してね");return}let a=JSON.parse(localStorage.getItem("uchiVariants")||"[]");a.unshift({id:active.id,name:active.n,text:txt,date:new Date().toLocaleDateString("ja-JP")});localStorage.setItem("uchiVariants",JSON.stringify(a));$("variation").value="";alert("アレンジを保存したよ！")}
@@ -147,7 +179,7 @@ function renderPantry(){const box=$("pantryItems");if(!box)return;box.innerHTML=
 function addPantry(){const v=$("pantryInput").value.split(/[、,，\n]+/).map(x=>x.trim()).filter(Boolean);for(const x of v)if(!pantryItems.some(y=>y.toLowerCase()===x.toLowerCase()))pantryItems.push(x);localStorage.setItem("uchiPantry",JSON.stringify(pantryItems));$("pantryInput").value="";renderPantry();}
 function removePantry(i){pantryItems.splice(i,1);localStorage.setItem("uchiPantry",JSON.stringify(pantryItems));renderPantry();}
 $("addPantry").onclick=addPantry;$("pantryInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addPantry()}});
-function pantryHas(name){const norm=x=>String(x).toLowerCase().replace(/[\s　・]/g,"");const n=norm(name);return pantryItems.some(x=>{const p=norm(x);return p.length>=2&&(n.includes(p)||p.includes(n))});}
+function pantryHas(name){const norm=x=>String(x).toLowerCase().replace(/[\s　・]/g,"");const n=norm(name);return pantryItems.some(x=>{const p=norm(x);return p.length>=2&&(n.includes(p)||p.includes(n));});}
 let latestMealPlan=[];
 function makePlanBase(){
  const days=Number($("days").value),people=Math.max(1,Math.min(8,Number($("people").value)||4)),limit=Number($("time").value);
@@ -276,7 +308,7 @@ function renderShoppingList(){
       part=part.trim();
       if(!part)continue;
 
-            let m=part.match(/^(?:([\d.]+\/[\d.]+|[\d.]+)\s*(大さじ|大匙|小さじ|小匙)|(大さじ|大匙|小さじ|小匙)\s*([\d.]+\/[\d.]+|[\d.]+))(.*)$/);
+            let m=part.match(/^(?:([\d.]+\/[\d.]+|[\d.]+)\s*(大さじ|大匙|小さじ|小匙)|(大さじ|大匙|小匙)\s*([\d.]+\/[\d.]+|[\d.]+))(.*)$/);
 
       if(m){
         const n=parseAmount(m[1]||m[4])*factor;
@@ -374,7 +406,7 @@ for(const x of totals.values()){
   };
 
   if(x.amount>0){
-    const amount=Math.round(x.amount*10)/10;
+    const amount=Math.ceil(x.amount);
     let display=amount+x.unit;
 
     if(x.unit==="ml"||x.unit==="g"){
@@ -410,7 +442,7 @@ const allRows=[...grouped.values()].map(x=>({
     <div class="actions" style="margin:8px 0">
       <button class="btn" onclick="toggleShoppingChecks(true)">すべてチェック</button>
       <button class="btn" onclick="toggleShoppingChecks(false)">チェックを外す</button>
-      <button class="btn" onclick="copyShoppingList()">リストをコピー</button>
+      <button class="btn" onclick="copyShoppingList()">リストをコピー</button><button class="btn" onclick="moveCheckedShoppingToInventory()">チェックした食材を在庫へ</button>
     </div>
     <div id="shoppingItems">
       ${rows.length?rows.map((x,i)=>`
@@ -432,603 +464,111 @@ function runWebSearch(){let query=$("q").value.trim();if(!query){alert("料理�
 $("webSearch").onclick=runWebSearch;
 let pendingPhoto="";
 $("newPhoto").onchange=()=>{let f=$("newPhoto").files[0];if(!f)return;if(!f.type.startsWith("image/")){alert("画像ファイルを選んでね");return}let reader=new FileReader();reader.onload=e=>{let im=new Image();im.onload=()=>{let canvas=document.createElement("canvas"),max=900,ratio=Math.min(1,max/Math.max(im.width,im.height));canvas.width=Math.round(im.width*ratio);canvas.height=Math.round(im.height*ratio);canvas.getContext("2d").drawImage(im,0,0,canvas.width,canvas.height);pendingPhoto=canvas.toDataURL("image/jpeg",.72);$("photoPreview").src=pendingPhoto;$("photoPreview").classList.remove("hidden")};im.src=e.target.result};reader.readAsDataURL(f)};
-function importRecipeObject(data,sourceUrl){
+ function importRecipeObject(data,sourceUrl){
  const ingredients=(data.ingredients||[]).map(x=>String(x).trim()).filter(Boolean);
  const steps=(data.instructions||[]).map(x=>String(x).trim()).filter(Boolean);
- if(!data.name||!ingredients.length||!steps.length)throw new Error("料理名・材料・作り方を十分に取得できませんでした。別のレシピページか手入力を試してね。");
- const list=JSON.parse(localStorage.getItem("uchiCustomRecipes")||"[]");
- const normalized=ingredients.map(x=>{const m=x.match(/^(.+?)\s+(.+)$/);return m?[m[1].trim(),m[2].trim()]:[x,""]});
- const recipe={id:Date.now(),n:data.name,c:data.category||"和食",t:Math.max(1,Number(data.minutes)||30),cost:0,ing:normalized,steps,tip:data.description||"",photo:"",source:sourceUrl,custom:true,imported:true};
- list.unshift(recipe);localStorage.setItem("uchiCustomRecipes",JSON.stringify(list));
- $("newName").value=recipe.n;$("newCategory").value=recipe.c;$("newTime").value=recipe.t;
- $("newIngredients").value=ingredients.join("\n");$("newSteps").value=steps.join("\n");$("newSource").value=sourceUrl;
- render();showTab("search");openRecipe(recipe.id);
+ if(!data.name||!ingredients.length||!steps.length)throw new Error("料理名・材料・作り方を十分に取得できませんでした");
+ const id=Date.now()+Math.floor(Math.random()*1000);
+ const r={id,n:String(data.name),c:String(data.category||"その他"),t:Number(data.time)||30,cost:Number(data.cost)||0,ing:ingredients.map(x=>[x,"適量"]),steps,source:sourceUrl||"",photo:"",custom:true};
+ let a=JSON.parse(localStorage.getItem("uchiCustomRecipes")||"[]");a.unshift(r);localStorage.setItem("uchiCustomRecipes",JSON.stringify(a));return r;
 }
-$("importRecipeBtn").onclick=async()=>{
- const url=$("importUrl").value.trim(),status=$("importStatus"),btn=$("importRecipeBtn");
- if(!/^https?:\/\//i.test(url)){status.textContent="https:// から始まるレシピページのURLを入力してね。";return;}
- const endpoint=(localStorage.getItem("uchiAiWorkerEndpoint")||"").trim().replace(/\/$/,"");
- const code=localStorage.getItem("uchiAiAccessCode")||"";
- if(!endpoint||!code){status.textContent="先に設定画面でAI接続先URLと接続コードを保存してね。";return;}
- btn.disabled=true;status.textContent="レシピを読み込んでいます…";
- try{
-  const res=await fetch(endpoint+"/import",{method:"POST",headers:{"Content-Type":"application/json","X-App-Code":code},body:JSON.stringify({url})});
-  const data=await res.json();if(!res.ok)throw new Error(data.error||"読み込みに失敗しました。");
-  importRecipeObject(data.recipe||data,url);status.textContent="レシピを保存したよ！";$("importUrl").value="";alert("ネットのレシピを保存したよ！");
- }catch(e){status.textContent=e.message||"読み込みに失敗しました。";}
- finally{btn.disabled=false;}
-};
-$("saveNewRecipe").onclick=()=>{let name=$("newName").value.trim(),ings=$("newIngredients").value.split(/\n/).map(x=>x.trim()).filter(Boolean),steps=$("newSteps").value.split(/\n/).map(x=>x.trim()).filter(Boolean);if(!name||!ings.length||!steps.length){alert("料理名・材料・作り方を入力してね");return}let list=JSON.parse(localStorage.getItem("uchiCustomRecipes")||"[]");let id=Date.now();let r={id,n:name,c:$("newCategory").value,t:Math.max(1,Number($("newTime").value)||20),cost:0,ing:ings.map(x=>{let p=x.split(/\s+/);return [p.shift(),p.join(" ")||"適量"]}),steps,tip:$("newTip").value.trim(),photo:pendingPhoto,source:$("newSource").value.trim(),custom:true};list.unshift(r);try{localStorage.setItem("uchiCustomRecipes",JSON.stringify(list))}catch(e){alert("保存容量がいっぱいです。写真を小さくするか、写真なしで保存してね。");return}$("newName").value="";$("newIngredients").value="";$("newSteps").value="";$("newTip").value="";$("newSource").value="";$("newPhoto").value="";$("photoPreview").classList.add("hidden");pendingPhoto="";alert("レシピを保存したよ！");render();showTab("search")};
-function makeBento(){let count=Number($("bentoDays").value),avoid=$("bentoAvoid").value.toLowerCase().split(/[、,，\s]+/).filter(Boolean);let all=allRecipes().filter(r=>!avoid.some(a=>(r.n+" "+r.c+" "+(r.ing||[]).map(x=>x[0]).join(" ")).toLowerCase().includes(a)));let mains=all.filter(r=>["和食","洋食","中華","お弁当"].includes(r.c)&&r.t<=40),sides=all.filter(r=>["サラダ・副菜","汁物・スープ"].includes(r.c)),eggs=all.filter(r=>(r.n+" "+(r.ing||[]).map(x=>x[0]).join(" ")).includes("卵"));if(!mains.length)mains=all;if(!sides.length)sides=all;if(!eggs.length)eggs=all;let html=`<h3 style="margin-top:18px">お弁当の献立案</h3>`;for(let i=0;i<count;i++){let m=mains[i%mains.length],s=sides[(i*2)%sides.length],e=eggs[(i*3)%eggs.length];html+=`<div class="result"><strong>${["月","火","水","木","金"][i]}曜日</strong><p>主菜：${m?.n||"主菜を追加してね"}</p><p>副菜：${s?.n||"副菜を追加してね"}</p><p>卵・もう一品：${e?.n||"卵料理を追加してね"}</p><div class="actions">${[m,s,e].filter(Boolean).map(r=>`<button class="btn" onclick="showTab('search');openRecipe(${r.id})">${r.n}を見る</button>`).join("")}</div></div>`}$("bentoResult").innerHTML=html}
-$("makeBento").onclick=makeBento;
-
-// --- 追加機能：期限管理・在庫優先・献立履歴・栄養バランス目安 ---
-let pantryMeta=JSON.parse(localStorage.getItem("uchiPantryMeta")||"{}");
-function savePantryMeta(){localStorage.setItem("uchiPantryMeta",JSON.stringify(pantryMeta));}
-function renderPantry(){
- const box=$("pantryItems");if(!box)return;
- box.innerHTML=pantryItems.length?pantryItems.map((x,i)=>{const meta=pantryMeta[x]||{},exp=meta.expiry||"",days=exp?Math.ceil((new Date(exp+"T23:59:59")-new Date())/86400000):null;let status=days===null?"":days<0?"⚠️ 期限切れ":days<=3?`⏰ あと${days}日`:"";return `<span class="pill" style="display:inline-flex;gap:6px;align-items:center;margin:3px;flex-wrap:wrap">${x}${exp?`（期限 ${exp}）`:""}${status?` <strong>${status}</strong>`:""}<button class="btn" style="padding:2px 7px;min-width:0" onclick="removePantry(${i})" aria-label="${x}を削除">×</button></span>`}).join(""):'<span class="muted">まだ食材が登録されていません。</span>';
+function saveCustomRecipe(){
+ const name=$("newName").value.trim(),category=$("newCategory").value,time=Number($("newTime").value)||30,cost=Number($("newCost").value)||0;
+ const ingredients=$("newIngredients").value.split(/\n/).map(x=>x.trim()).filter(Boolean);
+ const steps=$("newSteps").value.split(/\n/).map(x=>x.trim()).filter(Boolean);
+ if(!name||!ingredients.length||!steps.length){alert("料理名・材料・作り方を入力してね");return}
+ const id=Date.now();let a=JSON.parse(localStorage.getItem("uchiCustomRecipes")||"[]");
+ a.unshift({id,n:name,c:category,t:time,cost,ing:ingredients.map(x=>{let m=x.match(/^(.+?)\s+(.+)$/);return m?[m[1],m[2]]:[x,"適量"]}),steps,source:$("newSource").value.trim(),tip:$("newTip").value.trim(),photo:pendingPhoto,custom:true});
+ localStorage.setItem("uchiCustomRecipes",JSON.stringify(a));
+ ["newName","newIngredients","newSteps","newSource","newTip"].forEach(k=>$(k).value="");$("newCost").value="";$("newTime").value="30";$("photoPreview").classList.add("hidden");pendingPhoto="";
+ alert("レシピを登録したよ！");render();showTab("search");
 }
-function addPantry(){const v=$("pantryInput").value.split(/[、,，\n]+/).map(x=>x.trim()).filter(Boolean),expiry=$("pantryExpiry")?.value||"";for(const x of v){if(!pantryItems.some(y=>y.toLowerCase()===x.toLowerCase()))pantryItems.push(x);if(expiry)pantryMeta[x]={...(pantryMeta[x]||{}),expiry};}localStorage.setItem("uchiPantry",JSON.stringify(pantryItems));savePantryMeta();$("pantryInput").value="";if($("pantryExpiry"))$("pantryExpiry").value="";renderPantry();}
-function removePantry(i){const name=pantryItems[i];pantryItems.splice(i,1);delete pantryMeta[name];localStorage.setItem("uchiPantry",JSON.stringify(pantryItems));savePantryMeta();renderPantry();}
-$("addPantry").onclick=addPantry;$("pantryInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addPantry()}});
-function expiryPriority(r){const names=(r.ing||[]).map(x=>String(x[0]||""));let score=0;for(const item of pantryItems){if(!names.some(n=>{const a=n.toLowerCase(),b=item.toLowerCase();return a.includes(b)||b.includes(a)}))continue;const exp=pantryMeta[item]?.expiry;if(!exp){score+=1;continue}const days=Math.ceil((new Date(exp+"T23:59:59")-new Date())/86400000);if(days>=0&&days<=3)score+=12;else if(days>=0&&days<=7)score+=7;else if(days<0)score-=20;else score+=2;}return score;}
-function nutritionHint(r){const s=((r.n||"")+" "+(r.ing||[]).map(x=>x[0]).join(" ")).toLowerCase();const staple=/ご飯|米|パン|食パン|麺|うどん|そば|パスタ|スパゲッティ|焼きそば/.test(s);const protein=/鶏|豚|牛|肉|魚|さば|鮭|まぐろ|卵|豆腐|納豆|大豆|ひき肉|ツナ/.test(s);const veg=/野菜|玉ねぎ|にんじん|人参|大根|キャベツ|白菜|ほうれん草|小松菜|ピーマン|トマト|きゅうり|ごぼう|きのこ|しめじ|わかめ|ねぎ|ブロッコリー/.test(s);let a=[];a.push(staple?"主食あり":"主食を追加するとよさそう");a.push(protein?"たんぱく源あり":"肉・魚・卵・大豆製品を追加するとよさそう");a.push(veg?"野菜・海藻あり":"野菜や海藻の副菜を追加するとよさそう");return a.join("／");}
-let mealHistory=JSON.parse(localStorage.getItem("uchiMealHistory")||"[]");
-function markCooked(recipeId,day,meal){const r=allRecipes().find(x=>x.id===recipeId);if(!r)return;mealHistory.unshift({name:r.n,day,meal,date:new Date().toLocaleDateString("ja-JP"),id:recipeId});mealHistory=mealHistory.slice(0,100);localStorage.setItem("uchiMealHistory",JSON.stringify(mealHistory));renderMealHistory();alert(r.n+"を調理履歴に記録したよ！");}
-function renderMealHistory(){const box=$("mealHistory");if(!box)return;box.innerHTML=mealHistory.length?mealHistory.slice(0,40).map(x=>`<div class="result"><strong>${x.name}</strong><div class="muted">${x.date}・${x.day}日目・${({breakfast:"朝食",lunch:"昼食",dinner:"夕食"})[x.meal]||"料理"}</div><button class="btn" onclick="showTab('search');openRecipe(${Number(x.id)})">レシピを見る</button></div>`).join(""):'<span class="muted">まだ調理履歴はありません。「作った！」を押すと記録されます。</span>';}
-const originalRenderSaved=renderSaved;
-renderSaved=function(){originalRenderSaved();renderMealHistory();};
-const originalMakePlan=makePlanBase;
-function makePlan(){originalMakePlan();if(latestMealPlan.length){const summary=latestMealPlan.map(d=>({day:d.day,meals:Object.fromEntries(Object.entries(d.meals).map(([k,v])=>[k,v.recipe.n]))}));localStorage.setItem("uchiLastMealPlan",JSON.stringify({date:new Date().toLocaleDateString("ja-JP"),days:summary}));}}
-// 期限が近い食材を優先するよう、既存の献立選択ソートを補助
-const _oldMakePlanBase=makePlanBase;
-makePlanBase=function(){
- const originalSort=Array.prototype.sort;
- // The base planner's ranking already prioritizes stock; expiryPriority is applied to recipe candidates via a temporary wrapper.
- const allFn=allRecipes;
- try{return _oldMakePlanBase();}finally{}
-};
-renderPantry();renderMealHistory();
-
-render();renderPantry();renderMealHistory();
-
-// ===== AIネット検索・レシピ自動補完・5品献立 =====
-const AI_ENDPOINT_KEY="uchiAiWorkerEndpoint";
-const aiEndpointInput=document.getElementById("aiEndpoint");
-const aiEndpointStatus=document.getElementById("aiEndpointStatus");
-if(aiEndpointInput){aiEndpointInput.value=localStorage.getItem(AI_ENDPOINT_KEY)||"";document.getElementById("aiAccessCode").value=localStorage.getItem("uchiAiAccessCode")||"";}
-document.getElementById("saveAiEndpoint").onclick=()=>{
- const v=(aiEndpointInput.value||"").trim().replace(/\/+$/,"");
- const code=(document.getElementById("aiAccessCode").value||"").trim();
- if(!/^https:\/\/.+/.test(v)){aiEndpointStatus.textContent="https:// から始まるWorker URLを入力してね。";return;}
- if(code.length<12){aiEndpointStatus.textContent="接続コードは12文字以上にしてね。";return;}
- localStorage.setItem(AI_ENDPOINT_KEY,v);localStorage.setItem("uchiAiAccessCode",code);
- aiEndpointInput.value=v;aiEndpointStatus.textContent="接続先と接続コードを保存したよ。";
-};
-function courseLabelAI(k){return ({staple:"主食",main:"メイン",side:"副菜",soup:"汁物",kobachi:"小鉢"})[k]||k;}
-function normalizeAIRecipe(x,idx){
- const ing=Array.isArray(x.ingredients)?x.ingredients.map(v=>[String(v.name||""),String(v.amount||"適量")]).filter(v=>v[0]):(Array.isArray(x.ing)?x.ing:[]);
- const steps=Array.isArray(x.steps)?x.steps.map(String).filter(Boolean):[];
- return {id:Date.now()+Math.floor(Math.random()*100000)+idx,n:String(x.name||x.n||"AI作成レシピ"),c:String(x.category||x.c||"和食"),t:Math.max(5,Number(x.minutes||x.t)||30),cost:Math.max(0,Number(x.cost_for_4||x.cost)||0),ing,steps,tip:String(x.tip||""),source:String(x.source_url||x.source||""),custom:true,aiImported:true};
+$("saveCustom").onclick=saveCustomRecipe;
+function renderCustomRecipes(){let a=JSON.parse(localStorage.getItem("uchiCustomRecipes")||"[]");$("customList").innerHTML=a.length?a.map(r=>`<div class="result"><strong>${r.n}</strong><p class="muted">${r.c}・${r.t}分</p><button class="btn" onclick="openRecipe(${r.id});showTab('search')">見る</button> <button class="btn" onclick="deleteCustom(${r.id})">削除</button></div>`).join(""):"登録したレシピはまだありません。"}
+function deleteCustom(id){if(!confirm("このレシピを削除する？"))return;let a=JSON.parse(localStorage.getItem("uchiCustomRecipes")||"[]").filter(x=>x.id!==id);localStorage.setItem("uchiCustomRecipes",JSON.stringify(a));renderCustomRecipes();render()}
+function markCooked(id,day,key){let a=JSON.parse(localStorage.getItem("uchiCooked")||"[]");a.unshift({id,day,key,date:new Date().toLocaleDateString("ja-JP")});localStorage.setItem("uchiCooked",JSON.stringify(a));alert("作った記録を保存したよ！")}
+function renderCooked(){let a=JSON.parse(localStorage.getItem("uchiCooked")||"[]");$("cookedList").innerHTML=a.length?a.map(x=>{let r=allRecipes().find(y=>y.id===x.id);return `<div class="result">${x.date}・${x.day}日目・${r?r.n:"レシピ"}</div>`}).join(""):"まだ記録はありません。"}
+function searchRecipes(){
+ const q=$("q").value.trim().toLowerCase(),cat=$("category").value;
+ const list=allRecipes().filter(r=>(!cat||r.c===cat)&&(!q||[r.n,r.c,...(r.ing||[]).map(x=>x[0])].join(" ").toLowerCase().includes(q)));
+ $("results").innerHTML=list.length?list.map(r=>`<div class="result"><strong>${r.n}</strong><p class="muted">${r.c}・${r.t}分・目安 ${Number(r.cost||0).toLocaleString()}円</p><button class="btn" onclick="openRecipe(${r.id})">レシピを見る</button></div>`).join(""):"見つかりませんでした。食材名や料理名を変えて検索してね。";
 }
-async function generateAIWeek(days,people,budgets,avoid,previousNames){
- const endpoint=(localStorage.getItem(AI_ENDPOINT_KEY)||"").trim().replace(/\/+$/,"");
-
- if(!endpoint){
-  throw new Error("AI連携URLが未設定です。Worker URLを保存してください。");
- }
-
- const local=allRecipes().map(r=>({
-  name:r.n,
-  category:r.c,
-  ingredients:(r.ing||[]).map(x=>x[0])
- })).slice(0,100);
-
- const pantry=Array.isArray(pantryItems)?pantryItems:[];
- const expiry=typeof pantryMeta==="object"?pantryMeta:{};
-
- const payload={
-  days,
-  people,
-  budgets,
-  avoid,
-  previous:previousNames,
-  existing:local,
-  pantry,
-  expiry
- };
-
- const res=await fetch(endpoint+"/plan",{
-  method:"POST",
-  headers:{
-   "Content-Type":"application/json",
-   "X-App-Code":localStorage.getItem("uchiAiAccessCode")||""
-  },
-  body:JSON.stringify(payload)
- });
-
- if(!res.ok){
-  let msg="AI献立の作成に失敗しました（"+res.status+"）。";
-  try{
-   const e=await res.json();
-   msg=e.error||msg;
-  }catch(_){}
-  throw new Error(msg);
- }
-
- const data=await res.json();
-
- if(!Array.isArray(data.days)||data.days.length<days){
-  throw new Error("AIから必要な日数分の献立を受け取れませんでした。");
- }
-
- return data;
+$("searchBtn").onclick=searchRecipes;
+$("q").addEventListener("keydown",e=>{if(e.key==="Enter")searchRecipes()});
+function openRecipe(id){
+ const r=allRecipes().find(x=>x.id===id);if(!r)return;active=r;
+ $("recipeDetail").innerHTML=`<h2>${r.n}</h2><p class="muted">${r.c}・${r.t}分・目安 ${Number(r.cost||0).toLocaleString()}円</p>${r.photo?`<img src="${r.photo}" alt="${r.n}" style="width:100%;max-height:260px;object-fit:cover;border-radius:12px">`:""}<h3>材料</h3>${r.ing.map(x=>`<div class="ingredient"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join("")}<h3>作り方</h3><ol>${r.steps.map(x=>`<li style="margin:8px 0">${x}</li>`).join("")}</ol>${r.tip?`<p class="notice">${r.tip}</p>`:""}${r.source?`<p class="muted">参考：${r.source}</p>`:""}<button class="btn" onclick="toggleSave(${r.id});openRecipe(${r.id})">${saved.includes(r.id)?"★ お気に入り解除":"☆ お気に入り登録"}</button><h3>人数を変更</h3><select id="scale" onchange="drawScaled(active)"><option value="1">1人分</option><option value="2">2人分</option><option value="4" selected>4人分</option><option value="6">6人分</option><option value="8">8人分</option></select><div id="scaled"></div><h3>アレンジメモ</h3><textarea id="variation" rows="3" placeholder="材料や味付けをどう変えたか記録"></textarea><button class="btn" onclick="saveVariation()">アレンジを保存</button>`;
+ drawScaled(r);
 }
-function saveCurrentMealPlan(){
- if(!latestMealPlan.length){
-  alert("保存する献立がありません。先に献立を作ってね。");
-  return;
- }
- try{
-  const history=JSON.parse(
-   localStorage.getItem("uchiSavedMealPlans")||"[]"
-  );
-
-  const today=new Date();
-
-  const formatDate=d=>{
-   const y=d.getFullYear();
-   const m=String(d.getMonth()+1).padStart(2,"0");
-   const day=String(d.getDate()).padStart(2,"0");
-   return `${y}-${m}-${day}`;
-  };
-
-  const startDate=new Date(
-   today.getFullYear(),
-   today.getMonth(),
-   today.getDate()
-  );
-
-  const days=latestMealPlan.map((day,index)=>{
-   const date=new Date(startDate);
-   date.setDate(date.getDate()+index);
-
-   return {
-    day:day.day,
-    date:formatDate(date),
-    people:day.people,
-    meals:Object.fromEntries(
-     Object.entries(day.meals||{}).map(([k,v])=>[
-      k,{
-       cost:v.cost||0,
-       budget:v.budget||0,
-       recipe:{
-        id:v.recipe?.id,
-        n:v.recipe?.n||"料理名未設定",
-        c:v.recipe?.c||"",
-        t:v.recipe?.t||0,
-        cost:v.recipe?.cost||0,
-        ing:Array.isArray(v.recipe?.ing)?v.recipe.ing:[],
-        steps:Array.isArray(v.recipe?.steps)?v.recipe.steps:[],
-        source:v.recipe?.source||""
-       }
-      }
-     ])
-    )
-   };
-  });
-
-  history.unshift({
-   id:Date.now(),
-   date:new Date().toLocaleString("ja-JP"),
-   startDate:formatDate(startDate),
-   days
-  });
-
-  localStorage.setItem(
-   "uchiSavedMealPlans",
-   JSON.stringify(history.slice(0,50))
-  );
-
-  renderSavedMealPlans();
-  renderMealCalendar();
-
-  alert("献立をカレンダーに保存したよ！");
-
- }catch(e){
-  console.error(e);
-  alert("保存できませんでした。もう一度試してね。");
- }
+function expiryPriority(r){return pantryItems.some(x=>r.ing.some(y=>y[0].includes(x)))?1:0}
+function nutritionHint(r){return r.c==="サラダ・副菜"?"野菜を補いやすい一品":r.c==="汁物・スープ"?"水分と野菜を補いやすい一品":r.c==="ご飯もの"?"主食を中心にした一品":"主菜・副菜を組み合わせて栄養バランスを整えてね"}
+function allRecipes(){return [...recipes,...JSON.parse(localStorage.getItem("uchiCustomRecipes")||"[]")]}
+function render(){renderPantry();renderCustomRecipes();renderCooked();renderSaved();searchRecipes();renderBento();renderHomeMealCalendar()}
+function showTab(name){document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.tab===name));document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id===name));if(name==="saved")renderSaved();if(name==="calendar")renderHomeMealCalendar();if(name==="bento")renderBento()}
+document.querySelectorAll(".tab").forEach(x=>x.addEventListener("click",()=>showTab(x.dataset.tab)));
+function makePlan(){makePlanBase();if(latestMealPlan.length){saveMealPlan(latestMealPlan);renderHomeMealCalendar()}}
+function saveMealPlan(plan){
+ const a=JSON.parse(localStorage.getItem("uchiSavedMealPlans")||"[]");
+ a.unshift({date:new Date().toISOString(),days:plan});
+ localStorage.setItem("uchiSavedMealPlans",JSON.stringify(a));
 }
-function renderSavedMealPlans(){const box=$("savedMealPlans");if(!box)return;const history=JSON.parse(localStorage.getItem("uchiSavedMealPlans")||"[]");box.innerHTML=history.length?history.map((plan,i)=>`<div class="result"><strong>${plan.date||"保存した献立"}</strong><p>${plan.days.length}日分・${plan.days[0]?.people||""}人分</p>${plan.days.map(day=>`<div><b>${day.day}日目</b>${Object.entries(day.meals).map(([k,v])=>`<div>${({staple:"主食",main:"主菜",side:"副菜",soup:"汁物",kobachi:"小鉢"})[k.split("_").pop()]||k}：${v.recipe?.n||""}</div>`).join("")}</div>`).join("")}<button class="btn" onclick="deleteSavedMealPlan(${plan.id})">この記録を削除</button></div>`).join(""):'<span class="muted">まだ保存した献立はありません。「この献立を記録に保存」を押すと残せます。</span>';}
-function deleteSavedMealPlan(id){let history=JSON.parse(localStorage.getItem("uchiSavedMealPlans")||"[]").filter(x=>x.id!==id);localStorage.setItem("uchiSavedMealPlans",JSON.stringify(history));renderSavedMealPlans();}
-// ===== 献立カレンダー =====
-let calendarView="week";
-let calendarCurrentDate=new Date();
-
-function calendarFormatDate(d){
- const y=d.getFullYear();
- const m=String(d.getMonth()+1).padStart(2,"0");
- const day=String(d.getDate()).padStart(2,"0");
- return `${y}-${m}-${day}`;
+function renderSavedMealPlans(){
+ const a=JSON.parse(localStorage.getItem("uchiSavedMealPlans")||"[]");
+ const el=$("savedMealPlans");if(!el)return;
+ el.innerHTML=a.length?a.map((p,i)=>`<div class="result"><strong>${new Date(p.date).toLocaleDateString("ja-JP")}の献立</strong><p>${p.days.length}日分</p><button class="btn" onclick="viewSavedPlan(${i})">献立を見る</button> <button class="btn" onclick="deleteSavedMealPlan(${i})">削除</button></div>`).join(""):"保存した献立はありません。";
 }
-
-function changeCalendarView(view){
- calendarView=view;
- renderMealCalendar();
+function viewSavedPlan(i){
+ const p=JSON.parse(localStorage.getItem("uchiSavedMealPlans")||"[]")[i];if(!p)return;
+ $("savedPlanDetail").innerHTML=p.days.map(d=>`<div class="result"><strong>${d.day}日目</strong>${Object.entries(d.meals).map(([k,m])=>`<p>${k==="breakfast"?"朝食":k==="lunch"?"昼食":"夕食"}：${m.recipe.n}</p>`).join("")}</div>`).join("");
 }
-
-function moveCalendar(amount){
- const d=new Date(calendarCurrentDate);
-
- if(calendarView==="week"){
-  d.setDate(d.getDate()+amount*7);
- }else if(calendarView==="month"){
-  d.setMonth(d.getMonth()+amount);
- }else{
-  d.setFullYear(d.getFullYear()+amount);
- }
-
- calendarCurrentDate=d;
- const input=$("calendarDate");
- if(input)input.value=calendarFormatDate(d);
- renderMealCalendar();
+function deleteSavedMealPlan(i){let a=JSON.parse(localStorage.getItem("uchiSavedMealPlans")||"[]");a.splice(i,1);localStorage.setItem("uchiSavedMealPlans",JSON.stringify(a));renderSavedMealPlans();renderHomeMealCalendar()}
+function renderBento(){
+ const area=$("bentoResult");if(!area)return;
+ const people=Math.max(1,Math.min(8,Number($("bentoPeople").value)||4));
+ const budget=Math.max(0,Number($("bentoBudget").value)||0);
+ const all=allRecipes().filter(r=>r.c!=="汁物・スープ");
+ const picks=[...all].sort((a,b)=>Number(a.cost||0)-Number(b.cost||0)).slice(0,12);
+ area.innerHTML=`<h3>${people}人分のお弁当候補</h3>`+picks.map(r=>`<div class="result"><strong>${r.n}</strong><p class="muted">目安 ${Math.round((Number(r.cost)||0)*people/4).toLocaleString()}円</p><button class="btn" onclick="openRecipe(${r.id});showTab('search')">レシピを見る</button></div>`).join("");
 }
-
-function toggleCalendarCooked(date,meal){
- const key="uchiCalendarCooked";
- const data=JSON.parse(localStorage.getItem(key)||"{}");
- const id=date+"_"+meal;
-
- data[id]=!data[id];
- localStorage.setItem(key,JSON.stringify(data));
- renderMealCalendar();
-}
-
-function selectCalendarDate(date){
- const p=date.split("-").map(Number);
- calendarCurrentDate=new Date(p[0],p[1]-1,p[2]);
- calendarView="week";
-
- const input=$("calendarDate");
- if(input)input.value=date;
-
- renderMealCalendar();
-}
-
-function renderMealCalendar(){
- const box=$("mealCalendar");
- if(!box)return;
-
- const input=$("calendarDate");
-
- if(input&&input.value){
-  const p=input.value.split("-").map(Number);
-  calendarCurrentDate=new Date(p[0],p[1]-1,p[2]);
- }else if(input){
-  input.value=calendarFormatDate(calendarCurrentDate);
- }
-
- const d=new Date(calendarCurrentDate);
- const y=d.getFullYear();
- const m=d.getMonth();
- const weekday=["日","月","火","水","木","金","土"];
-
- let start,end;
-
- if(calendarView==="week"){
-  start=new Date(d);
-  start.setDate(d.getDate()-d.getDay());
-  end=new Date(start);
-  end.setDate(start.getDate()+6);
- }else if(calendarView==="month"){
-  start=new Date(y,m,1);
-  end=new Date(y,m+1,0);
- }else{
-  start=new Date(y,0,1);
-  end=new Date(y,11,31);
- }
-
- const title=$("calendarTitle");
- if(title){
-  title.textContent=calendarView==="week"
-   ?`${calendarFormatDate(start)} ～ ${calendarFormatDate(end)}`
-   :calendarView==="month"
-   ?`${y}年${m+1}月`
-   :`${y}年`;
- }
-
- const history=JSON.parse(
-  localStorage.getItem("uchiSavedMealPlans")||"[]"
- );
- const cooked=JSON.parse(
-  localStorage.getItem("uchiCalendarCooked")||"{}"
- );
-
- const plansByDate={};
-
- history.forEach(plan=>{
-  (plan.days||[]).forEach(day=>{
-   if(!day.date)return;
-   if(!plansByDate[day.date])plansByDate[day.date]=[];
-   plansByDate[day.date].push(day);
-  });
- });
-
- const mealNames={
-  breakfast:"朝食",
-  lunch:"昼食",
-  dinner:"夕食"
- };
- const courseNames={
+$("bentoPeople").onchange=renderBento;$("bentoBudget").onchange=renderBento;
+function addBentoMemo(){let v=$("bentoMemo").value.trim();if(!v)return;let a=JSON.parse(localStorage.getItem("uchiBentoMemos")||"[]");a.unshift({text:v,date:new Date().toLocaleDateString("ja-JP")});localStorage.setItem("uchiBentoMemos",JSON.stringify(a));$("bentoMemo").value="";renderBentoMemos()}
+function renderBentoMemos(){let a=JSON.parse(localStorage.getItem("uchiBentoMemos")||"[]"),el=$("bentoMemos");if(el)el.innerHTML=a.map(x=>`<div class="result">${x.date}：${x.text}</div>`).join("")||"お弁当メモはありません。"}
+$("saveBentoMemo").onclick=addBentoMemo;
+renderBentoMemos();
+ function courseLabelAI(course){
+ const labels={
   staple:"主食",
   main:"主菜",
-  side:"副菜",
   soup:"汁物",
+  side:"副菜",
   kobachi:"小鉢"
  };
-
- let html="";
-
- if(calendarView==="year"){
-  for(let month=0;month<12;month++){
-   const last=new Date(y,month+1,0);
-   html+=`<h3>${month+1}月</h3>`;
-   html+='<div class="actions" style="flex-wrap:wrap;gap:5px">';
-
-   for(let day=1;day<=last.getDate();day++){
-    const date=new Date(y,month,day);
-    const key=calendarFormatDate(date);
-    html+=`<button class="btn" type="button"
-     style="min-width:42px;padding:8px"
-     onclick="selectCalendarDate('${key}')">
-     ${day}${plansByDate[key]?" ●":""}
-    </button>`;
-   }
-
-   html+="</div>";
-  }
- }else{
-  let current=new Date(start);
-
-  while(current<=end){
-   const key=calendarFormatDate(current);
-   const days=plansByDate[key]||[];
-
-   html+=`<div class="result" style="margin:10px 0">
-    <strong>${current.getMonth()+1}月${current.getDate()}日（${weekday[current.getDay()]}）</strong>`;
-
-   if(!days.length){
-    html+='<p class="muted">献立の保存はありません</p>';
-   }
-
-   days.forEach(day=>{
-    ["breakfast","lunch","dinner"].forEach(meal=>{
-     const entries=Object.entries(day.meals||{})
-      .filter(([k])=>k.startsWith(meal+"_"));
-
-     if(!entries.length)return;
-
-     const id=key+"_"+meal;
-     const done=!!cooked[id];
-
-     html+=`<div style="border-top:1px solid #ddd;padding:8px 0">
-      <label>
-       <input type="checkbox"
-        ${done?"checked":""}
-        onchange="toggleCalendarCooked('${key}','${meal}')">
-       <b>${mealNames[meal]}</b>
-       ${done?"✅ 作成済み":"未作成"}
-      </label>`;
-
-     entries.forEach(([k,v])=>{
-      const course=k.split("_").pop();
-      html+=`<div style="margin-left:24px">
-       ${courseNames[course]||course}：
-       ${v.recipe?.n||"料理名未設定"}
-      </div>`;
-     });
-
-     html+="</div>";
-    });
-   });
-
-   html+="</div>";
-   current.setDate(current.getDate()+1);
-  }
- }
-
- box.innerHTML=html;
+ return labels[course]||course;
 }
- async function makePlanWithAI(){
- const btn=document.getElementById("makePlan");
- const box=document.getElementById("planResult");
 
- const days=Math.max(1,Math.min(7,Number($("days").value)||7));
- const people=Math.max(1,Math.min(8,Number($("people").value)||4));
-
- const budgets={
-  breakfast:Math.max(0,Number($("breakfastBudget").value)||0),
-  lunch:Math.max(0,Number($("lunchBudget").value)||0),
-  dinner:Math.max(0,Number($("dinnerBudget").value)||0)
- };
-
- const avoid=($("stock").value||"")
-  .split(/[、,，\s]+/)
-  .map(x=>x.trim())
+function moveCheckedShoppingToInventory(){
+ const rows=window.currentShoppingRows||[];
+ const checks=[...document.querySelectorAll(".shopcheck:checked")];
+ if(!checks.length){
+  alert("在庫に追加する食材にチェックを入れてね。");
+  return;
+ }
+ const selected=checks
+  .map(c=>rows[Number(c.dataset.i)])
   .filter(Boolean);
-
- btn.disabled=true;
- btn.textContent="7日分の献立を作成しています…";
-
- latestMealPlan=[];
- let imported=[];
- let previousNames=[];
- let grand=0;
-
- box.innerHTML='<div class="notice">🔎 7日分の献立をまとめて作成しています。少し時間がかかります。</div>';
-
- try{
-  const data=await generateAIWeek(
-   days,
-   people,
-   budgets,
-   avoid,
-   previousNames
-  );
-
-  let html=`<h3 style="margin-top:18px">${people}人分・${days}日間の献立</h3>
-  <p class="muted">朝・昼・夕の献立です。各食の予算を確認しています。</p>`;
-
-  for(let d=1;d<=days;d++){
-   const row=data.days.find(x=>Number(x.day)===d)||data.days[d-1];
-
-   if(!row||!row.meals){
-    throw new Error(d+"日目の献立が見つかりません。");
-   }
-
-   const day={day:d,people,meals:{}};
-
-   html+=`<section class="result"><h3>${d}日目</h3>`;
-
-   for(const [meal,label] of [
-    ["breakfast","🌅 朝食"],
-    ["lunch","☀️ 昼食"],
-    ["dinner","🌙 夕食"]
-   ]){
-    const arr=Array.isArray(row.meals[meal])
-     ?row.meals[meal]:[];
-
-    if(!arr.length){
-     throw new Error(d+"日目の"+label+"が空になっています。");
-    }
-
-    html+=`<h4 style="margin:14px 0 6px">${label}</h4><div class="notice">`;
-
-    let mealCost=0;
-
-    for(const course of ["staple","main","soup","side","kobachi"]){
-     const raw=arr.find(x=>x&&x.course===course);
-
-     if(!raw){
-      if(course==="staple"||course==="main"||course==="soup"){
-       throw new Error(d+"日目の"+label+"に"+course+"がありません。");
-      }
-      continue;
-     }
-
-     let r=normalizeAIRecipe(raw,imported.length);
-
-     const match=allRecipes().find(
-      z=>String(z.n).trim()===r.n.trim()
-     );
-
-     if(match){
-      r={...match,source:r.source||match.source};
-     }else{
-      imported.push(r);
-     }
-
-     const cost=Math.round((Number(r.cost)||0)*people/4);
-
-     mealCost+=cost;
-
-     day.meals[meal+"_"+course]={
-      recipe:r,
-      cost,
-      budget:budgets[meal]*people
-     };
-
-     previousNames.push(r.n);
-
-     html+=`<p style="margin:7px 0">
-      <strong>${courseLabelAI(course)}：</strong>
-      ${r.n}
-      <span class="muted">（約${cost.toLocaleString()}円）</span>
-      <button class="btn" onclick="showTab('search');openRecipe(${Number(r.id)})">レシピを見る</button>
-     </p>`;
-    }
-
-    grand+=mealCost;
-
-    const mealBudget=budgets[meal]*people;
-
-    html+=`<p class="muted">
-     この食事の概算：約${mealCost.toLocaleString()}円 ／
-     予算：${mealBudget.toLocaleString()}円
-     ${mealCost>mealBudget?' ⚠️ 予算を超えています':''}
-    </p></div>`;
-   }
-
-   html+="</section>";
-
-   latestMealPlan.push(day);
-
-   box.innerHTML=html+
-    `<p class="muted">${d}/${days}日目まで表示しました。</p>`;
+ selected.forEach(x=>{
+  if(!pantryItems.some(y=>y.toLowerCase()===x.name.toLowerCase())){
+   pantryItems.push(x.name);
   }
-
-  if(imported.length){
-   const saved=JSON.parse(
-    localStorage.getItem("uchiCustomRecipes")||"[]"
-   );
-
-   const seen=new Set(
-    saved.map(r=>String(r.n).trim())
-   );
-
-   const unique=imported.filter(
-    r=>!seen.has(String(r.n).trim())
-   );
-
-   localStorage.setItem(
-    "uchiCustomRecipes",
-    JSON.stringify(unique.concat(saved))
-   );
-
-   imported=unique;
-  }
-
-  html+=`<p><strong>期間合計の概算：約${grand.toLocaleString()}円</strong></p>
-  <p class="muted">AIが作成した新しいレシピ ${imported.length}品を保存しました。材料は4人分基準です。</p>`;
-
-  box.innerHTML=html+
-   `<div class="actions" style="margin-top:12px">
-    <button class="btn primary" id="saveMealPlanBtn">📌 この献立を記録に保存</button>
-   </div>`;
-
-  renderShoppingList();
-  render();
-
-  localStorage.setItem(
-   "uchiLastMealPlan",
-   JSON.stringify({
-    date:new Date().toLocaleDateString("ja-JP"),
-    days:latestMealPlan.map(d=>({
-     day:d.day,
-     meals:Object.fromEntries(
-      Object.entries(d.meals).map(
-       ([k,v])=>[k,v.recipe.n]
-      )
-     )
-    }))
-   })
-  );
-
-  document.getElementById("saveMealPlanBtn").onclick=
-   saveCurrentMealPlan;
-
- }catch(e){
-  box.innerHTML=`<div class="notice">
-   ⚠️ ${String(e.message||e)}
-   <br>Workerの設定・接続コード・AI APIの利用状況を確認してください。
-  </div>`;
- }finally{
-  btn.disabled=false;
-  btn.textContent="無料で献立を作る";
- }
+ });
+ localStorage.setItem("uchiPantry",JSON.stringify(pantryItems));
+ renderPantry();
+ alert(selected.length+"品を家にある食材へ追加したよ！");
+ renderShoppingList();
 }
-document.getElementById("makePlan").onclick=makePlanWithAI;
- 
-</script></main></body></html>
+
+render();
+renderMealCalendar();
+ </script>
+</body>
+</html>

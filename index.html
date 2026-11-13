@@ -3,1497 +3,1827 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f5ef">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="うちのごはん">
 <title>うちのごはん</title>
 
 <style>
 :root {
-  --bg:#f7f5f0;
-  --card:#ffffff;
-  --text:#37352f;
-  --muted:#8a877f;
-  --accent:#7c967b;
-  --accent-light:#e8efe5;
-  --border:#e9e6df;
-  --orange:#d69a69;
-  --blue:#829bb4;
+  --ink:#302f2b;
+  --muted:#77736b;
+  --line:#e6e1d7;
+  --paper:#fffefa;
+  --accent:#657b59;
+  --soft:#eef2e9;
 }
 
-* { box-sizing:border-box; }
+* {
+  box-sizing:border-box;
+}
 
 body {
   margin:0;
-  background:var(--bg);
-  color:var(--text);
+  background:#f7f5ef;
+  color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,
-    "Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
-}
-
-button,input,select,textarea {
-  font:inherit;
-}
-
-button {
-  cursor:pointer;
-}
-
-header {
-  background:#fff;
-  padding:18px 16px 12px;
-  border-bottom:1px solid var(--border);
-}
-
-.header-inner {
-  max-width:900px;
-  margin:auto;
-}
-
-.logo {
-  font-size:24px;
-  font-weight:700;
-  letter-spacing:1px;
-}
-
-.subtitle {
-  font-size:12px;
-  color:var(--muted);
-  margin-top:4px;
+  "Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
 }
 
 main {
-  max-width:900px;
+  max-width:850px;
   margin:auto;
-  padding:16px;
-  padding-bottom:100px;
+  padding:16px 12px 48px;
 }
 
-.page-title {
-  font-size:21px;
-  margin:8px 0 16px;
+header {
+  padding:12px 4px 18px;
+  border-bottom:1px solid var(--line);
 }
 
-.card {
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:16px;
-  margin-bottom:16px;
+.brand {
+  display:flex;
+  align-items:center;
+  gap:12px;
 }
 
-.section-title {
-  font-size:16px;
-  font-weight:700;
-  margin-bottom:12px;
-}
-
-button.primary {
+.brand-icon {
+  width:54px;
+  height:54px;
+  border-radius:15px;
+  display:grid;
+  place-items:center;
   background:var(--accent);
-  color:#fff;
-  border:0;
-  border-radius:10px;
-  padding:11px 16px;
+  color:white;
+  font-size:28px;
 }
 
-button.secondary {
-  background:var(--accent-light);
-  color:#536b52;
-  border:0;
-  border-radius:10px;
-  padding:10px 14px;
+h1 {
+  font-size:25px;
+  margin:0 0 5px;
 }
 
-button.outline {
+h2 {
+  font-size:19px;
+  margin:0 0 12px;
+}
+
+h3 {
+  font-size:16px;
+  margin:16px 0 8px;
+}
+
+.sub,.muted {
+  color:var(--muted);
+  font-size:13px;
+}
+
+.tabs {
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  padding:14px 0;
+}
+
+button,.btn {
+  border:1px solid var(--line);
   background:white;
-  border:1px solid var(--border);
-  border-radius:10px;
-  padding:9px 13px;
+  border-radius:11px;
+  padding:11px 14px;
+  font-size:14px;
+  color:var(--ink);
+  cursor:pointer;
+}
+
+button.active,.primary {
+  background:var(--accent);
+  color:white;
+  border-color:var(--accent);
+}
+
+button:disabled {
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+section.card {
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-radius:15px;
+  padding:15px;
+  margin:12px 0;
 }
 
 input,select,textarea {
   width:100%;
-  border:1px solid var(--border);
-  border-radius:9px;
+  min-width:0;
   padding:11px;
+  border:1px solid var(--line);
+  border-radius:10px;
   background:white;
-  color:var(--text);
-  margin:5px 0 12px;
+  color:var(--ink);
+  font:inherit;
 }
 
 label {
   display:block;
   font-size:13px;
-  font-weight:600;
+  color:var(--muted);
+  margin:10px 0 5px;
 }
 
-.calendar-head {
+.grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.row,.actions {
   display:flex;
   align-items:center;
-  justify-content:space-between;
   gap:8px;
-  margin-bottom:14px;
+  flex-wrap:wrap;
 }
 
-.calendar-month {
-  font-size:20px;
-  font-weight:700;
+.hidden {
+  display:none!important;
 }
 
-.calendar-week,
-.calendar-grid {
-  display:grid;
-  grid-template-columns:repeat(7,minmax(0,1fr));
+.notice {
+  background:var(--soft);
+  border-radius:10px;
+  padding:11px;
+  font-size:13px;
+  margin-top:10px;
 }
 
-.calendar-week div {
-  text-align:center;
-  padding:8px 0;
+.result {
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  margin:9px 0;
+}
+
+.tag {
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:20px;
+  background:var(--soft);
+  color:var(--accent);
+  font-size:12px;
+}
+
+.photo {
+  width:100%;
+  max-height:230px;
+  object-fit:cover;
+  border-radius:12px;
+  margin-top:8px;
+}
+
+.page-title {
+  margin:8px 0 14px;
+}
+
+.small {
   font-size:12px;
   color:var(--muted);
 }
 
-.calendar-day {
-  min-height:105px;
-  border:1px solid var(--border);
-  background:#fff;
-  padding:5px;
-  text-align:left;
-  min-width:0;
-  border-radius:5px;
-  overflow:hidden;
-}
-
-.calendar-day.empty {
-  background:#f8f7f4;
-}
-
-.calendar-day.today {
-  background:#f0f5ed;
-  border:2px solid var(--accent);
-}
-
-.calendar-day.selected {
-  outline:2px solid var(--orange);
-  outline-offset:-2px;
-}
-
-.day-number {
-  font-size:13px;
-  font-weight:700;
-  margin-bottom:5px;
-}
-
-.day-menu {
-  display:block;
-  font-size:10px;
-  line-height:1.45;
-  margin-top:3px;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  border-radius:4px;
-  padding:2px 3px;
-}
-
-.breakfast { background:#fff1d9; }
-.lunch { background:#e8f0fa; }
-.dinner { background:#f8e9e6; }
-
-.calendar-note {
-  font-size:11px;
-  color:var(--muted);
+.full {
+  width:100%;
   margin-top:10px;
 }
 
-.meal-row {
+/* 月間カレンダー */
+
+.calendar-head {
   display:flex;
-  gap:10px;
-  align-items:flex-start;
-  padding:11px 0;
-  border-bottom:1px solid var(--border);
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:12px 0;
 }
 
-.meal-row:last-child {
-  border-bottom:0;
-}
-
-.meal-label {
-  width:48px;
-  flex-shrink:0;
-  font-size:13px;
-  font-weight:700;
-}
-
-.meal-content {
+.calendar-title {
   flex:1;
-  min-width:0;
-  font-size:14px;
+  text-align:center;
+  font-size:19px;
+  font-weight:bold;
 }
 
-.meal-empty {
+.calendar-grid {
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  border-top:1px solid var(--line);
+  border-left:1px solid var(--line);
+  border-radius:10px;
+  overflow:hidden;
+}
+
+.calendar-weekday,
+.calendar-day {
+  min-width:0;
+  border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  padding:4px 3px;
+}
+
+.calendar-weekday {
+  text-align:center;
+  background:#f2f0e9;
+  font-size:12px;
+  font-weight:bold;
+}
+
+.calendar-day {
+  min-height:83px;
+  background:white;
+  text-align:left;
+  border-radius:0;
+  padding:4px 3px;
+}
+
+.calendar-day.other {
+  background:#f7f6f2;
   color:#aaa;
 }
 
-.bottom-nav {
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  background:#fff;
-  border-top:1px solid var(--border);
-  display:flex;
-  justify-content:center;
-  z-index:10;
-  padding:7px 3px calc(7px + env(safe-area-inset-bottom));
+.calendar-day.today {
+  background:#f0f5eb;
 }
 
-.nav-inner {
-  width:100%;
-  max-width:700px;
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
+.calendar-day.selected {
+  outline:2px solid var(--accent);
+  outline-offset:-2px;
 }
 
-.nav-button {
-  border:0;
-  background:transparent;
-  color:var(--muted);
-  font-size:10px;
-  padding:6px 2px;
+.calendar-number {
+  font-size:13px;
+  font-weight:bold;
 }
 
-.nav-button span {
+.calendar-meal {
   display:block;
-  font-size:20px;
-  margin-bottom:3px;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  font-size:9px;
+  padding:2px;
+  margin-top:3px;
+  border-radius:4px;
+  background:#eef2e9;
 }
 
-.nav-button.active {
-  color:var(--accent);
-  font-weight:700;
+.calendar-meal.lunch {
+  background:#fff1dc;
 }
 
-.hidden { display:none !important; }
+.calendar-meal.dinner {
+  background:#e9eef8;
+}
 
-@media(max-width:500px) {
-  main { padding:10px; padding-bottom:100px; }
-  .calendar-day { min-height:83px; padding:3px; }
-  .day-menu { font-size:9px; }
-  .calendar-month { font-size:18px; }
+@media(max-width:520px) {
+  .calendar-day {
+    min-height:70px;
+    padding:3px 2px;
+  }
+
+  .calendar-weekday {
+    font-size:11px;
+  }
+
+  .calendar-meal {
+    font-size:8px;
+    padding:2px 1px;
+  }
+
+  .grid {
+    gap:7px;
+  }
 }
 </style>
 </head>
 
 <body>
+<main>
 
 <header>
-  <div class="header-inner">
-    <div class="logo">🍚 うちのごはん</div>
-    <div class="subtitle">毎日のごはんを、もっと楽しく。</div>
+  <div class="brand">
+    <div class="brand-icon">🍚</div>
+    <div>
+      <h1>うちのごはん</h1>
+      <div class="sub">毎日のごはんを、もっと楽しく。</div>
+    </div>
   </div>
 </header>
 
-<main>
+<nav class="tabs">
+  <button class="active" data-tab="calendar">📅 カレンダー</button>
+  <button data-tab="plan">🍽 献立作成</button>
+  <button data-tab="search">🔎 レシピ検索</button>
+  <button data-tab="bento">🍱 お弁当</button>
+  <button data-tab="add">＋ レシピ追加</button>
+  <button data-tab="saved">⭐ 保存・履歴</button>
+</nav>
+<!-- ==============================
+     月間カレンダー
+============================== -->
 
-<section id="homePage">
+<div id="calendar">
 
-  <h1 class="page-title">献立カレンダー</h1>
+<section class="card">
+<h2>📅 わが家の月間献立カレンダー</h2>
+<p class="muted">日付を押すと、その日の献立を確認できます。</p>
+
+<div class="calendar-head">
+  <button onclick="moveMonth(-1)">◀ 前月</button>
+  <div id="monthTitle" class="calendar-title"></div>
+  <button onclick="moveMonth(1)">次月 ▶</button>
+  <button onclick="goToday()">今日</button>
+</div>
+
+<div id="monthGrid" class="calendar-grid"></div>
+<div id="dayDetail"></div>
+
+<button class="primary full" onclick="showTab('plan')">
+🍽 献立を作る
+</button>
+</section>
+
+<section class="card">
+<h3>🧾 最近の献立</h3>
+<div id="recentPlans"></div>
+</section>
+
+</div>
+
+
+<!-- ==============================
+     献立作成
+============================== -->
+
+<div id="plan" class="hidden">
+
+<section class="card">
+<h2>🍽 献立作成</h2>
+<p class="muted">
+人数・予算・食材・調理時間に合わせて献立を作ります。
+</p>
+
+<div class="grid">
+  <div>
+    <label>献立の日数</label>
+    <select id="planDays">
+      <option value="1">1日</option>
+      <option value="3">3日</option>
+      <option value="5">5日</option>
+      <option value="7" selected>7日</option>
+    </select>
+  </div>
+
+  <div>
+    <label>何人分？</label>
+    <select id="planPeople">
+      <option>1</option>
+      <option>2</option>
+      <option>3</option>
+      <option selected>4</option>
+      <option>5</option>
+      <option>6</option>
+      <option>7</option>
+      <option>8</option>
+    </select>
+  </div>
+</div>
+
+<h3>💰 1人あたりの予算</h3>
+
+<div class="grid">
+  <div>
+    <label>朝食（円）</label>
+    <input id="breakfastBudget" type="number" value="150">
+  </div>
+
+  <div>
+    <label>昼食（円）</label>
+    <input id="lunchBudget" type="number" value="300">
+  </div>
+
+  <div>
+    <label>夕食（円）</label>
+    <input id="dinnerBudget" type="number" value="500">
+  </div>
+</div>
+
+<label>使いたい食材</label>
+<textarea id="planIngredients" rows="3"
+placeholder="例：鶏むね肉、キャベツ、卵"></textarea>
+
+<label>避けたい食材・料理</label>
+<textarea id="planAvoid" rows="2"
+placeholder="例：辛い料理、きのこ"></textarea>
+
+<label>調理時間</label>
+<select id="planTime">
+  <option value="15">15分以内</option>
+  <option value="30" selected>30分以内</option>
+  <option value="45">45分以内</option>
+  <option value="60">60分以内</option>
+  <option value="999">時間制限なし</option>
+</select>
+
+<div class="notice">
+献立は保存済みレシピを優先して作成します。
+レシピが足りない場合の検索・追加機能は後半でつなげます。
+</div>
+
+<label>献立の開始日</label>
+<input id="planStartDate" type="date">
+
+<button class="primary full" id="makePlan">
+🍳 献立を作る
+</button>
+
+<div id="planStatus" class="notice hidden"></div>
+<div id="planResult"></div>
+
+<button class="primary full hidden" id="savePlan">
+📅 カレンダーに保存
+</button>
+</section>
+
+
+<!-- 買い物リスト -->
+
+<section class="card">
+<h2>🛒 買い物リスト</h2>
+<p class="muted">献立に必要な食材をまとめます。</p>
+
+<div id="shoppingList"></div>
+
+<button class="primary full" id="addShoppingToPantry">
+冷蔵庫の在庫に追加
+</button>
+</section>
+
+
+<!-- 冷蔵庫 -->
+
+<section class="card">
+<h2>🥬 冷蔵庫・食品在庫</h2>
+
+<label>食材名</label>
+<input id="pantryName" placeholder="例：鶏むね肉">
+
+<div class="grid">
+  <div>
+    <label>数量</label>
+    <input id="pantryAmount" placeholder="例：2枚">
+  </div>
+
+  <div>
+    <label>賞味・消費期限</label>
+    <input id="pantryExpiry" type="date">
+  </div>
+</div>
+
+<button class="primary full" id="addPantry">
+在庫に追加
+</button>
+
+<h3>現在の在庫</h3>
+<div id="pantryList"></div>
+
+<h3>⚠️ 期限が近い食材</h3>
+<div id="pantryWarnings"></div>
+</section>
+
+</div>
+<!-- ③ レシピ検索 -->
+<section id="search" class="hidden">
+
+  <h1 class="page-title">🔎 レシピ検索</h1>
 
   <div class="card">
+    <div class="section-title">登録済みレシピを検索</div>
 
-    <div class="calendar-head">
-      <button class="outline" id="prevMonth">‹</button>
-      <div class="calendar-month" id="calendarMonth"></div>
-      <button class="outline" id="nextMonth">›</button>
+    <label for="recipeSearchWord">料理名・材料で検索</label>
+    <input
+      id="recipeSearchWord"
+      type="search"
+      placeholder="例：鶏むね肉、カレー、キャベツ"
+    >
+
+    <div class="form-row">
+      <div>
+        <label for="recipeSearchCategory">ジャンル</label>
+        <select id="recipeSearchCategory">
+          <option value="">すべて</option>
+          <option value="和食">和食</option>
+          <option value="洋食">洋食</option>
+          <option value="中華">中華</option>
+          <option value="韓国料理">韓国料理</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="recipeSearchTime">調理時間</label>
+        <select id="recipeSearchTime">
+          <option value="">指定なし</option>
+          <option value="15">15分以内</option>
+          <option value="30">30分以内</option>
+          <option value="45">45分以内</option>
+          <option value="60">60分以内</option>
+        </select>
+      </div>
     </div>
 
-    <div class="calendar-week">
-      <div style="color:#d66">日</div>
-      <div>月</div>
-      <div>火</div>
-      <div>水</div>
-      <div>木</div>
-      <div>金</div>
-      <div style="color:#579">土</div>
-    </div>
+    <button id="searchRecipes" class="primary-btn">
+      登録レシピを検索
+    </button>
 
-    <div class="calendar-grid" id="calendarGrid"></div>
-
-    <div class="calendar-note">
-      🍳 朝　🍱 昼　🍽 夕
-      <br>
-      日付を押すと、その日の献立を確認できます。
-    </div>
-
+    <div id="recipeSearchStatus" class="status"></div>
+    <div id="recipeSearchResults" class="recipe-list"></div>
   </div>
 
   <div class="card">
-    <div class="section-title" id="selectedDateTitle">
-      今日の献立
-    </div>
+    <div class="section-title">🌐 インターネットでレシピを探す</div>
 
-    <div id="selectedMeals">
+    <p class="muted">
+      Web検索を開いて、見つけたレシピを確認できるよ。
+      気に入ったレシピは、URLや材料を使ってアプリに登録できるよ。
+    </p>
 
-      <div class="meal-row">
-        <div class="meal-label">朝 🍳</div>
-        <div class="meal-content meal-empty">献立はまだありません</div>
-      </div>
+    <label for="webRecipeWord">探したい料理・材料</label>
+    <input
+      id="webRecipeWord"
+      type="search"
+      placeholder="例：鯖の味噌煮 簡単"
+    >
 
-      <div class="meal-row">
-        <div class="meal-label">昼 🍱</div>
-        <div class="meal-content meal-empty">献立はまだありません</div>
-      </div>
-
-      <div class="meal-row">
-        <div class="meal-label">夕 🍽</div>
-        <div class="meal-content meal-empty">献立はまだありません</div>
-      </div>
-
-    </div>
-
-    <button class="secondary" id="editSelectedMeal">
-      この日の献立を編集
+    <button id="webRecipeSearch" class="primary-btn">
+      Googleでレシピを検索
     </button>
 
+    <button id="webRecipeCookpad" class="sub-btn">
+      クックパッドで検索
+    </button>
+
+    <button id="webRecipeDelish" class="sub-btn">
+      DELISH KITCHENで検索
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="section-title">📥 Webレシピを登録</div>
+
+    <label for="webRecipeTitle">料理名</label>
+    <input
+      id="webRecipeTitle"
+      type="text"
+      placeholder="料理名を入力"
+    >
+
+    <label for="webRecipeUrl">レシピのURL</label>
+    <input
+      id="webRecipeUrl"
+      type="url"
+      placeholder="https://..."
+    >
+
+    <label for="webRecipeMemo">メモ</label>
+    <textarea
+      id="webRecipeMemo"
+      rows="3"
+      placeholder="作り方や材料のメモなど"
+    ></textarea>
+
+    <button id="registerWebRecipe" class="primary-btn">
+      レシピとして登録
+    </button>
+
+    <p class="muted">
+      ※Webサイトによっては自動で材料や作り方を読み取れない場合があるよ。
+      その場合は、サイトを見ながらレシピ追加画面で登録してね。
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="section-title">📖 レシピ詳細</div>
+    <div id="recipeDetail">
+      <p class="muted">レシピを選ぶと、ここに詳細が表示されるよ。</p>
+    </div>
   </div>
 
 </section>
+<!-- ④ お弁当 -->
+<section id="bento" class="hidden">
 
-<section id="mealPage" class="hidden">
-
-  <h1 class="page-title">🍽 献立作成</h1>
+  <h1 class="page-title">🍱 お弁当</h1>
 
   <div class="card">
-    <div class="section-title">献立の条件</div>
+    <div class="section-title">お弁当の条件</div>
 
-    <label>何人分？</label>
-    <input id="planPeople" type="number" min="1" max="30" value="4">
-
-    <label>何日分？</label>
-    <select id="planDays">
-      <option value="1">1日分</option>
-      <option value="3">3日分</option>
-      <option value="5">5日分</option>
-      <option value="7" selected>7日分</option>
+    <label for="bentoPeople">何人分？</label>
+    <select id="bentoPeople">
+      <option value="1">1人分</option>
+      <option value="2">2人分</option>
+      <option value="3">3人分</option>
+      <option value="4" selected>4人分</option>
+      <option value="5">5人分</option>
+      <option value="6">6人分</option>
+      <option value="7">7人分</option>
+      <option value="8">8人分</option>
     </select>
 
-    <label>朝食の予算（1人1食・円）</label>
-    <input id="breakfastBudget" type="number" min="0" value="150">
+    <label for="bentoBudget">1人分の予算（円）</label>
+    <input id="bentoBudget" type="number" min="0" value="300">
 
-    <label>昼食の予算（1人1食・円）</label>
-    <input id="lunchBudget" type="number" min="0" value="300">
-
-    <label>夕食の予算（1人1食・円）</label>
-    <input id="dinnerBudget" type="number" min="0" value="500">
-
-    <label>使いたい食材</label>
-    <input id="planIngredients"
-      placeholder="例：鶏むね肉、キャベツ、卵">
-
-    <label>避けたい食材・料理</label>
-    <input id="planAvoid"
-      placeholder="例：魚、辛い料理">
-
-    <label>調理時間の目安</label>
-    <select id="planCookingTime">
+    <label for="bentoTime">調理時間</label>
+    <select id="bentoTime">
       <option value="15">15分以内</option>
       <option value="30" selected>30分以内</option>
       <option value="45">45分以内</option>
       <option value="60">60分以内</option>
-      <option value="999">時間制限なし</option>
     </select>
 
-    <button class="primary" id="makePlan" style="width:100%">
-      献立を作る
+    <label for="bentoIngredients">使いたい材料</label>
+    <textarea
+      id="bentoIngredients"
+      rows="3"
+      placeholder="例：鶏むね肉、卵、ブロッコリー"
+    ></textarea>
+
+    <label for="bentoRequests">希望・リクエスト</label>
+    <textarea
+      id="bentoRequests"
+      rows="3"
+      placeholder="例：冷めてもおいしい、彩りよく、ボリューム多め"
+    ></textarea>
+
+    <button id="makeBento" class="primary-btn">
+      お弁当メニューを作る
+    </button>
+
+    <div id="bentoStatus" class="status"></div>
+    <div id="bentoResult"></div>
+
+    <button id="saveBento" class="sub-btn">
+      このお弁当を保存
     </button>
   </div>
 
   <div class="card">
-    <div class="section-title">作成した献立</div>
-    <div id="mealPlanResult">
-      まだ献立は作成されていません。
-    </div>
-
-    <button class="primary hidden" id="saveMealPlan"
-      style="width:100%;margin-top:12px">
-      カレンダーに保存する
-    </button>
+    <div class="section-title">🍳 登録済みレシピから選ぶ</div>
+    <div id="bentoRecipeList"></div>
   </div>
 
 </section>
 
-<section id="recipePage" class="hidden">
 
-  <h1 class="page-title">📖 レシピ帳</h1>
+<!-- レシピ追加 -->
+<section id="add" class="hidden">
+
+  <h1 class="page-title">＋ レシピ追加</h1>
 
   <div class="card">
-    <div class="section-title">レシピを検索</div>
-    <input id="recipeSearch" type="search"
-      placeholder="料理名・材料・カテゴリーで検索">
+    <div class="section-title">新しいレシピを登録</div>
 
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="secondary" id="showAllRecipes">すべて</button>
-      <button class="secondary" id="showFavoriteRecipes">お気に入り</button>
-      <button class="secondary" id="showAddRecipe">＋ レシピ登録</button>
-    </div>
-  </div>
+    <label for="newRecipeName">料理名</label>
+    <input
+      id="newRecipeName"
+      type="text"
+      placeholder="例：鶏むね肉のチキン南蛮"
+    >
 
-  <div id="recipeListArea">
-    <div class="section-title">登録レシピ</div>
-    <div id="recipeList"></div>
-  </div>
-
-  <div id="recipeFormArea" class="card hidden">
-
-    <div class="section-title" id="recipeFormTitle">
-      新しいレシピ
-    </div>
-
-    <label>料理名</label>
-    <input id="recipeName" placeholder="例：鶏肉の照り焼き">
-
-    <label>カテゴリー</label>
-    <select id="recipeCategory">
-      <option value="主食">主食</option>
-      <option value="主菜">主菜</option>
-      <option value="副菜">副菜</option>
-      <option value="汁物">汁物</option>
-      <option value="小鉢">小鉢</option>
-      <option value="お弁当">お弁当</option>
+    <label for="newRecipeCategory">ジャンル</label>
+    <select id="newRecipeCategory">
+      <option value="和食">和食</option>
+      <option value="洋食">洋食</option>
+      <option value="中華">中華</option>
+      <option value="韓国料理">韓国料理</option>
       <option value="その他">その他</option>
     </select>
 
-    <label>何人分</label>
-    <input id="recipeServings" type="number" min="1" value="2">
+    <div class="form-row">
+      <div>
+        <label for="newRecipeServings">何人分？</label>
+        <input
+          id="newRecipeServings"
+          type="number"
+          min="1"
+          value="2"
+        >
+      </div>
 
-    <label>材料・分量</label>
-    <textarea id="recipeIngredients" rows="6"
-      placeholder="鶏もも肉 300g&#10;醤油 大さじ2&#10;みりん 大さじ2"></textarea>
-
-    <label>作り方</label>
-    <textarea id="recipeSteps" rows="7"
-      placeholder="1. 鶏肉を食べやすい大きさに切る&#10;2. フライパンで焼く"></textarea>
-
-    <label>調理時間（分）</label>
-    <input id="recipeTime" type="number" min="0" placeholder="20">
-
-    <label>予算（円）</label>
-    <input id="recipeBudget" type="number" min="0" placeholder="500">
-
-    <label>元のレシピサイトURL</label>
-    <input id="recipeSource" type="url" placeholder="https://...">
-
-    <label>メモ・味付けのポイント</label>
-    <textarea id="recipeMemo" rows="3"></textarea>
-
-    <label>写真URL</label>
-    <input id="recipePhoto" type="url" placeholder="https://...">
-
-    <div style="display:flex;gap:8px">
-      <button class="primary" id="saveRecipe">保存する</button>
-      <button class="outline" id="cancelRecipe">キャンセル</button>
+      <div>
+        <label for="newRecipeTime">調理時間（分）</label>
+        <input
+          id="newRecipeTime"
+          type="number"
+          min="0"
+          value="30"
+        >
+      </div>
     </div>
 
+    <label for="newRecipeCost">材料費の目安（円）</label>
+    <input
+      id="newRecipeCost"
+      type="number"
+      min="0"
+      placeholder="例：600"
+    >
+
+    <div class="section-title">材料</div>
+
+    <div id="newRecipeIngredients"></div>
+
+    <button id="addIngredientRow" class="sub-btn">
+      ＋ 材料を追加
+    </button>
+
+    <label for="newRecipeSteps">作り方</label>
+    <textarea
+      id="newRecipeSteps"
+      rows="7"
+      placeholder="1. 材料を切る&#10;2. フライパンで炒める&#10;3. 調味料を加えて煮る"
+    ></textarea>
+
+    <label for="newRecipeSource">元のレシピサイトURL</label>
+    <input
+      id="newRecipeSource"
+      type="url"
+      placeholder="https://..."
+    >
+
+    <label for="newRecipeMemo">メモ・味付けのポイント</label>
+    <textarea
+      id="newRecipeMemo"
+      rows="3"
+      placeholder="次回変更したいところ、味付けの感想など"
+    ></textarea>
+
+    <label for="newRecipePhoto">料理の写真</label>
+    <input
+      id="newRecipePhoto"
+      type="file"
+      accept="image/*"
+    >
+
+    <div id="newRecipePhotoPreview"></div>
+
+    <button id="registerRecipe" class="primary-btn">
+      レシピを登録する
+    </button>
+
+    <div id="registerRecipeStatus" class="status"></div>
   </div>
 
-  <div id="recipeDetailArea" class="card hidden">
-    <div id="recipeDetail"></div>
-    <button class="outline" id="closeRecipeDetail">戻る</button>
-  </div>
-
-</section>
-
-<section id="bentoPage" class="hidden">
-  <h1 class="page-title">🍱 お弁当</h1>
   <div class="card">
-    <p>お弁当作成機能をここに追加します。</p>
+    <div class="section-title">🔄 レシピのアレンジを登録</div>
+
+    <p class="muted">
+      基本レシピを残したまま、分量や味付けを変えたレシピを別に保存するための機能だよ。
+    </p>
+
+    <label for="variationBase">元になるレシピ</label>
+    <select id="variationBase">
+      <option value="">レシピを選択</option>
+    </select>
+
+    <label for="variationName">アレンジ名</label>
+    <input
+      id="variationName"
+      type="text"
+      placeholder="例：甘めの味付け"
+    >
+
+    <label for="variationIngredients">変更した材料・分量</label>
+    <textarea
+      id="variationIngredients"
+      rows="4"
+      placeholder="例：砂糖を大さじ1から大さじ2に変更"
+    ></textarea>
+
+    <label for="variationSteps">変更した作り方</label>
+    <textarea
+      id="variationSteps"
+      rows="4"
+      placeholder="変更した手順を入力"
+    ></textarea>
+
+    <label for="variationMemo">アレンジの感想</label>
+    <textarea
+      id="variationMemo"
+      rows="3"
+      placeholder="味や仕上がりの感想"
+    ></textarea>
+
+    <button id="saveVariation" class="primary-btn">
+      アレンジを保存
+    </button>
+
+    <div id="variationStatus" class="status"></div>
   </div>
+
 </section>
 
-<section id="pantryPage" class="hidden">
-  <h1 class="page-title">🧺 食材・買い物</h1>
+
+<!-- 保存・履歴 -->
+<section id="saved" class="hidden">
+
+  <h1 class="page-title">⭐ 保存・履歴</h1>
+
   <div class="card">
-    <p>冷蔵庫・買い物リスト機能をここに追加します。</p>
+    <div class="section-title">⭐ お気に入りレシピ</div>
+    <div id="favoriteRecipes"></div>
   </div>
+
+  <div class="card">
+    <div class="section-title">📚 登録済みレシピ</div>
+    <div id="savedRecipes"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">🍽 献立の保存履歴</div>
+    <div id="savedMealPlans"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">🍱 保存したお弁当</div>
+    <div id="savedBentoes"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">📝 調理履歴</div>
+    <div id="cookingHistory"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">💾 保存データの確認</div>
+    <p class="muted">
+      登録したレシピや献立は、この端末のブラウザ内に保存するよ。
+    </p>
+    <div id="storageStatus" class="status"></div>
+  </div>
+
 </section>
-
-</main>
-
-<nav class="bottom-nav">
-  <div class="nav-inner">
-
-    <button class="nav-button active" data-page="homePage">
-      <span>📅</span>カレンダー
-    </button>
-
-    <button class="nav-button" data-page="mealPage">
-      <span>🍽</span>献立
-    </button>
-
-    <button class="nav-button" data-page="recipePage">
-      <span>📖</span>レシピ
-    </button>
-
-    <button class="nav-button" data-page="bentoPage">
-      <span>🍱</span>お弁当
-    </button>
-
-    <button class="nav-button" data-page="pantryPage">
-      <span>🧺</span>食材
-    </button>
-
-  </div>
-</nav>
-
 <script>
 /* =====================================
-   うちのごはん 基本データ
+   うちのごはん 共通データ管理
 ===================================== */
 
-const STORAGE_KEYS = {
-  recipes:"uchiRecipes",
-  plans:"uchiMealPlans",
-  pantry:"uchiPantry",
-  shopping:"uchiShoppingList",
-  history:"uchiMealHistory",
-  bentos:"uchiSavedBentos",
-  favorites:"uchiFavorites"
+const KEYS = {
+  recipes: "uchiRecipes",
+  custom: "uchiCustomRecipes",
+  plans: "uchiMealPlans",
+  pantry: "uchiPantry",
+  shopping: "uchiShoppingList",
+  history: "uchiMealHistory",
+  bentos: "uchiSavedBentos",
+  favorites: "uchiFavorites",
+  variations: "uchiVariants"
 };
 
-function readData(key, fallback) {
+function readData(key, fallback = []) {
   try {
     const value = localStorage.getItem(key);
-    return value === null ? fallback : JSON.parse(value);
-  } catch(error) {
-    console.error("保存データの読み込みエラー:",key,error);
+    return value ? JSON.parse(value) : fallback;
+  } catch (e) {
     return fallback;
   }
 }
 
-function saveData(key,value) {
+function writeData(key, value) {
   try {
-    localStorage.setItem(key,JSON.stringify(value));
+    localStorage.setItem(key, JSON.stringify(value));
     return true;
-  } catch(error) {
-    console.error("保存エラー:",key,error);
-    alert("保存できませんでした。端末の空き容量やブラウザ設定を確認してください。");
+  } catch (e) {
+    alert("保存できなかったよ。写真の容量が大きすぎる可能性があります。");
     return false;
   }
 }
 
-/* 既存データを読み込む */
-let recipes = readData(STORAGE_KEYS.recipes,[]);
-let mealPlans = readData(STORAGE_KEYS.plans,{});
-let pantry = readData(STORAGE_KEYS.pantry,[]);
-let shoppingList = readData(STORAGE_KEYS.shopping,[]);
-let mealHistory = readData(STORAGE_KEYS.history,[]);
-let savedBentos = readData(STORAGE_KEYS.bentos,[]);
-let favorites = readData(STORAGE_KEYS.favorites,[]);
+function makeId() {
+  return Date.now().toString(36) +
+    Math.random().toString(36).slice(2, 8);
+}
+
+function asArray(value) {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  return String(value).split(/\n/).filter(Boolean);
+}
+
+function normalizeIngredient(item) {
+  if (Array.isArray(item)) {
+    return {
+      name: String(item[0] || ""),
+      amount: String(item[1] || "")
+    };
+  }
+
+  if (typeof item === "object" && item !== null) {
+    return {
+      name: String(item.name || item.ingredient || ""),
+      amount: String(item.amount || item.quantity || "")
+    };
+  }
+
+  return {
+    name: String(item || ""),
+    amount: ""
+  };
+}
+
+function normalizeRecipe(item) {
+  const ingredients = asArray(
+    item.ingredients || item.ing || item.materials
+  ).map(normalizeIngredient).filter(x => x.name);
+
+  const steps = asArray(
+    item.steps || item.method || item.procedure
+  ).map(x => String(x));
+
+  return {
+    ...item,
+    id: item.id || makeId(),
+    name: String(item.name || item.n || item.title || "名前なし"),
+    category: String(item.category || item.c || "その他"),
+    servings: Number(item.servings || item.people || 2),
+    time: Number(item.time || item.t || 0),
+    cost: Number(item.cost || item.price || 0),
+    ingredients,
+    steps,
+    source: String(item.source || item.url || ""),
+    memo: String(item.memo || item.tip || ""),
+    photo: item.photo || "",
+    variations: Array.isArray(item.variations) ? item.variations : []
+  };
+}
+
+/* 以前の保存データを読み込む */
+function loadRecipes() {
+  const sources = [
+    readData(KEYS.recipes),
+    readData(KEYS.custom),
+    readData("uchiSaved"),
+    readData("uchiRecipeList")
+  ];
+
+  const result = [];
+  const seen = new Set();
+
+  sources.forEach(list => {
+    if (!Array.isArray(list)) return;
+
+    list.forEach(item => {
+      if (!item) return;
+
+      const recipe = normalizeRecipe(item);
+      const identity = recipe.id || recipe.name;
+
+      if (!seen.has(identity)) {
+        seen.add(identity);
+        result.push(recipe);
+      }
+    });
+  });
+
+  return result;
+}
+
+let recipes = loadRecipes();
+let mealPlans = readData(KEYS.plans);
+let pantry = readData(KEYS.pantry);
+let shoppingList = readData(KEYS.shopping);
+let mealHistory = readData(KEYS.history);
+let savedBentoes = readData(KEYS.bentos);
+let favorites = readData(KEYS.favorites);
+let variations = readData(KEYS.variations);
+
+if (!Array.isArray(mealPlans)) mealPlans = [];
+if (!Array.isArray(pantry)) pantry = [];
+if (!Array.isArray(shoppingList)) shoppingList = [];
+if (!Array.isArray(mealHistory)) mealHistory = [];
+if (!Array.isArray(savedBentoes)) savedBentoes = [];
+if (!Array.isArray(favorites)) favorites = [];
+if (!Array.isArray(variations)) variations = [];
+
+function saveAll() {
+  writeData(KEYS.recipes, recipes);
+  writeData(KEYS.plans, mealPlans);
+  writeData(KEYS.pantry, pantry);
+  writeData(KEYS.shopping, shoppingList);
+  writeData(KEYS.history, mealHistory);
+  writeData(KEYS.bentos, savedBentoes);
+  writeData(KEYS.favorites, favorites);
+  writeData(KEYS.variations, variations);
+}
 
 /* =====================================
-   カレンダー
+   共通表示
+===================================== */
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[c]));
+}
+
+function showMessage(id, message) {
+  const el = $(id);
+  if (el) el.textContent = message;
+}
+
+function formatIngredients(items) {
+  return (items || []).map(x => {
+    const item = normalizeIngredient(x);
+    return `<li>${escapeHTML(item.name)} ${escapeHTML(item.amount)}</li>`;
+  }).join("");
+}
+
+function recipeCard(recipe) {
+  const favorite = favorites.includes(recipe.id);
+
+  return `
+    <div class="card recipe-card">
+      <h3>${escapeHTML(recipe.name)}</h3>
+      <p class="muted">
+        ${escapeHTML(recipe.category)}
+        ／ ${recipe.time || "時間未設定"}分
+        ／ ${recipe.servings}人分
+      </p>
+      <button class="sub-btn" data-open-recipe="${escapeHTML(recipe.id)}">
+        詳細を見る
+      </button>
+      <button class="sub-btn" data-favorite="${escapeHTML(recipe.id)}">
+        ${favorite ? "★ お気に入り解除" : "☆ お気に入り"}
+      </button>
+    </div>
+  `;
+}
+
+/* =====================================
+   ページ切り替え
+===================================== */
+
+function showTab(tabName) {
+  document.querySelectorAll("main > section").forEach(section => {
+    section.classList.add("hidden");
+  });
+
+  const target = $(tabName);
+  if (target) target.classList.remove("hidden");
+
+  document.querySelectorAll("[data-tab]").forEach(button => {
+    button.classList.toggle(
+      "active",
+      button.dataset.tab === tabName
+    );
+  });
+
+  if (tabName === "calendar") renderCalendar();
+  if (tabName === "search") renderRecipeSearch();
+  if (tabName === "bento") renderBentoRecipes();
+  if (tabName === "add") renderVariationOptions();
+  if (tabName === "saved") renderSaved();
+}
+
+document.querySelectorAll("[data-tab]").forEach(button => {
+  button.addEventListener("click", () => {
+    showTab(button.dataset.tab);
+  });
+});
+
+/* =====================================
+   レシピ検索・詳細
+===================================== */
+
+function renderRecipeSearch() {
+  const results = $("recipeSearchResults");
+  if (!results) return;
+
+  results.innerHTML = recipes.length
+    ? recipes.map(recipeCard).join("")
+    : "<p>まだレシピが登録されていないよ。レシピ追加から登録してね。</p>";
+}
+
+function searchRecipes() {
+  const word = ($("recipeSearchWord")?.value || "").trim().toLowerCase();
+  const category = $("recipeSearchCategory")?.value || "";
+  const maxTime = Number($("recipeSearchTime")?.value || 0);
+
+  const found = recipes.filter(recipe => {
+    const text = [
+      recipe.name,
+      recipe.category,
+      recipe.memo,
+      ...recipe.ingredients.map(x => x.name)
+    ].join(" ").toLowerCase();
+
+    return (!word || text.includes(word)) &&
+      (!category || recipe.category === category) &&
+      (!maxTime || !recipe.time || recipe.time <= maxTime);
+  });
+
+  $("recipeSearchResults").innerHTML = found.length
+    ? found.map(recipeCard).join("")
+    : "<p>条件に合うレシピが見つからなかったよ。</p>";
+
+  showMessage("recipeSearchStatus", `${found.length}件見つかったよ`);
+}
+
+$("searchRecipes")?.addEventListener("click", searchRecipes);
+$("recipeSearchWord")?.addEventListener("input", searchRecipes);
+$("recipeSearchCategory")?.addEventListener("change", searchRecipes);
+$("recipeSearchTime")?.addEventListener("change", searchRecipes);
+
+function showRecipeDetail(id) {
+  const recipe = recipes.find(x => x.id === id);
+  if (!recipe) return;
+
+  const detail = $("recipeDetail");
+  if (!detail) return;
+
+  detail.innerHTML = `
+    <h3>${escapeHTML(recipe.name)}</h3>
+    <p>${escapeHTML(recipe.category)} ／ ${recipe.time}分</p>
+    <p>目安：${recipe.servings}人分</p>
+    <h4>材料</h4>
+    <ul>${formatIngredients(recipe.ingredients)}</ul>
+    <h4>作り方</h4>
+    <ol>${recipe.steps.map(x => `<li>${escapeHTML(x)}</li>`).join("")}</ol>
+    <h4>メモ</h4>
+    <p>${escapeHTML(recipe.memo)}</p>
+    ${recipe.source ? `<p><a href="${escapeHTML(recipe.source)}" target="_blank" rel="noopener">元のレシピを見る</a></p>` : ""}
+    ${recipe.photo ? `<img src="${recipe.photo}" alt="料理写真" style="max-width:100%;border-radius:12px;">` : ""}
+    <button class="sub-btn" data-cooked="${escapeHTML(recipe.id)}">作った！</button>
+    <button class="sub-btn" data-delete-recipe="${escapeHTML(recipe.id)}">このレシピを削除</button>
+  `;
+}
+
+document.addEventListener("click", event => {
+  const open = event.target.closest("[data-open-recipe]");
+  if (open) showRecipeDetail(open.dataset.openRecipe);
+
+  const fav = event.target.closest("[data-favorite]");
+  if (fav) {
+    const id = fav.dataset.favorite;
+    favorites = favorites.includes(id)
+      ? favorites.filter(x => x !== id)
+      : [...favorites, id];
+
+    saveAll();
+    renderRecipeSearch();
+    renderSaved();
+  }
+
+  const cooked = event.target.closest("[data-cooked]");
+  if (cooked) {
+    const recipe = recipes.find(x => x.id === cooked.dataset.cooked);
+    if (recipe) {
+      mealHistory.unshift({
+        id: makeId(),
+        name: recipe.name,
+        date: new Date().toLocaleDateString("ja-JP")
+      });
+      saveAll();
+      alert("調理履歴に保存したよ！");
+    }
+  }
+
+  const del = event.target.closest("[data-delete-recipe]");
+  if (del) {
+    if (!confirm("このレシピを削除する？")) return;
+
+    recipes = recipes.filter(x => x.id !== del.dataset.deleteRecipe);
+    favorites = favorites.filter(x => x !== del.dataset.deleteRecipe);
+    saveAll();
+    renderRecipeSearch();
+    renderSaved();
+    $("recipeDetail").innerHTML = "<p>レシピを削除したよ。</p>";
+  }
+});
+
+/* =====================================
+   Web検索
+===================================== */
+
+function openWebSearch(site = "") {
+  const word = ($("webRecipeWord")?.value || "").trim();
+  if (!word) {
+    alert("料理名や材料を入力してね");
+    return;
+  }
+
+  const query = site
+    ? `site:${site} ${word} レシピ`
+    : `${word} レシピ`;
+
+  window.open(
+    "https://www.google.com/search?q=" + encodeURIComponent(query),
+    "_blank"
+  );
+}
+
+$("webRecipeSearch")?.addEventListener("click", () => openWebSearch());
+$("webRecipeCookpad")?.addEventListener("click", () => openWebSearch("cookpad.com"));
+$("webRecipeDelish")?.addEventListener("click", () => openWebSearch("delishkitchen.tv"));
+
+$("registerWebRecipe")?.addEventListener("click", () => {
+  const name = $("webRecipeTitle").value.trim();
+  if (!name) {
+    alert("料理名を入力してね");
+    return;
+  }
+
+  recipes.push(normalizeRecipe({
+    id: makeId(),
+    name,
+    category: "その他",
+    servings: 2,
+    ingredients: [],
+    steps: [],
+    source: $("webRecipeUrl").value.trim(),
+    memo: $("webRecipeMemo").value.trim()
+  }));
+
+  saveAll();
+  $("webRecipeTitle").value = "";
+  $("webRecipeUrl").value = "";
+  $("webRecipeMemo").value = "";
+
+  alert("レシピを登録したよ！");
+  renderRecipeSearch();
+});
+
+/* =====================================
+   レシピ追加
+===================================== */
+
+function addIngredientInput(name = "", amount = "") {
+  const area = $("newRecipeIngredients");
+  if (!area) return;
+
+  const row = document.createElement("div");
+  row.className = "form-row ingredient-row";
+  row.innerHTML = `
+    <div>
+      <label>材料名</label>
+      <input class="ingredient-name" type="text" value="${escapeHTML(name)}" placeholder="例：鶏むね肉">
+    </div>
+    <div>
+      <label>分量</label>
+      <input class="ingredient-amount" type="text" value="${escapeHTML(amount)}" placeholder="例：1枚">
+    </div>
+    <button type="button" class="sub-btn remove-ingredient">削除</button>
+  `;
+
+  area.appendChild(row);
+
+  row.querySelector(".remove-ingredient").addEventListener("click", () => {
+    row.remove();
+  });
+}
+
+$("addIngredientRow")?.addEventListener("click", () => addIngredientInput());
+
+if ($("newRecipeIngredients") && !$("newRecipeIngredients").children.length) {
+  addIngredientInput();
+}
+
+let newPhotoData = "";
+
+$("newRecipePhoto")?.addEventListener("change", event => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  if (file.size > 1200000) {
+    alert("写真が大きいよ。1.2MB以下の写真を選んでね。");
+    event.target.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    newPhotoData = reader.result;
+    $("newRecipePhotoPreview").innerHTML =
+      `<img src="${newPhotoData}" alt="写真プレビュー" style="max-width:180px;border-radius:10px;">`;
+  };
+  reader.readAsDataURL(file);
+});
+
+$("registerRecipe")?.addEventListener("click", () => {
+  const name = $("newRecipeName").value.trim();
+
+  if (!name) {
+    showMessage("registerRecipeStatus", "料理名を入力してね");
+    return;
+  }
+
+  const ingredients = [...document.querySelectorAll(".ingredient-row")]
+    .map(row => ({
+      name: row.querySelector(".ingredient-name").value.trim(),
+      amount: row.querySelector(".ingredient-amount").value.trim()
+    }))
+    .filter(x => x.name);
+
+  const recipe = normalizeRecipe({
+    id: makeId(),
+    name,
+    category: $("newRecipeCategory").value,
+    servings: Number($("newRecipeServings").value) || 2,
+    time: Number($("newRecipeTime").value) || 0,
+    cost: Number($("newRecipeCost").value) || 0,
+    ingredients,
+    steps: $("newRecipeSteps").value.split("\n").filter(Boolean),
+    source: $("newRecipeSource").value.trim(),
+    memo: $("newRecipeMemo").value.trim(),
+    photo: newPhotoData
+  });
+
+  recipes.push(recipe);
+  saveAll();
+
+  $("newRecipeName").value = "";
+  $("newRecipeCost").value = "";
+  $("newRecipeSteps").value = "";
+  $("newRecipeSource").value = "";
+  $("newRecipeMemo").value = "";
+  $("newRecipePhoto").value = "";
+  $("newRecipePhotoPreview").innerHTML = "";
+  newPhotoData = "";
+  $("newRecipeIngredients").innerHTML = "";
+  addIngredientInput();
+
+  showMessage("registerRecipeStatus", "レシピを登録したよ！");
+  renderSaved();
+});
+
+/* =====================================
+   アレンジ保存
+===================================== */
+
+function renderVariationOptions() {
+  const select = $("variationBase");
+  if (!select) return;
+
+  select.innerHTML = '<option value="">レシピを選択</option>' +
+    recipes.map(r =>
+      `<option value="${escapeHTML(r.id)}">${escapeHTML(r.name)}</option>`
+    ).join("");
+}
+
+$("saveVariation")?.addEventListener("click", () => {
+  const baseId = $("variationBase").value;
+  const name = $("variationName").value.trim();
+
+  if (!baseId || !name) {
+    showMessage("variationStatus", "元のレシピとアレンジ名を入力してね");
+    return;
+  }
+
+  variations.push({
+    id: makeId(),
+    baseId,
+    name,
+    ingredients: $("variationIngredients").value,
+    steps: $("variationSteps").value,
+    memo: $("variationMemo").value,
+    date: new Date().toLocaleDateString("ja-JP")
+  });
+
+  saveAll();
+
+  $("variationName").value = "";
+  $("variationIngredients").value = "";
+  $("variationSteps").value = "";
+  $("variationMemo").value = "";
+
+  showMessage("variationStatus", "アレンジを保存したよ！");
+});
+
+/* =====================================
+   食材在庫
+===================================== */
+
+function renderPantry() {
+  const list = $("pantryList");
+  if (!list) return;
+
+  list.innerHTML = pantry.length
+    ? pantry.map((item, index) => `
+      <div class="list-row">
+        <span>${escapeHTML(item.name)}：${escapeHTML(item.amount)}
+        ${item.expiry ? `／期限 ${escapeHTML(item.expiry)}` : ""}</span>
+        <button class="sub-btn" data-remove-pantry="${index}">削除</button>
+      </div>
+    `).join("")
+    : "<p>食材はまだ登録されていないよ。</p>";
+
+  const warnings = pantry.filter(item => {
+    if (!item.expiry) return false;
+    const days = (new Date(item.expiry) - new Date()) / 86400000;
+    return days <= 3;
+  });
+
+  $("pantryWarnings").innerHTML = warnings.length
+    ? "<strong>期限が近い食材</strong><br>" +
+      warnings.map(x => escapeHTML(x.name)).join("、")
+    : "";
+}
+
+$("addPantry")?.addEventListener("click", () => {
+  const name = $("pantryName").value.trim();
+  if (!name) return alert("食材名を入力してね");
+
+  pantry.push({
+    id: makeId(),
+    name,
+    amount: $("pantryAmount").value.trim(),
+    expiry: $("pantryExpiry").value
+  });
+
+  $("pantryName").value = "";
+  $("pantryAmount").value = "";
+  $("pantryExpiry").value = "";
+
+  saveAll();
+  renderPantry();
+});
+
+document.addEventListener("click", event => {
+  const remove = event.target.closest("[data-remove-pantry]");
+  if (!remove) return;
+
+  pantry.splice(Number(remove.dataset.removePantry), 1);
+  saveAll();
+  renderPantry();
+});
+
+/* =====================================
+   買い物リスト
+===================================== */
+
+function renderShopping() {
+  const area = $("shoppingList");
+  if (!area) return;
+
+  area.innerHTML = shoppingList.length
+    ? shoppingList.map((item, index) => `
+      <div class="list-row">
+        <label>
+          <input type="checkbox" data-shopping-done="${index}" ${item.done ? "checked" : ""}>
+          ${escapeHTML(item.name)} ${escapeHTML(item.amount)}
+        </label>
+      </div>
+    `).join("")
+    : "<p>買い物リストは空だよ。</p>";
+}
+
+document.addEventListener("change", event => {
+  const check = event.target.closest("[data-shopping-done]");
+  if (!check) return;
+
+  const item = shoppingList[Number(check.dataset.shoppingDone)];
+  if (item) item.done = check.checked;
+  saveAll();
+});
+
+$("addShoppingToPantry")?.addEventListener("click", () => {
+  const purchased = shoppingList.filter(x => x.done);
+
+  purchased.forEach(item => {
+    pantry.push({
+      id: makeId(),
+      name: item.name,
+      amount: item.amount,
+      expiry: ""
+    });
+  });
+
+  shoppingList = shoppingList.filter(x => !x.done);
+  saveAll();
+  renderShopping();
+  renderPantry();
+});
+
+/* =====================================
+   献立作成
+===================================== */
+
+let currentPlan = [];
+
+function chooseRecipe(used, maxTime, budget) {
+  const candidates = recipes.filter(recipe =>
+    !used.includes(recipe.id) &&
+    (!maxTime || !recipe.time || recipe.time <= maxTime) &&
+    (!budget || !recipe.cost || recipe.cost <= budget)
+  );
+
+  if (!candidates.length) return null;
+
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+function makeMealPlan() {
+  if (!recipes.length) {
+    showMessage("planStatus", "先にレシピを登録してね。レシピ追加画面から登録できるよ。");
+    return;
+  }
+
+  const days = Number($("planDays").value) || 1;
+  const people = Number($("planPeople").value) || 1;
+  const maxTime = Number($("planTime").value) || 0;
+
+  const used = [];
+  currentPlan = [];
+
+  for (let i = 0; i < days; i++) {
+    const day = {
+      date: new Date(Date.now() + i * 86400000).toLocaleDateString("ja-JP"),
+      breakfast: null,
+      lunch: null,
+      dinner: null,
+      people
+    };
+
+    [
+      ["breakfast", "breakfastBudget"],
+      ["lunch", "lunchBudget"],
+      ["dinner", "dinnerBudget"]
+    ].forEach(([meal, budgetId]) => {
+      const budget = Number($(budgetId).value) || 0;
+      const recipe = chooseRecipe(used, maxTime, budget);
+
+      if (recipe) {
+        day[meal] = recipe;
+        used.push(recipe.id);
+      }
+    });
+
+    currentPlan.push(day);
+  }
+
+  renderPlanResult();
+  showMessage("planStatus", "献立を作成したよ！");
+}
+
+function renderPlanResult() {
+  const area = $("planResult");
+  if (!area) return;
+
+  area.innerHTML = currentPlan.map(day => `
+    <div class="card">
+      <h3>${escapeHTML(day.date)}</h3>
+      <p>朝食：${escapeHTML(day.breakfast?.name || "候補なし")}</p>
+      <p>昼食：${escapeHTML(day.lunch?.name || "候補なし")}</p>
+      <p>夕食：${escapeHTML(day.dinner?.name || "候補なし")}</p>
+    </div>
+  `).join("");
+}
+
+$("makePlan")?.addEventListener("click", makeMealPlan);
+
+$("savePlan")?.addEventListener("click", () => {
+  if (!currentPlan.length) {
+    alert("先に献立を作成してね");
+    return;
+  }
+
+  mealPlans.unshift({
+    id: makeId(),
+    date: new Date().toLocaleDateString("ja-JP"),
+    days: currentPlan
+  });
+
+  saveAll();
+  renderSaved();
+  renderCalendar();
+  alert("献立を保存したよ！");
+});
+
+/* =====================================
+   お弁当
+===================================== */
+
+let currentBento = null;
+
+function makeBento() {
+  if (!recipes.length) {
+    showMessage("bentoStatus", "先にレシピを登録してね。");
+    return;
+  }
+
+  const people = Number($("bentoPeople").value) || 1;
+  const budget = Number($("bentoBudget").value) || 0;
+  const time = Number($("bentoTime").value) || 0;
+
+  const candidates = recipes.filter(r =>
+    (!budget || !r.cost || r.cost <= budget * people) &&
+    (!time || !r.time || r.time <= time)
+  );
+
+  if (!candidates.length) {
+    showMessage("bentoStatus", "条件に合うレシピがないよ。予算や時間を変えてみてね。");
+    return;
+  }
+
+  const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+  currentBento = {
+    id: makeId(),
+    date: new Date().toLocaleDateString("ja-JP"),
+    people,
+    recipes: shuffled.slice(0, Math.min(4, shuffled.length)),
+    request: $("bentoRequests").value
+  };
+
+  $("bentoResult").innerHTML = `
+    <h3>${people}人分のお弁当メニュー</h3>
+    ${currentBento.recipes.map(r => `<p>・${escapeHTML(r.name)}</p>`).join("")}
+  `;
+
+  showMessage("bentoStatus", "お弁当メニューを作成したよ！");
+}
+
+$("makeBento")?.addEventListener("click", makeBento);
+
+$("saveBento")?.addEventListener("click", () => {
+  if (!currentBento) {
+    alert("先にお弁当を作ってね");
+    return;
+  }
+
+  savedBentoes.unshift(currentBento);
+  saveAll();
+  renderSaved();
+  alert("お弁当を保存したよ！");
+});
+
+function renderBentoRecipes() {
+  const area = $("bentoRecipeList");
+  if (!area) return;
+
+  area.innerHTML = recipes.length
+    ? recipes.map(recipeCard).join("")
+    : "<p>レシピを登録すると、ここに表示されるよ。</p>";
+}
+
+/* =====================================
+   保存・履歴表示
+===================================== */
+
+function renderSaved() {
+  $("savedRecipes").innerHTML = recipes.length
+    ? recipes.map(recipeCard).join("")
+    : "<p>登録済みレシピはまだないよ。</p>";
+
+  $("favoriteRecipes").innerHTML = recipes
+    .filter(r => favorites.includes(r.id))
+    .map(recipeCard).join("") || "<p>お気に入りはまだないよ。</p>";
+
+  $("savedMealPlans").innerHTML = mealPlans.map(plan => `
+    <div class="card">
+      <strong>${escapeHTML(plan.date || "")}</strong>
+      ${(plan.days || []).map(day => `
+        <p>${escapeHTML(day.date || "")}：
+          朝 ${escapeHTML(day.breakfast?.name || "なし")} ／
+          昼 ${escapeHTML(day.lunch?.name || "なし")} ／
+          夜 ${escapeHTML(day.dinner?.name || "なし")}
+        </p>
+      `).join("")}
+    </div>
+  `).join("") || "<p>保存した献立はまだないよ。</p>";
+
+  $("savedBentoes").innerHTML = savedBentoes.map(b => `
+    <div class="card">
+      <strong>${escapeHTML(b.date || "")}のお弁当</strong>
+      ${(b.recipes || []).map(r => `<p>・${escapeHTML(r.name)}</p>`).join("")}
+    </div>
+  `).join("") || "<p>保存したお弁当はまだないよ。</p>";
+
+  $("cookingHistory").innerHTML = mealHistory.map(h => `
+    <p>${escapeHTML(h.date)}：${escapeHTML(h.name)}</p>
+  `).join("") || "<p>調理履歴はまだないよ。</p>";
+
+  showMessage(
+    "storageStatus",
+    `レシピ ${recipes.length}件 ／ 献立 ${mealPlans.length}件 ／ 在庫 ${pantry.length}件`
+  );
+}
+
+/* =====================================
+   月間カレンダー
 ===================================== */
 
 let calendarDate = new Date();
-let selectedDate = new Date();
-
-function dateKey(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth()+1).padStart(2,"0");
-  const d = String(date.getDate()).padStart(2,"0");
-  return `${y}-${m}-${d}`;
-}
-
-function getPlan(date) {
-  const key = dateKey(date);
-  return mealPlans[key] || {};
-}
 
 function renderCalendar() {
+  const grid = $("monthGrid");
+  if (!grid) return;
 
   const year = calendarDate.getFullYear();
   const month = calendarDate.getMonth();
 
-  document.getElementById("calendarMonth").textContent =
-    `${year}年 ${month+1}月`;
+  $("monthTitle").textContent = `${year}年 ${month + 1}月`;
 
-  const grid = document.getElementById("calendarGrid");
-  grid.innerHTML = "";
+  const firstDay = new Date(year, month, 1).getDay();
+  const lastDate = new Date(year, month + 1, 0).getDate();
 
-  const firstDay = new Date(year,month,1).getDay();
-  const lastDate = new Date(year,month+1,0).getDate();
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
 
-  const todayKey = dateKey(new Date());
-  const selectedKey = dateKey(selectedDate);
+  let html = weekdays.map(day =>
+    `<div class="calendar-day weekday">${day}</div>`
+  ).join("");
 
-  for(let i=0;i<firstDay;i++) {
-    const empty = document.createElement("div");
-    empty.className = "calendar-day empty";
-    grid.appendChild(empty);
+  for (let i = 0; i < firstDay; i++) {
+    html += `<div class="calendar-day empty"></div>`;
   }
 
-  for(let day=1;day<=lastDate;day++) {
+  for (let date = 1; date <= lastDate; date++) {
+    const key = new Date(year, month, date).toLocaleDateString("ja-JP");
 
-    const date = new Date(year,month,day);
-    const key = dateKey(date);
-    const plan = getPlan(date);
+    const entries = mealPlans.flatMap(p => p.days || [])
+      .filter(d => d.date === key);
 
-    const cell = document.createElement("button");
-    cell.type = "button";
-    cell.className = "calendar-day";
-
-    if(key === todayKey) cell.classList.add("today");
-    if(key === selectedKey) cell.classList.add("selected");
-
-    const number = document.createElement("div");
-    number.className = "day-number";
-    number.textContent = day;
-    cell.appendChild(number);
-
-    const meals = [
-      ["朝","breakfast",plan.breakfast],
-      ["昼","lunch",plan.lunch],
-      ["夕","dinner",plan.dinner]
-    ];
-
-    meals.forEach(([label,className,meal]) => {
-      if(!meal) return;
-
-      const menu = document.createElement("span");
-      menu.className = `day-menu ${className}`;
-      menu.textContent = `${label} ${getMealName(meal)}`;
-      menu.title = `${label} ${getMealName(meal)}`;
-      cell.appendChild(menu);
-    });
-
-    cell.addEventListener("click",()=>{
-      selectedDate = date;
-      renderCalendar();
-      renderSelectedMeals();
-    });
-
-    grid.appendChild(cell);
+    html += `
+      <button class="calendar-day" data-calendar-date="${escapeHTML(key)}">
+        <strong>${date}</strong>
+        ${entries.map(d => `
+          <small class="calendar-meal">
+            ${escapeHTML(d.breakfast?.name || "")}
+            ${escapeHTML(d.lunch?.name || "")}
+            ${escapeHTML(d.dinner?.name || "")}
+          </small>
+        `).join("")}
+      </button>
+    `;
   }
 
+  grid.innerHTML = html;
 }
 
-function getMealName(meal) {
-  if(typeof meal === "string") return meal;
-  if(meal && typeof meal === "object") {
-    return meal.name || meal.title || "献立あり";
-  }
-  return "";
-}
-
-function renderSelectedMeals() {
-
-  const plan = getPlan(selectedDate);
-
-  document.getElementById("selectedDateTitle").textContent =
-    `${selectedDate.getFullYear()}年${selectedDate.getMonth()+1}月${selectedDate.getDate()}日の献立`;
-
-  const container = document.getElementById("selectedMeals");
-  container.innerHTML = "";
-
-  const meals = [
-    ["朝 🍳","breakfast"],
-    ["昼 🍱","lunch"],
-    ["夕 🍽","dinner"]
-  ];
-
-  meals.forEach(([label,key])=>{
-
-    const row = document.createElement("div");
-    row.className = "meal-row";
-
-    const labelDiv = document.createElement("div");
-    labelDiv.className = "meal-label";
-    labelDiv.textContent = label;
-
-    const content = document.createElement("div");
-    content.className = "meal-content";
-
-    const name = getMealName(plan[key]);
-
-    if(name) {
-      content.textContent = name;
-    } else {
-      content.textContent = "献立はまだありません";
-      content.classList.add("meal-empty");
-    }
-
-    row.appendChild(labelDiv);
-    row.appendChild(content);
-    container.appendChild(row);
-
-  });
-
-}
-
-/* =====================================
-   月移動
-===================================== */
-
-document.getElementById("prevMonth").addEventListener("click",()=>{
-  calendarDate.setMonth(calendarDate.getMonth()-1);
+$("monthPrev")?.addEventListener("click", () => {
+  calendarDate.setMonth(calendarDate.getMonth() - 1);
   renderCalendar();
 });
 
-document.getElementById("nextMonth").addEventListener("click",()=>{
-  calendarDate.setMonth(calendarDate.getMonth()+1);
+$("monthNext")?.addEventListener("click", () => {
+  calendarDate.setMonth(calendarDate.getMonth() + 1);
   renderCalendar();
 });
 
-/* =====================================
-   下部メニュー切り替え
-===================================== */
+document.addEventListener("click", event => {
+  const day = event.target.closest("[data-calendar-date]");
+  if (!day) return;
 
-function showPage(pageId) {
+  const date = day.dataset.calendarDate;
+  const entries = mealPlans.flatMap(p => p.days || [])
+    .filter(d => d.date === date);
 
-  document.querySelectorAll("main > section").forEach(section=>{
-    section.classList.add("hidden");
-  });
-
-  const target = document.getElementById(pageId);
-  if(target) target.classList.remove("hidden");
-
-  document.querySelectorAll(".nav-button").forEach(button=>{
-    button.classList.toggle(
-      "active",
-      button.dataset.page === pageId
-    );
-  });
-
-}
-
-document.querySelectorAll(".nav-button").forEach(button=>{
-  button.addEventListener("click",()=>{
-    showPage(button.dataset.page);
-  });
-});
-
-/* =====================================
-   献立編集画面への移動
-===================================== */
-
-document.getElementById("editSelectedMeal").addEventListener("click",()=>{
-  showPage("mealPage");
+  $("dayDetail").innerHTML = `
+    <h3>${escapeHTML(date)}</h3>
+    ${entries.length ? entries.map(d => `
+      <p>朝食：${escapeHTML(d.breakfast?.name || "なし")}</p>
+      <p>昼食：${escapeHTML(d.lunch?.name || "なし")}</p>
+      <p>夕食：${escapeHTML(d.dinner?.name || "なし")}</p>
+    `).join("") : "<p>この日の献立はまだないよ。</p>"}
+  `;
 });
 
 /* =====================================
    初期表示
 ===================================== */
 
-renderCalendar();
-renderSelectedMeals();
+function initializeApp() {
+  saveAll();
+  renderRecipeSearch();
+  renderPantry();
+  renderShopping();
+  renderVariationOptions();
+  renderBentoRecipes();
+  renderSaved();
+  renderCalendar();
 
-  /* =====================================
-   レシピ管理
-===================================== */
-
-let editingRecipeId = null;
-let recipeFilter = "all";
-
-function createRecipeId() {
-  return "recipe_" + Date.now() + "_" +
-    Math.random().toString(36).slice(2,8);
+  showTab("calendar");
 }
 
-function saveRecipes() {
-  saveData(STORAGE_KEYS.recipes,recipes);
-}
+initializeApp();
 
-function normalizeRecipe(recipe) {
-  return {
-    id: recipe.id || createRecipeId(),
-    name: recipe.name || recipe.title || "",
-    category: recipe.category || "その他",
-    servings: Number(recipe.servings || recipe.people || 2),
-    ingredients: recipe.ingredients || "",
-    steps: recipe.steps || recipe.method || "",
-    time: Number(recipe.time || 0),
-    budget: Number(recipe.budget || 0),
-    source: recipe.source || recipe.url || "",
-    memo: recipe.memo || recipe.tip || "",
-    photo: recipe.photo || recipe.image || "",
-    favorite: Boolean(recipe.favorite)
-  };
-}
-
-recipes = Array.isArray(recipes)
-  ? recipes.map(normalizeRecipe)
-  : [];
-
-saveRecipes();
-
-/* レシピ一覧 */
-
-function renderRecipeList() {
-
-  const list = document.getElementById("recipeList");
-  if(!list) return;
-
-  const keyword =
-    (document.getElementById("recipeSearch").value || "")
-      .trim().toLowerCase();
-
-  let filtered = recipes.filter(recipe => {
-
-    if(recipeFilter === "favorite" &&
-       !recipe.favorite &&
-       !favorites.includes(recipe.id)) {
-      return false;
-    }
-
-    const text = [
-      recipe.name,
-      recipe.category,
-      recipe.ingredients,
-      recipe.memo
-    ].join(" ").toLowerCase();
-
-    return text.includes(keyword);
-  });
-
-  list.innerHTML = "";
-
-  if(filtered.length === 0) {
-    list.innerHTML =
-      '<div class="card">レシピがありません。<br>「＋ レシピ登録」から追加できます。</div>';
-    return;
-  }
-
-  filtered.forEach(recipe => {
-
-    const card = document.createElement("div");
-    card.className = "card";
-
-    const title = document.createElement("div");
-    title.style.fontWeight = "700";
-    title.style.fontSize = "16px";
-    title.textContent = recipe.name;
-
-    const category = document.createElement("div");
-    category.style.fontSize = "12px";
-    category.style.color = "#888";
-    category.style.margin = "5px 0";
-    category.textContent =
-      `${recipe.category} ・ ${recipe.servings}人分` +
-      (recipe.time ? ` ・ ${recipe.time}分` : "");
-
-    const favorite = document.createElement("button");
-    favorite.className = "outline";
-    favorite.textContent =
-      recipe.favorite || favorites.includes(recipe.id)
-        ? "★ お気に入り"
-        : "☆ お気に入り";
-
-    favorite.addEventListener("click",event => {
-      event.stopPropagation();
-      toggleRecipeFavorite(recipe.id);
-    });
-
-    const detailButton = document.createElement("button");
-    detailButton.className = "secondary";
-    detailButton.textContent = "レシピを見る";
-    detailButton.addEventListener("click",()=>{
-      showRecipeDetail(recipe.id);
-    });
-
-    card.appendChild(title);
-    card.appendChild(category);
-
-    if(recipe.photo) {
-      const img = document.createElement("img");
-      img.src = recipe.photo;
-      img.alt = recipe.name;
-      img.style.width = "100%";
-      img.style.maxHeight = "180px";
-      img.style.objectFit = "cover";
-      img.style.borderRadius = "10px";
-      img.style.marginBottom = "10px";
-      img.onerror = () => img.remove();
-      card.appendChild(img);
-    }
-
-    card.appendChild(favorite);
-    card.appendChild(detailButton);
-    list.appendChild(card);
-
-  });
-
-}
-
-/* お気に入り */
-
-function toggleRecipeFavorite(id) {
-
-  const recipe = recipes.find(item => item.id === id);
-  if(!recipe) return;
-
-  recipe.favorite = !recipe.favorite;
-
-  if(recipe.favorite) {
-    if(!favorites.includes(id)) favorites.push(id);
-  } else {
-    favorites = favorites.filter(item => item !== id);
-  }
-
-  saveRecipes();
-  saveData(STORAGE_KEYS.favorites,favorites);
-  renderRecipeList();
-}
-
-/* 登録画面 */
-
-function openRecipeForm(id = null) {
-
-  editingRecipeId = id;
-
-  const form = document.getElementById("recipeFormArea");
-  const list = document.getElementById("recipeListArea");
-  const detail = document.getElementById("recipeDetailArea");
-
-  list.classList.add("hidden");
-  detail.classList.add("hidden");
-  form.classList.remove("hidden");
-
-  const recipe = id
-    ? recipes.find(item => item.id === id)
-    : null;
-
-  document.getElementById("recipeFormTitle").textContent =
-    recipe ? "レシピを編集" : "新しいレシピ";
-
-  document.getElementById("recipeName").value =
-    recipe?.name || "";
-
-  document.getElementById("recipeCategory").value =
-    recipe?.category || "主菜";
-
-  document.getElementById("recipeServings").value =
-    recipe?.servings || 2;
-
-  document.getElementById("recipeIngredients").value =
-    recipe?.ingredients || "";
-
-  document.getElementById("recipeSteps").value =
-    recipe?.steps || "";
-
-  document.getElementById("recipeTime").value =
-    recipe?.time || "";
-
-  document.getElementById("recipeBudget").value =
-    recipe?.budget || "";
-
-  document.getElementById("recipeSource").value =
-    recipe?.source || "";
-
-  document.getElementById("recipeMemo").value =
-    recipe?.memo || "";
-
-  document.getElementById("recipePhoto").value =
-    recipe?.photo || "";
-
-}
-
-/* レシピ保存 */
-
-function saveRecipeForm() {
-
-  const name =
-    document.getElementById("recipeName").value.trim();
-
-  if(!name) {
-    alert("料理名を入力してください。");
-    return;
-  }
-
-  const recipe = {
-    id: editingRecipeId || createRecipeId(),
-    name,
-    category:document.getElementById("recipeCategory").value,
-    servings:Math.max(1,Number(
-      document.getElementById("recipeServings").value || 1
-    )),
-    ingredients:document.getElementById("recipeIngredients").value.trim(),
-    steps:document.getElementById("recipeSteps").value.trim(),
-    time:Number(document.getElementById("recipeTime").value || 0),
-    budget:Number(document.getElementById("recipeBudget").value || 0),
-    source:document.getElementById("recipeSource").value.trim(),
-    memo:document.getElementById("recipeMemo").value.trim(),
-    photo:document.getElementById("recipePhoto").value.trim(),
-    favorite:false
-  };
-
-  if(editingRecipeId) {
-
-    const index = recipes.findIndex(
-      item => item.id === editingRecipeId
-    );
-
-    if(index >= 0) {
-      recipe.favorite = recipes[index].favorite;
-      recipes[index] = recipe;
-    }
-
-  } else {
-    recipes.unshift(recipe);
-  }
-
-  saveRecipes();
-
-  document.getElementById("recipeFormArea").classList.add("hidden");
-  document.getElementById("recipeListArea").classList.remove("hidden");
-
-  renderRecipeList();
-  alert("レシピを保存しました。");
-
-}
-
-/* レシピ詳細 */
-
-function showRecipeDetail(id) {
-
-  const recipe = recipes.find(item => item.id === id);
-  if(!recipe) return;
-
-  document.getElementById("recipeListArea").classList.add("hidden");
-  document.getElementById("recipeFormArea").classList.add("hidden");
-  document.getElementById("recipeDetailArea").classList.remove("hidden");
-
-  const detail = document.getElementById("recipeDetail");
-  detail.innerHTML = "";
-
-  const heading = document.createElement("h2");
-  heading.textContent = recipe.name;
-  detail.appendChild(heading);
-
-  if(recipe.photo) {
-    const img = document.createElement("img");
-    img.src = recipe.photo;
-    img.alt = recipe.name;
-    img.style.width = "100%";
-    img.style.borderRadius = "12px";
-    img.onerror = () => img.remove();
-    detail.appendChild(img);
-  }
-
-  function addDetail(title,text) {
-    const h = document.createElement("h3");
-    h.textContent = title;
-    const p = document.createElement("p");
-    p.style.whiteSpace = "pre-wrap";
-    p.textContent = text || "未登録";
-    detail.appendChild(h);
-    detail.appendChild(p);
-  }
-
-  addDetail("カテゴリー",recipe.category);
-  addDetail("材料・分量",recipe.ingredients);
-  addDetail("作り方",recipe.steps);
-  addDetail("調理時間",recipe.time ? recipe.time+"分" : "");
-  addDetail("予算",recipe.budget ? recipe.budget+"円" : "");
-  addDetail("メモ",recipe.memo);
-
-  if(recipe.source) {
-    const link = document.createElement("a");
-    link.href = recipe.source;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.textContent = "元のレシピサイトを開く";
-    detail.appendChild(link);
-  }
-
-  const edit = document.createElement("button");
-  edit.className = "secondary";
-  edit.textContent = "編集する";
-  edit.style.marginTop = "15px";
-  edit.addEventListener("click",()=>{
-    openRecipeForm(id);
-  });
-
-  const remove = document.createElement("button");
-  remove.className = "outline";
-  remove.textContent = "削除する";
-  remove.style.margin = "10px";
-  remove.addEventListener("click",()=>{
-    if(!confirm("このレシピを削除しますか？")) return;
-
-    recipes = recipes.filter(item => item.id !== id);
-    favorites = favorites.filter(item => item !== id);
-
-    saveRecipes();
-    saveData(STORAGE_KEYS.favorites,favorites);
-
-    document.getElementById("recipeDetailArea").classList.add("hidden");
-    document.getElementById("recipeListArea").classList.remove("hidden");
-
-    renderRecipeList();
-  });
-
-  detail.appendChild(edit);
-  detail.appendChild(remove);
-
-}
-
-/* ボタンの動作 */
-
-document.getElementById("recipeSearch")
-  .addEventListener("input",renderRecipeList);
-
-document.getElementById("showAllRecipes")
-  .addEventListener("click",()=>{
-    recipeFilter = "all";
-    renderRecipeList();
-  });
-
-document.getElementById("showFavoriteRecipes")
-  .addEventListener("click",()=>{
-    recipeFilter = "favorite";
-    renderRecipeList();
-  });
-
-document.getElementById("showAddRecipe")
-  .addEventListener("click",()=>{
-    openRecipeForm();
-  });
-
-document.getElementById("saveRecipe")
-  .addEventListener("click",saveRecipeForm);
-
-document.getElementById("cancelRecipe")
-  .addEventListener("click",()=>{
-    document.getElementById("recipeFormArea").classList.add("hidden");
-    document.getElementById("recipeListArea").classList.remove("hidden");
-  });
-
-document.getElementById("closeRecipeDetail")
-  .addEventListener("click",()=>{
-    document.getElementById("recipeDetailArea").classList.add("hidden");
-    document.getElementById("recipeListArea").classList.remove("hidden");
-  });
-
-/* レシピ画面を開いたときに一覧を更新 */
-
-document.querySelector('[data-page="recipePage"]')
-  .addEventListener("click",renderRecipeList);
-
-renderRecipeList();
-   
- /* =====================================
-   献立作成機能
-===================================== */
-
-let currentGeneratedPlan = {};
-
-function getRecipeText(recipe) {
-  return [
-    recipe.name || "",
-    recipe.category || "",
-    recipe.ingredients || "",
-    recipe.memo || ""
-  ].join(" ");
-}
-
-function matchesPlanConditions(recipe, ingredients, avoid, maxTime) {
-
-  if(!recipe.name) return false;
-
-  if(avoid.length > 0) {
-    const text = getRecipeText(recipe).toLowerCase();
-
-    if(avoid.some(word => text.includes(word.toLowerCase()))) {
-      return false;
-    }
-  }
-
-  if(maxTime < 999 && recipe.time > maxTime) {
-    return false;
-  }
-
-  if(ingredients.length > 0) {
-    const text = getRecipeText(recipe).toLowerCase();
-
-    if(!ingredients.some(word =>
-      text.includes(word.toLowerCase())
-    )) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-function findPlanRecipe(category, ingredients, avoid, maxTime, used) {
-
-  let candidates = recipes.filter(recipe => {
-
-    if(used.includes(recipe.id)) return false;
-
-    if(!matchesPlanConditions(
-      recipe,ingredients,avoid,maxTime
-    )) return false;
-
-    return recipe.category === category;
-  });
-
-  if(candidates.length === 0) {
-    candidates = recipes.filter(recipe => {
-
-      if(used.includes(recipe.id)) return false;
-
-      if(!matchesPlanConditions(
-        recipe,ingredients,avoid,maxTime
-      )) return false;
-
-      return true;
-    });
-  }
-
-  if(candidates.length === 0) return null;
-
-  return candidates[
-    Math.floor(Math.random() * candidates.length)
-  ];
-}
-
-function createMealForDay(ingredients,avoid,maxTime,used) {
-
-  const categories = [
-    ["主食","主食"],
-    ["主菜","主菜"],
-    ["副菜","副菜"],
-    ["汁物","汁物"],
-    ["小鉢","小鉢"]
-  ];
-
-  const result = {};
-
-  categories.forEach(([key,category]) => {
-
-    const recipe = findPlanRecipe(
-      category,
-      ingredients,
-      avoid,
-      maxTime,
-      used
-    );
-
-    if(recipe) {
-      result[key] = recipe;
-      used.push(recipe.id);
-    }
-
-  });
-
-  return result;
-}
-
-function createMealDay(ingredients,avoid,maxTime,used) {
-
-  const breakfast = createMealForDay(
-    ingredients,avoid,maxTime,used
-  );
-
-  const lunch = createMealForDay(
-    ingredients,avoid,maxTime,used
-  );
-
-  const dinner = createMealForDay(
-    ingredients,avoid,maxTime,used
-  );
-
-  return {
-    breakfast,
-    lunch,
-    dinner
-  };
-}
-
-function renderMealPlan(plan) {
-
-  const container =
-    document.getElementById("mealPlanResult");
-
-  container.innerHTML = "";
-
-  const days = Object.keys(plan);
-
-  if(days.length === 0) {
-    container.textContent = "献立がありません。";
-    return;
-  }
-
-  days.forEach(key => {
-
-    const day = plan[key];
-
-    const card = document.createElement("div");
-    card.className = "card";
-
-    const heading = document.createElement("h3");
-    heading.textContent = key;
-    card.appendChild(heading);
-
-    const mealNames = [
-      ["朝食","breakfast"],
-      ["昼食","lunch"],
-      ["夕食","dinner"]
-    ];
-
-    mealNames.forEach(([label,time]) => {
-
-      const section = document.createElement("div");
-      section.style.padding = "8px 0";
-      section.style.borderTop = "1px solid #eee";
-
-      const title = document.createElement("strong");
-      title.textContent = label;
-
-      section.appendChild(title);
-
-      const meals = day[time] || {};
-
-      const categories = [
-        "主食","主菜","副菜","汁物","小鉢"
-      ];
-
-      categories.forEach(category => {
-
-        const recipe = meals[category];
-
-        const p = document.createElement("p");
-        p.style.margin = "4px 0";
-        p.style.fontSize = "13px";
-
-        p.textContent = recipe
-          ? `${category}：${recipe.name}`
-          : `${category}：未登録`;
-
-        section.appendChild(p);
-
-      });
-
-      card.appendChild(section);
-
-    });
-
-    container.appendChild(card);
-
-  });
-
-}
-
-function generateMealPlan() {
-
-  const people = Number(
-    document.getElementById("planPeople").value
-  );
-
-  const days = Number(
-    document.getElementById("planDays").value
-  );
-
-  const maxTime = Number(
-    document.getElementById("planCookingTime").value
-  );
-
-  if(!people || people < 1 || people > 30) {
-    alert("人数は1〜30人で入力してください。");
-    return;
-  }
-
-  if(recipes.length === 0) {
-    alert("先にレシピを登録してください。");
-    showPage("recipePage");
-    return;
-  }
-
-  const ingredients = document.getElementById(
-    "planIngredients"
-  ).value.split(/[、,，\s]+/).filter(Boolean);
-
-  const avoid = document.getElementById(
-    "planAvoid"
-  ).value.split(/[、,，\s]+/).filter(Boolean);
-
-  const used = [];
-
-  currentGeneratedPlan = {};
-
-  for(let i=0;i<days;i++) {
-
-    const date = new Date();
-    date.setDate(date.getDate()+i);
-
-    const key = dateKey(date);
-
-    currentGeneratedPlan[key] = createMealDay(
-      ingredients,
-      avoid,
-      maxTime,
-      used
-    );
-
-  }
-
-  renderMealPlan(currentGeneratedPlan);
-
-  document.getElementById("saveMealPlan")
-    .classList.remove("hidden");
-
-}
-
-document.getElementById("makePlan")
-  .addEventListener("click",generateMealPlan);
-
-/* カレンダーへ保存 */
-
-document.getElementById("saveMealPlan")
-  .addEventListener("click",()=>{
-
-    if(Object.keys(currentGeneratedPlan).length === 0) {
-      alert("先に献立を作成してください。");
-      return;
-    }
-
-    Object.entries(currentGeneratedPlan).forEach(
-      ([date,day])=>{
-
-        mealPlans[date] = {
-          breakfast:day.breakfast,
-          lunch:day.lunch,
-          dinner:day.dinner
-        };
-
-      }
-    );
-
-    saveData(STORAGE_KEYS.plans,mealPlans);
-
-    renderCalendar();
-
-    alert("献立をカレンダーに保存しました！");
-
-    showPage("homePage");
-
-    selectedDate = new Date(
-      Object.keys(currentGeneratedPlan)[0] + "T00:00:00"
-    );
-
-    renderCalendar();
-    renderSelectedMeals();
-
-  });
-
-/* 献立画面を開いたときの初期表示 */
-
-document.querySelector('[data-page="mealPage"]')
-  .addEventListener("click",()=>{
-    document.getElementById("mealPlanResult").textContent =
-      "人数・予算・食材を指定して献立を作成できます。";
-  });
-   
 </script>
-
+</main>
 </body>
 </html>

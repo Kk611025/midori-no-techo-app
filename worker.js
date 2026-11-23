@@ -1,9 +1,27 @@
 /**
  * うちのごはん - Cloudflare Worker
- * 予算厳守・並列高速生成・モデル自動学習・無料AIフォールバック完全版
+ * 5種類の無料AI対応（Groq / Mistral / OpenRouter / Google / Workers AI）
+ * 予算厳守・並列高速生成・モデル自動学習完全版
  */
 const ALLOWED_ORIGINS = [
   "https://kk611025.github.io"
+];
+
+const MODELS_GROQ = [
+  "openai/gpt-oss-120b",
+  "llama-3.3-70b-versatile",
+  "qwen/qwen3.8-27b"
+];
+
+const MODELS_MISTRAL = [
+  "mistral-small-latest",
+  "open-mistral-nemo"
+];
+
+const MODELS_OPENROUTER = [
+  "google/gemma-4-26b-a4b-it:free",
+  "google/gemma-4-31b-it:free",
+  "openrouter/free"
 ];
 
 const MODELS_GEMMA = [
@@ -16,14 +34,7 @@ const MODELS_GEMINI = [
   "gemini-3.5-flash-lite",
   "gemini-3.8-flash",
   "gemini-3.6-flash",
-  "gemini-3.1-flash-lite",
-  "gemini-4-hydrogen"
-];
-
-const MODELS_GROQ = [
-  "llama-3.3-70b-versatile",
-  "openai/gpt-oss-120b",
-  "llama-3.1-8b-instant"
+  "gemini-3.1-flash-lite"
 ];
 
 const MODELS_WORKERS_AI = [
@@ -185,6 +196,14 @@ function parseJson(text) {
   }
 }
 
+function safeParseResponse(rawText) {
+  try {
+    return JSON.parse(rawText);
+  } catch (_) {
+    return { error: { message: String(rawText || "").slice(0, 150) } };
+  }
+}
+
 function safeArray(value, max) {
   return Array.isArray(value) ? value.slice(0, max) : [];
 }
@@ -193,7 +212,6 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-// フロントエンドの計算式と1円単位まで一致させる
 function costOf(dishes, people) {
   return dishes.reduce(
     (sum, d) => sum + Math.round((Number(d.cost_for_4) || 0) * people / 4),
@@ -292,10 +310,55 @@ async function runSingleCandidate(env, task, prompt, maxTokens) {
         }),
         signal: controller.signal
       });
-      const data = await res.json();
+      const data = safeParseResponse(await res.text());
       const content = data?.choices?.[0]?.message?.content;
       if (res.ok && content) return { ok: true, data: parseJson(content) };
       return { ok: false, error: `Groq(${model} ${res.status})：${data?.error?.message || "失敗"}` };
+    }
+
+    if (provider === "mistral") {
+      const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + env.MISTRAL_API_KEY
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.4,
+          max_tokens: Math.min(maxTokens, 6000),
+          response_format: { type: "json_object" }
+        }),
+        signal: controller.signal
+      });
+      const data = safeParseResponse(await res.text());
+      const content = data?.choices?.[0]?.message?.content;
+      if (res.ok && content) return { ok: true, data: parseJson(content) };
+      return { ok: false, error: `Mistral(${model} ${res.status})：${data?.error?.message || data?.message || "失敗"}` };
+    }
+
+    if (provider === "openrouter") {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + env.OPENROUTER_API_KEY,
+          "HTTP-Referer": ALLOWED_ORIGINS[0],
+          "X-Title": "Uchinogohan"
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.4,
+          max_tokens: Math.min(maxTokens, 6000)
+        }),
+        signal: controller.signal
+      });
+      const data = safeParseResponse(await res.text());
+      const content = data?.choices?.[0]?.message?.content;
+      if (res.ok && content) return { ok: true, data: parseJson(content) };
+      return { ok: false, error: `OpenRouter(${model} ${res.status})：${data?.error?.message || "失敗"}` };
     }
 
     if (provider === "workers_ai") {
@@ -355,13 +418,7 @@ async function runSingleCandidate(env, task, prompt, maxTokens) {
         signal: controller.signal
       });
 
-      const rawText = await response.text();
-      let raw = null;
-      try {
-        raw = JSON.parse(rawText);
-      } catch (_) {
-        raw = { error: { message: rawText.slice(0, 150) } };
-      }
+      const raw = safeParseResponse(await response.text());
 
       if (response.ok) {
         if (mode === "interactions" && raw.status !== "completed") {
@@ -400,10 +457,16 @@ async function callAI(env, prompt, maxTokens) {
   if (env.GROQ_API_KEY) {
     MODELS_GROQ.forEach(model => candidates.push({ provider: "groq", model, mode: "chat" }));
   }
+  if (env.MISTRAL_API_KEY) {
+    MODELS_MISTRAL.forEach(model => candidates.push({ provider: "mistral", model, mode: "chat" }));
+  }
+  if (env.OPENROUTER_API_KEY) {
+    MODELS_OPENROUTER.forEach(model => candidates.push({ provider: "openrouter", model, mode: "chat" }));
+  }
   if (env.GEMINI_API_KEY) {
     MODELS_GEMMA.forEach(model => candidates.push({ provider: "google", model, mode: "gemma" }));
     MODELS_GEMINI.forEach(model => candidates.push({ provider: "google", model, mode: "generateContent" }));
-    MODELS_GEMINI.forEach(model => candidates.push({ provider: "google", model, mode: "interactions" }));
+    MODELS_GEMINI.slice(0, 2).forEach(model => candidates.push({ provider: "google", model, mode: "interactions" }));
   }
   if (env.AI) {
     MODELS_WORKERS_AI.forEach(model => candidates.push({ provider: "workers_ai", model, mode: "run" }));
@@ -568,7 +631,7 @@ export default {
         }
       }
 
-      if (!env.GEMINI_API_KEY && !env.GROQ_API_KEY && !env.AI) {
+      if (!env.GEMINI_API_KEY && !env.GROQ_API_KEY && !env.MISTRAL_API_KEY && !env.OPENROUTER_API_KEY && !env.AI) {
         return json({ error: "AIキーまたはWorkers AIが設定されていません。" }, 500, origin);
       }
 

@@ -296,9 +296,13 @@ ${JSON.stringify(pantry)}
 
 【期限情報】
 ${JSON.stringify(expiry)}
+期限が近い在庫食材を優先して使い、調味料・スパイスは在庫にあるものを優先してください。
 
 【避けたい食材など】
 ${JSON.stringify(avoid)}
+
+【優先して使いたい食材】
+${JSON.stringify(body.wanted || "")}
 
 【ネット検索結果】
 ${JSON.stringify(searchResults)}
@@ -593,9 +597,14 @@ export default {
       };
 
       // ネット検索は短時間だけ試す
+      const pantryWords = context.pantry.map(x => x && x.name ? x.name : "").filter(Boolean).slice(0, 12);
+      const wantedWords = Array.isArray(body.wanted)
+        ? body.wanted
+        : String(body.wanted || "").split(/[、,，]/).map(x => x.trim()).filter(Boolean);
       const searchWords = [
-        "家庭料理 節約 献立 レシピ",
-        "簡単 朝食 昼食 夕食 レシピ"
+        "家庭料理 献立 レシピ " + pantryWords.slice(0, 5).join(" "),
+        "簡単 朝食 昼食 夕食 レシピ " + wantedWords.join(" "),
+        "煮物 炒め物 主菜 副菜 汁物 家庭料理 レシピ"
       ];
 
       const searchController = new AbortController();
@@ -634,6 +643,11 @@ export default {
         clearTimeout(searchTimer);
       }
 
+      // 献立AIへ希望食材・調理時間も明示的に渡す
+      context.avoid = context.avoid.concat(
+        wantedWords.length ? ["優先して使いたい食材：" + wantedWords.join("、")] : [],
+        body.avoidTime ? ["調理時間：" + body.avoidTime] : []
+      );
       const prompt = buildWeekPrompt(body, context);
       const generated = await callGemini(
         env,

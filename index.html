@@ -58,25 +58,10 @@ header {
   font-size:28px;
 }
 
-h1 {
-  font-size:25px;
-  margin:0 0 5px;
-}
-
-h2 {
-  font-size:19px;
-  margin:0 0 12px;
-}
-
-h3 {
-  font-size:16px;
-  margin:16px 0 8px;
-}
-
-.sub,.muted {
-  color:var(--muted);
-  font-size:13px;
-}
+h1 { font-size:25px; margin:0 0 5px; }
+h2 { font-size:19px; margin:0 0 12px; }
+h3 { font-size:16px; margin:16px 0 8px; }
+.sub,.muted { color:var(--muted); font-size:13px; }
 
 .tabs {
   position:fixed;
@@ -162,9 +147,7 @@ label {
   flex-wrap:wrap;
 }
 
-.hidden {
-  display:none!important;
-}
+.hidden { display:none!important; }
 
 .notice {
   background:var(--soft);
@@ -198,22 +181,36 @@ label {
   margin-top:8px;
 }
 
-.page-title {
-  margin:8px 0 14px;
-}
+.page-title { margin:8px 0 14px; }
+.small { font-size:12px; color:var(--muted); }
+.full { width:100%; margin-top:10px; }
 
-.small {
-  font-size:12px;
-  color:var(--muted);
-}
-
-.full {
+details.dish-detail {
   width:100%;
-  margin-top:10px;
+  margin:4px 0;
+  padding:6px 8px;
+  border-radius:8px;
+  background:#faf8f2;
+  border:1px solid var(--line);
+}
+details.dish-detail summary {
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  list-style:none;
+}
+details.dish-detail summary::-webkit-details-marker { display:none; }
+details.dish-detail .dish-body {
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px dashed var(--line);
+  font-size:13px;
+  line-height:1.6;
 }
 
 /* 月間カレンダー */
-
 .calendar-head {
   display:flex;
   justify-content:space-between;
@@ -255,31 +252,21 @@ label {
 }
 
 .calendar-day {
-  min-height:83px;
+  width:100%;
+  min-height:78px;
   background:white;
   text-align:left;
   border-radius:0;
+  display:block;
   padding:4px 3px;
+  overflow:hidden;
 }
 
-.calendar-day.other {
-  background:#f7f6f2;
-  color:#aaa;
-}
-
-.calendar-day.today {
-  background:#f0f5eb;
-}
-
-.calendar-day.selected {
-  outline:2px solid var(--accent);
-  outline-offset:-2px;
-}
-
-.calendar-number {
-  font-size:13px;
-  font-weight:bold;
-}
+.calendar-day:focus { outline:2px solid var(--accent); outline-offset:-2px; }
+.calendar-day.other { background:#f7f6f2; color:#aaa; }
+.calendar-day.today { background:#f0f5eb; }
+.calendar-day.selected { outline:2px solid var(--accent); outline-offset:-2px; }
+.calendar-number { font-size:13px; font-weight:bold; }
 
 .calendar-meal {
   display:block;
@@ -292,37 +279,23 @@ label {
   border-radius:4px;
   background:#eef2e9;
 }
+.calendar-meal.lunch { background:#fff1dc; }
+.calendar-meal.dinner { background:#e9eef8; }
 
-.calendar-meal.lunch {
-  background:#fff1dc;
-}
-
-.calendar-meal.dinner {
-  background:#e9eef8;
-}
+.home-calendar-card { padding:12px; }
+.calendar-legend { margin-top:10px; text-align:center; }
+.home-quick-grid .card { min-width:0; margin:0; }
+.home-cost-number { display:block; font-size:25px; color:var(--accent); }
 
 @media(max-width:520px) {
-  .calendar-day {
-    min-height:70px;
-    padding:3px 2px;
-  }
-
-  .calendar-weekday {
-    font-size:11px;
-  }
-
-  .calendar-meal {
-    font-size:8px;
-    padding:2px 1px;
-  }
-
-  .grid {
-    gap:7px;
-  }
+  .calendar-day { min-height:68px; padding:3px 2px; }
+  .calendar-weekday { font-size:11px; }
+  .calendar-meal { font-size:8px; padding:2px 1px; }
+  .grid { gap:7px; }
+  .home-quick-grid { grid-template-columns:1fr 1fr; }
 }
 
 /* 食材費 */
-
 .cost-summary {
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
@@ -357,9 +330,7 @@ label {
   gap:7px;
 }
 
-.purchase-grid input {
-  padding:8px;
-}
+.purchase-grid input { padding:8px; }
 
 .cost-bar-row {
   display:grid;
@@ -385,43 +356,34 @@ label {
 }
 
 @media(max-width:520px) {
-  .cost-summary {
-    grid-template-columns:1fr 1fr;
-  }
-
-  .purchase-grid {
-    grid-template-columns:1fr 1fr;
-  }
+  .cost-summary { grid-template-columns:1fr 1fr; }
+  .purchase-grid { grid-template-columns:1fr 1fr; }
 }
-
-.calendar-day {
-  width:100%;
-  min-height:78px;
-  border-radius:0;
-  display:block;
-  text-align:left;
-  padding:4px 3px;
-  overflow:hidden;
-}
-.calendar-day:focus { outline:2px solid var(--accent); outline-offset:-2px; }
-.home-calendar-card { padding:12px; }
-.calendar-legend { margin-top:10px; text-align:center; }
-.home-quick-grid .card { min-width:0; margin:0; }
-.home-cost-number { display:block; font-size:25px; color:var(--accent); }
-@media(max-width:520px) { .home-quick-grid { grid-template-columns:1fr 1fr; } .calendar-day { min-height:68px; } }
-
 
 /* レシピ帳・味付け早見表 */
 .taste-guide { background:#fffaf0!important; border:1px solid #e5d8bd!important; }
 .taste-guide .result { background:#fffefa; }
 .taste-filters button { padding:8px 10px; font-size:12px; }
-.taste-card { border:1px solid #e8dfcf; background:#fffefa; border-radius:12px; padding:12px; margin:9px 0; box-shadow:2px 3px 0 rgba(100,80,50,.07); }
+.taste-card {
+  border:1px solid #e8dfcf;
+  background:#fffefa;
+  border-radius:12px;
+  padding:12px;
+  margin:9px 0;
+  box-shadow:2px 3px 0 rgba(100,80,50,.07);
+}
 .taste-card h3 { margin:0 0 6px; }
 .taste-ratio { font-weight:700; color:#657b59; }
 .taste-card .small { line-height:1.7; }
-.recipe-scrap-card { background:#fffdf5; border:1px solid #e8dfcf; border-radius:13px; padding:13px; margin:10px 0; box-shadow:2px 3px 0 rgba(90,70,40,.07); }
+.recipe-scrap-card {
+  background:#fffdf5;
+  border:1px solid #e8dfcf;
+  border-radius:13px;
+  padding:13px;
+  margin:10px 0;
+  box-shadow:2px 3px 0 rgba(90,70,40,.07);
+}
 .recipe-scrap-card:before { content:"📎"; float:right; }
-
 </style>
 </head>
 
@@ -439,7 +401,7 @@ label {
 
 <main>
 
-<!-- ホーム：月間カレンダーを中心にしたダッシュボード -->
+<!-- ホーム -->
 <div id="homePage">
   <h2 class="page-title">📅 ごはんカレンダー</h2>
 
@@ -488,6 +450,7 @@ label {
   </div>
 </div>
 
+<!-- 献立作成 -->
 <div id="mealPage" class="hidden">
   <h2 class="page-title">🍽 献立作成</h2>
 
@@ -508,8 +471,7 @@ label {
     <label>献立の開始日</label>
     <input type="date" id="mealStartDate">
 
-    <h3>予算（1食あたり）</h3>
-
+    <h3>予算（1食・1人あたり目安）</h3>
     <div class="grid">
       <div>
         <label>朝食予算（円）</label>
@@ -541,11 +503,14 @@ label {
     </select>
 
     <div class="notice">
-      🥬 登録済みの食材在庫を優先して献立を考える設定にします。
+      🥬 登録済みの食材在庫・登録レシピを優先し、足りない枠は定番の家庭料理から自動で組み合わせます。
     </div>
 
-    <button class="primary full" id="makePlan">
-      ✨ 献立を作成する
+    <button class="primary full" id="makeLocalPlan">
+      📖 レシピから献立を作成する（完全無料・通信なし）
+    </button>
+    <button class="full" id="makePlan">
+      ✨ AIを使って献立を作成する（混雑時はレシピ作成に切替可）
     </button>
   </section>
 
@@ -554,13 +519,12 @@ label {
     <div id="mealResult">
       <p class="muted">条件を入力して献立を作成してください。</p>
     </div>
-    <button class="full" id="saveMealPlan">献立を保存する</button>
+    <button class="primary full" id="saveMealPlan">献立を保存する</button>
     <button class="full" onclick="showTab('shopping')">
       🛒 買い物リストを見る
     </button>
   </section>
 </div>
-
 
 <!-- カレンダー -->
 <div id="calendarPage" class="hidden">
@@ -572,12 +536,8 @@ label {
       <div class="calendar-title" id="calendarTitle"></div>
       <button id="nextMonth">▶</button>
     </div>
-
     <div class="calendar-grid" id="calendarGrid"></div>
-
-    <div class="notice">
-      日付をタップすると、その日の献立を確認できます。
-    </div>
+    <div class="notice">日付をタップすると、その日の献立を確認できます。</div>
   </section>
 
   <section class="card">
@@ -588,11 +548,9 @@ label {
   </section>
 </div>
 
-
 <!-- レシピ帳 -->
 <div id="recipePage" class="hidden">
   <h2 class="page-title">📖 レシピ帳</h2>
-
 
   <section class="card taste-guide" id="tasteGuide">
     <div class="row" style="justify-content:space-between">
@@ -600,7 +558,7 @@ label {
     </div>
     <p class="small">料理名や味の名前から探して、分量を人数に合わせて確認できます。割合は基本の目安です。</p>
     <input id="tasteSearch" placeholder="例：筑前煮、照り焼き、ドレッシング">
-    <div class="row taste-filters">
+    <div class="row taste-filters" style="margin-top:8px">
       <button type="button" class="active" data-taste-filter="すべて">すべて</button>
       <button type="button" data-taste-filter="黄金比">黄金比</button>
       <button type="button" data-taste-filter="煮物">煮物</button>
@@ -618,11 +576,8 @@ label {
   <section class="card">
     <h2>レシピを検索</h2>
     <input id="recipeSearch" placeholder="料理名・食材・キーワード">
-    <button class="primary full" id="searchRecipe">
-      検索する
-    </button>
-
-    <div class="row">
+    <button class="primary full" id="searchRecipe">検索する</button>
+    <div class="row" style="margin-top:8px">
       <button onclick="searchWebRecipe('Google')">Googleで検索</button>
       <button onclick="searchWebRecipe('Cookpad')">クックパッド</button>
       <button onclick="searchWebRecipe('DELISH KITCHEN')">デリッシュキッチン</button>
@@ -631,7 +586,6 @@ label {
 
   <section class="card">
     <h2>レシピを登録</h2>
-
     <input type="hidden" id="recipeEditId">
 
     <label>料理名</label>
@@ -640,7 +594,7 @@ label {
     <label>料理の種類</label>
     <select id="recipeCategory">
       <option value="主食">主食</option>
-      <option value="主菜">主菜</option>
+      <option value="主菜" selected>主菜</option>
       <option value="副菜">副菜</option>
       <option value="汁物">汁物</option>
       <option value="小鉢">小鉢</option>
@@ -651,7 +605,7 @@ label {
     <label>何人分？</label>
     <input type="number" id="recipePeople" min="1" value="4">
 
-    <label>材料・分量</label>
+    <label>材料・分量（1行に「食材名 数量単位」で書くと買い物計算に便利です）</label>
     <textarea id="recipeIngredients" rows="5"
       placeholder="鶏もも肉 2枚&#10;醤油 大さじ2&#10;みりん 大さじ2"></textarea>
 
@@ -662,7 +616,7 @@ label {
     <label>調理時間（分）</label>
     <input type="number" id="recipeTime" value="30">
 
-    <label>予算（円）</label>
+    <label>予算（円・設定した人数分の合計）</label>
     <input type="number" id="recipeBudget" value="300">
 
     <label>レシピの評価</label>
@@ -683,14 +637,15 @@ label {
     <label>メモ・味付けのポイント</label>
     <textarea id="recipeMemo" rows="3"></textarea>
 
-    <button class="primary full" id="saveRecipe">
-      レシピを登録する
-    </button>
+    <button class="primary full" id="saveRecipe">レシピを登録する</button>
     <button class="full" id="cancelRecipeEdit">編集をキャンセル</button>
   </section>
 
   <section class="card">
-    <h2>登録済みレシピ</h2>
+    <div class="row" style="justify-content:space-between">
+      <h2>登録済みレシピ</h2>
+      <button id="loadPresetRecipes">📚 定番レシピを追加</button>
+    </div>
     <div id="recipeList"></div>
   </section>
 
@@ -711,14 +666,10 @@ label {
     <label>アレンジメモ</label>
     <textarea id="variationMemo" rows="2"></textarea>
 
-    <button class="primary full" id="saveVariation">
-      アレンジを保存する
-    </button>
-
+    <button class="primary full" id="saveVariation">アレンジを保存する</button>
     <div id="variationList"></div>
   </section>
 </div>
-
 
 <!-- 食材在庫 -->
 <div id="inventoryPage" class="hidden">
@@ -732,11 +683,16 @@ label {
 
     <label>カテゴリー</label>
     <select id="stockCategory">
-      <option value="野菜・果物">野菜・果物</option><option value="肉・魚">肉・魚</option>
-      <option value="卵・乳製品">卵・乳製品</option><option value="主食・粉類">主食・粉類</option>
-      <option value="調味料">調味料</option><option value="ソース・たれ">ソース・たれ</option>
-      <option value="油類">油類</option><option value="スパイス・香辛料">スパイス・香辛料</option>
-      <option value="だし・スープ類">だし・スープ類</option><option value="乾物・缶詰">乾物・缶詰</option>
+      <option value="野菜・果物">野菜・果物</option>
+      <option value="肉・魚">肉・魚</option>
+      <option value="卵・乳製品">卵・乳製品</option>
+      <option value="主食・粉類">主食・粉類</option>
+      <option value="調味料">調味料</option>
+      <option value="ソース・たれ">ソース・たれ</option>
+      <option value="油類">油類</option>
+      <option value="スパイス・香辛料">スパイス・香辛料</option>
+      <option value="だし・スープ類">だし・スープ類</option>
+      <option value="乾物・缶詰">乾物・缶詰</option>
       <option value="その他">その他</option>
     </select>
 
@@ -755,7 +711,13 @@ label {
     <input type="date" id="stockExpiry">
 
     <label>残量メモ</label>
-    <select id="stockLevel"><option value="">通常</option><option value="未開封">未開封</option><option value="残り多め">残り多め</option><option value="半分">半分</option><option value="残り少し">残り少し・補充したい</option>
+    <select id="stockLevel">
+      <option value="">通常</option>
+      <option value="未開封">未開封</option>
+      <option value="残り多め">残り多め</option>
+      <option value="半分">半分</option>
+      <option value="残り少し">残り少し・補充したい</option>
+    </select>
 
     <label>入手方法</label>
     <select id="stockSource">
@@ -767,9 +729,7 @@ label {
     <label>金額（円）</label>
     <input id="stockPrice" type="number" min="0" value="0">
 
-    <button class="primary full" id="addStock">
-      在庫に追加する
-    </button>
+    <button class="primary full" id="addStock">在庫に追加する</button>
   </section>
 
   <section class="card">
@@ -783,7 +743,6 @@ label {
   </section>
 </div>
 
-
 <!-- 買い物リスト -->
 <div id="shoppingPage" class="hidden">
   <h2 class="page-title">🛒 買い物リスト</h2>
@@ -794,15 +753,11 @@ label {
 
     <label>食材を手動で追加</label>
     <input id="shoppingNewName" placeholder="食材名">
-
     <div class="grid">
       <input id="shoppingNewAmount" type="number" placeholder="数量">
       <input id="shoppingNewUnit" placeholder="単位">
     </div>
-
-    <button class="primary full" id="addShoppingItem">
-      リストに追加
-    </button>
+    <button class="primary full" id="addShoppingItem">リストに追加</button>
   </section>
 
   <section class="card">
@@ -811,41 +766,26 @@ label {
   </section>
 </div>
 
-
 <!-- 食材費 -->
 <div id="costPage" class="hidden">
   <h2 class="page-title">💰 食材費管理</h2>
 
   <section class="card">
     <h2>食材費のまとめ</h2>
-
     <div class="cost-summary">
-      <div class="cost-box">
-        <span class="small">累計</span>
-        <strong id="totalCost">¥0</strong>
-      </div>
-
-      <div class="cost-box">
-        <span class="small">今週</span>
-        <strong id="weeklyCost">¥0</strong>
-      </div>
-
-      <div class="cost-box">
-        <span class="small">今月</span>
-        <strong id="monthlyCost">¥0</strong>
-      </div>
+      <div class="cost-box"><span class="small">累計</span><strong id="totalCost">0円</strong></div>
+      <div class="cost-box"><span class="small">今週</span><strong id="weeklyCost">0円</strong></div>
+      <div class="cost-box"><span class="small">今月</span><strong id="monthlyCost">0円</strong></div>
     </div>
   </section>
 
   <section class="card">
     <h2>食材費の推移</h2>
-
     <label>集計期間</label>
     <select id="costPeriod">
       <option value="week">週間</option>
       <option value="month" selected>月間</option>
     </select>
-
     <div id="costChart"></div>
   </section>
 
@@ -855,14 +795,12 @@ label {
   </section>
 </div>
 
-
 <!-- お弁当 -->
 <div id="bentoPage" class="hidden">
   <h2 class="page-title">🍱 お弁当作成</h2>
 
   <section class="card">
     <h2>お弁当の条件</h2>
-
     <label>何人分？</label>
     <input type="number" id="bentoPeople" min="1" max="8" value="4">
 
@@ -883,23 +821,16 @@ label {
     <input id="bentoAvoid" placeholder="例：辛いもの">
 
     <div class="notice">
-      🍱 お弁当専用のおかず・副菜・小鉢を中心に考えます。<br>
-      前日の夕食の残り物も活用できます。<br>
-      汁物は含めません。
+      🍱 登録済みレシピや定番のお弁当おかず・前日の夕食の残り物から作成します。汁物は含めません。
     </div>
 
-    <button class="primary full" id="makeBento">
-      お弁当を考える
-    </button>
+    <button class="primary full" id="makeBento">お弁当を考える</button>
   </section>
 
   <section class="card">
     <h2>作成したお弁当</h2>
-    <div id="bentoResult"></div>
-
-    <button class="primary full" id="saveBento">
-      お弁当を保存する
-    </button>
+    <div id="bentoResult"><p class="muted">条件を選んで「お弁当を考える」を押してください。</p></div>
+    <button class="primary full" id="saveBento">お弁当を保存する</button>
   </section>
 
   <section class="card">
@@ -912,7 +843,6 @@ label {
     <div id="bentoHistory"></div>
   </section>
 </div>
-
 
 <!-- 履歴 -->
 <div id="historyPage" class="hidden">
@@ -929,49 +859,32 @@ label {
   </section>
 </div>
 
-
 <!-- 設定 -->
 <div id="settingsPage" class="hidden">
   <h2 class="page-title">⚙️ 設定</h2>
 
   <section class="card">
     <h2>データ管理</h2>
-    <p class="muted">
-      登録したレシピ・在庫・献立・食材費などのデータを管理します。
-    </p>
-
-    <button class="full" id="exportData">
-      データをバックアップ
-    </button>
-
+    <p class="muted">登録したレシピ・在庫・献立・食材費などのデータをバックアップ／復元できます。</p>
+    <button class="primary full" id="exportData">データをバックアップ（JSON保存）</button>
     <label>バックアップファイルを読み込む</label>
     <input type="file" id="importData" accept=".json,application/json">
   </section>
 
   <section class="card">
-    <h2>AI・ネット検索の接続</h2>
-
-    <label>AI連携URL</label>
-    <input type="url" id="aiEndpoint"
-      placeholder="https://〇〇.workers.dev">
-
+    <h2>AI連携の設定（任意）</h2>
+    <p class="small">未設定でも、登録レシピと定番家庭料理から完全無料で献立を作成できます。</p>
+    <label>AI連携URL（Cloudflare Worker URL）</label>
+    <input type="url" id="aiEndpoint" placeholder="https://〇〇.workers.dev">
     <label>接続コード</label>
     <input type="password" id="aiAccessCode">
-
-    <button class="primary full" id="saveAiEndpoint">
-      接続設定を保存
-    </button>
-
-    <div id="aiEndpointStatus" class="notice">
-      AI接続は未設定です。献立作成にはCloudflare WorkerのURLと接続コードが必要です。
-    </div>
+    <button class="primary full" id="saveAiEndpoint">接続設定を保存</button>
+    <div id="aiEndpointStatus" class="notice">AI接続は未設定です。</div>
   </section>
 </div>
 
 </main>
 
-
-<!-- 下部タブ -->
 <nav class="tabs">
   <button class="active" data-tab="home">🏠 ホーム</button>
   <button data-tab="meal">🍽 献立</button>
@@ -986,11 +899,9 @@ label {
 </nav>
 
 <script>
-
 /* =========================
    1. データ保存の基本設定
 ========================= */
-
 const STORAGE = {
   recipes: "uchiRecipes",
   inventory: "uchiInventory",
@@ -1033,8 +944,7 @@ let selectedCalendarDate = new Date();
 let calendarMonth = new Date();
 
 function uid() {
-  return Date.now().toString(36) +
-    Math.random().toString(36).slice(2, 8);
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
 function todayString() {
@@ -1048,16 +958,27 @@ function todayString() {
 
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[char]);
 }
 
-function yen(value) {
-  return "¥" + Number(value || 0).toLocaleString("ja-JP");
+function formatDateJP(date) {
+  const d = new Date(String(date).includes("T") ? date : date + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+function formatYen(value) {
+  return Math.round(Number(value) || 0).toLocaleString("ja-JP") + "円";
+}
+
+function dateKey(date) {
+  const d = new Date(date);
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, "0"),
+    String(d.getDate()).padStart(2, "0")
+  ].join("-");
 }
 
 function persistAll() {
@@ -1071,58 +992,91 @@ function persistAll() {
   saveData(STORAGE.cookingHistory, cookingHistory);
 }
 
+/* =========================
+   2. 内蔵の定番レシピ（完全無料献立用）
+   ※ 4人分基準の予算・材料
+========================= */
+const PRESET_RECIPES = [
+  // 主食
+  { name:"白ごはん", category:"主食", people:4, time:5, budget:200, mealSlot:["breakfast","lunch","dinner"], ingredients:"米 3合\n水 適量", steps:"1. 米を研ぐ\n2. 炊飯器で炊く", memo:"基本の主食" },
+  { name:"わかめご飯", category:"主食", people:4, time:10, budget:240, mealSlot:["breakfast","lunch","dinner"], ingredients:"米 3合\n乾燥わかめ 大さじ2\n塩 小さじ1", steps:"1. 米を炊く\n2. 戻して刻んだわかめと塩を混ぜる", memo:"おにぎりにも合う" },
+  { name:"バタートースト", category:"主食", people:4, time:5, budget:220, mealSlot:["breakfast"], ingredients:"食パン 4枚\nバター 20g", steps:"1. 食パンをトーストする\n2. バターを塗る", memo:"朝の定番" },
+  { name:"おにぎり（鮭・梅）", category:"主食", people:4, time:10, budget:300, mealSlot:["breakfast","lunch"], ingredients:"ご飯 4膳\n焼鮭 1切れ\n梅干し 2個\n焼きのり 4枚", steps:"1. 具材をほぐす\n2. ご飯で握って海苔を巻く", memo:"お弁当にも" },
+  { name:"焼うどん", category:"主食", people:4, time:15, budget:400, mealSlot:["lunch"], ingredients:"ゆでうどん 4玉\n豚こま肉 150g\nキャベツ 3枚\n醤油 大さじ2\nサラダ油 大さじ1", steps:"1. 肉と野菜を炒める\n2. うどんと醤油を加えて炒め合わせる", memo:"お昼に手軽" },
+  { name:"ナポリタン", category:"主食", people:4, time:20, budget:450, mealSlot:["lunch"], ingredients:"スパゲティ 360g\nウインナー 6本\n玉ねぎ 1個\nピーマン 2個\nケチャップ 大さじ6", steps:"1. パスタを茹でる\n2. 具材を炒めてパスタとケチャップを絡める", memo:"ランチの人気メニュー" },
+  { name:"卵チャーハン", category:"主食", people:4, time:15, budget:320, mealSlot:["lunch","dinner"], ingredients:"ご飯 4膳\n卵 4個\n長ねぎ 1/2本\n醤油 大さじ1.5\nごま油 大さじ1", steps:"1. 溶き卵とご飯を強火で炒める\n2. ねぎと醤油で味を調える", memo:"冷蔵庫の残り野菜も活用可" },
+  { name:"そうめん（温・冷）", category:"主食", people:4, time:10, budget:280, mealSlot:["lunch"], ingredients:"そうめん 400g\nめんつゆ 適量\n長ねぎ 1/2本", steps:"1. そうめんを茹でて冷水でしめる\n2. 薬味とつゆでいただく", memo:"暑い日や忙しい日に" },
+
+  // 主菜
+  { name:"目玉焼きとウインナー", category:"主菜", people:4, time:10, budget:320, mealSlot:["breakfast"], ingredients:"卵 4個\nウインナー 8本\nサラダ油 小さじ1", steps:"1. ウインナーを焼く\n2. 卵を割り入れて蓋をして焼く", memo:"朝食の定番" },
+  { name:"だし巻き卵", category:"主菜", people:4, time:10, budget:200, mealSlot:["breakfast","bento"], ingredients:"卵 4個\nだし汁 80ml\n薄口醤油 小さじ1\n砂糖 小さじ1", steps:"1. 材料をよく混ぜる\n2. 卵焼き器で数回に分けて巻く", memo:"お弁当にもぴったり" },
+  { name:"納豆と焼き海苔", category:"主菜", people:4, time:5, budget:180, mealSlot:["breakfast"], ingredients:"納豆 4パック\n焼きのり 4袋\n長ねぎ 適量", steps:"1. 納豆にねぎとたれを混ぜる\n2. 海苔を添える", memo:"火を使わずすぐ出せる" },
+  { name:"焼き鮭", category:"主菜", people:4, time:15, budget:550, mealSlot:["breakfast","dinner","bento"], ingredients:"塩鮭 4切れ", steps:"1. グリルまたはフライパンで両面をこんがり焼く", memo:"朝も夜もお弁当もOK" },
+  { name:"鶏の照り焼き", category:"主菜", people:4, time:20, budget:550, mealSlot:["lunch","dinner","bento"], ingredients:"鶏もも肉 2枚\n醤油 大さじ2\nみりん 大さじ2\n酒 大さじ2\n砂糖 大さじ1", steps:"1. 鶏肉を皮目から焼く\n2. 調味料を加えて照りが出るまで煮絡める", memo:"ご飯が進む定番" },
+  { name:"豚の生姜焼き", category:"主菜", people:4, time:15, budget:600, mealSlot:["lunch","dinner"], ingredients:"豚ロース薄切り 400g\n玉ねぎ 1個\n醤油 大さじ2.5\nみりん 大さじ2\nおろし生姜 小さじ2", steps:"1. 豚肉と玉ねぎを炒める\n2. 合わせた調味料を加えて絡める", memo:"キャベツを添えると栄養満点" },
+  { name:"肉じゃが", category:"主菜", people:4, time:30, budget:620, mealSlot:["dinner"], ingredients:"豚こま肉 250g\nじゃがいも 4個\n玉ねぎ 1個\nにんじん 1本\nだし汁 300ml\n醤油 大さじ2.5\nみりん 大さじ2\n砂糖 大さじ2", steps:"1. 肉と野菜を炒める\n2. だしと調味料を加え、落とし蓋をして煮る", memo:"定番の家庭料理" },
+  { name:"鶏むね肉のから揚げ", category:"主菜", people:4, time:25, budget:480, mealSlot:["lunch","dinner","bento"], ingredients:"鶏むね肉 2枚\n醤油 大さじ2\n酒 大さじ1\nおろしにんにく 小さじ1\n片栗粉 大さじ5", steps:"1. 下味に10分漬ける\n2. 片栗粉をまぶして揚げる", memo:"経済的で食べ応えあり" },
+  { name:"さばの味噌煮", category:"主菜", people:4, time:20, budget:550, mealSlot:["dinner"], ingredients:"さば切り身 4切れ\n水 100ml\n酒 100ml\n味噌 大さじ2\nみりん 大さじ1\n砂糖 大さじ1", steps:"1. 煮汁を沸かす\n2. さばを入れて落とし蓋をし10分煮る", memo:"青魚で栄養豊富" },
+  { name:"麻婆豆腐", category:"主菜", people:4, time:20, budget:420, mealSlot:["lunch","dinner"], ingredients:"木綿豆腐 2丁\n豚ひき肉 200g\n長ねぎ 1本\n味噌 大さじ1.5\n醤油 大さじ1\n鶏ガラスープの素 小さじ2\n片栗粉 大さじ1", steps:"1. ひき肉とねぎを炒める\n2. スープと豆腐を加えて煮て水溶き片栗粉でとろみ", memo:"辛さはお好みで" },
+  { name:"豚こまとキャベツの味噌炒め", category:"主菜", people:4, time:15, budget:480, mealSlot:["lunch","dinner"], ingredients:"豚こま肉 250g\nキャベツ 1/4個\nピーマン 2個\n味噌 大さじ2\nみりん 大さじ1\n砂糖 小さじ2", steps:"1. 豚肉と野菜を強火で炒める\n2. 合わせ味噌で手早く絡める", memo:"15分でできる" },
+  { name:"和風おろしハンバーグ", category:"主菜", people:4, time:30, budget:650, mealSlot:["dinner"], ingredients:"合いびき肉 400g\n玉ねぎ 1個\nパン粉 大さじ4\n卵 1個\n大根 1/4本\nポン酢 適量", steps:"1. タネをこねて丸めて焼く\n2. 大根おろしとポン酢を添える", memo:"子どもにも人気" },
+  { name:"鮭のホイル焼き", category:"主菜", people:4, time:20, budget:580, mealSlot:["dinner"], ingredients:"生鮭 4切れ\n玉ねぎ 1/2個\nしめじ 1パック\nバター 20g\n醤油 適量", steps:"1. ホイルに野菜と鮭とバターを包む\n2. フライパンで12分蒸し焼き", memo:"洗い物が少ない" },
+  { name:"ハムエッグ", category:"主菜", people:4, time:10, budget:220, mealSlot:["breakfast"], ingredients:"卵 4個\nロースハム 4枚", steps:"1. ハムを焼き、上に卵を割って蓋をして焼く", memo:"手軽な朝の一品" },
+
+  // 汁物
+  { name:"わかめと豆腐の味噌汁", category:"汁物", people:4, time:10, budget:140, mealSlot:["breakfast","lunch","dinner"], ingredients:"豆腐 1/2丁\n乾燥わかめ 大さじ1\nだし汁 800ml\n味噌 大さじ4", steps:"1. だしを温め豆腐とわかめを入れる\n2. 火を弱めて味噌を溶く", memo:"定番のお味噌汁" },
+  { name:"具だくさん豚汁", category:"汁物", people:4, time:20, budget:320, mealSlot:["lunch","dinner"], ingredients:"豚こま肉 100g\n大根 5cm\nにんじん 1/2本\nごぼう 1/2本\nだし汁 800ml\n味噌 大さじ4", steps:"1. 具材を炒めてだしで煮る\n2. 味噌を溶き入れる", memo:"野菜たっぷり" },
+  { name:"大根と油揚げの味噌汁", category:"汁物", people:4, time:15, budget:150, mealSlot:["breakfast","dinner"], ingredients:"大根 5cm\n油揚げ 1枚\nだし汁 800ml\n味噌 大さじ4", steps:"1. 大根と油揚げをだしで煮る\n2. 味噌を溶く", memo:"ほっとする味" },
+  { name:"玉ねぎと卵の中華スープ", category:"汁物", people:4, time:10, budget:150, mealSlot:["breakfast","lunch","dinner"], ingredients:"玉ねぎ 1/2個\n卵 2個\n水 800ml\n鶏ガラスープの素 小さじ4\nごま油 小さじ1", steps:"1. スープで玉ねぎを煮る\n2. 溶き卵を回し入れてごま油", memo:"洋中どちらにも" },
+  { name:"キャベツとベーコンのコンソメスープ", category:"汁物", people:4, time:15, budget:200, mealSlot:["breakfast","lunch","dinner"], ingredients:"キャベツ 3枚\nベーコン 2枚\n水 800ml\n固形コンソメ 2個", steps:"1. 切った具材をコンソメで煮る\n2. 塩こしょうで調える", memo:"パンにも合う" },
+  { name:"もやしとニラのかき玉スープ", category:"汁物", people:4, time:10, budget:140, mealSlot:["lunch","dinner"], ingredients:"もやし 1/2袋\nニラ 1/3束\n卵 1個\n水 800ml\n鶏ガラスープの素 小さじ4", steps:"1. もやしとニラを煮る\n2. 溶き卵を流してふんわり仕上げ", memo:"安くて早い" },
+
+  // 副菜
+  { name:"ほうれん草のごま和え", category:"副菜", people:4, time:10, budget:200, mealSlot:["breakfast","lunch","dinner","bento"], ingredients:"ほうれん草 1束\nすりごま 大さじ2\n醤油 大さじ1\n砂糖 小さじ2", steps:"1. ほうれん草を茹でて水気を絞る\n2. 調味料とごまで和える", memo:"お弁当にも" },
+  { name:"きんぴらごぼう", category:"副菜", people:4, time:20, budget:220, mealSlot:["dinner","bento"], ingredients:"ごぼう 1本\nにんじん 1/2本\n醤油 大さじ1.5\nみりん 大さじ1.5\n砂糖 小さじ1\nごま油 大さじ1", steps:"1. 千切りをごま油で炒める\n2. 調味料を絡めて汁気を飛ばす", memo:"作り置き向き" },
+  { name:"ひじきの五目煮", category:"副菜", people:4, time:20, budget:240, mealSlot:["dinner","bento"], ingredients:"乾燥ひじき 20g\nにんじん 1/2本\n油揚げ 1枚\nだし汁 200ml\n醤油 大さじ1.5\n砂糖 大さじ1", steps:"1. 戻したひじきと具材を炒める\n2. だしと調味料で汁気が減るまで煮る", memo:"常備菜に便利" },
+  { name:"もやしと豆苗のナムル", category:"副菜", people:4, time:10, budget:150, mealSlot:["lunch","dinner"], ingredients:"もやし 1袋\n豆苗 1パック\nごま油 大さじ1\n鶏ガラスープの素 小さじ1", steps:"1. レンジまたは茹でて水気を切る\n2. ごま油とスープの素で和える", memo:"節約の味方" },
+  { name:"キャベツのコールスロー", category:"副菜", people:4, time:10, budget:180, mealSlot:["lunch","dinner"], ingredients:"キャベツ 1/4個\nコーン缶 1/2缶\nマヨネーズ 大さじ3\n酢 大さじ1", steps:"1. 千切りキャベツに塩を振り水気を絞る\n2. コーンと調味料で和える", memo:"さっぱり美味しい" },
+  { name:"じゃがいもの塩バター炒め", category:"副菜", people:4, time:15, budget:200, mealSlot:["lunch","dinner","bento"], ingredients:"じゃがいも 3個\nバター 15g\n塩こしょう 適量", steps:"1. 細切りじゃがいもをレンジ加熱\n2. バターでカリッと焼いて塩こしょう", memo:"子どもに人気" },
+
+  // 小鉢
+  { name:"冷奴", category:"小鉢", people:4, time:5, budget:120, mealSlot:["lunch","dinner"], ingredients:"絹豆腐 1丁\nかつお節 1袋\n醤油 適量", steps:"1. 豆腐を4等分に切る\n2. かつお節と醤油をかける", memo:"あと一品に" },
+  { name:"きゅうりとわかめの酢の物", category:"小鉢", people:4, time:10, budget:160, mealSlot:["dinner"], ingredients:"きゅうり 2本\n乾燥わかめ 大さじ1\n酢 大さじ3\n砂糖 大さじ2\n醤油 大さじ1", steps:"1. きゅうりを塩もみし水気を絞る\n2. わかめと三杯酢で和える", memo:"さっぱり口直し" },
+  { name:"トマトと大葉のサラダ", category:"小鉢", people:4, time:5, budget:220, mealSlot:["lunch","dinner"], ingredients:"トマト 2個\n大葉 4枚\nごま油 大さじ1\n塩 少々", steps:"1. トマトを一口大に切る\n2. 千切り大葉とごま油・塩で和える", memo:"5分で完成" },
+  { name:"ブロッコリーのおかか和え", category:"小鉢", people:4, time:10, budget:200, mealSlot:["breakfast","dinner","bento"], ingredients:"ブロッコリー 1株\nかつお節 1袋\n醤油 小さじ2", steps:"1. ブロッコリーを茹でる\n2. かつお節と醤油で和える", memo:"お弁当のすき間にも" },
+
+  // お弁当専用向け
+  { name:"ちくわの磯辺焼き", category:"弁当", people:4, time:10, budget:160, mealSlot:["bento"], ingredients:"ちくわ 4本\n青のり 小さじ2\n片栗粉 大さじ1\nマヨネーズ 大さじ1", steps:"1. ちくわにマヨ・片栗粉・青のりを絡める\n2. フライパンでこんがり焼く", memo:"冷めても美味しい" },
+  { name:"ウインナーとコーンのソテー", category:"弁当", people:4, time:10, budget:220, mealSlot:["bento","breakfast"], ingredients:"ウインナー 6本\nコーン 80g\nバター 10g\n塩こしょう 少々", steps:"1. 輪切りウインナーとコーンをバターで炒める", memo:"彩りに最適" },
+  { name:"ピーマンの塩昆布炒め", category:"弁当", people:4, time:10, budget:160, mealSlot:["bento","dinner"], ingredients:"ピーマン 4個\n塩昆布 大さじ1.5\nごま油 小さじ2", steps:"1. 細切りピーマンをごま油で炒める\n2. 塩昆布を絡める", memo:"5分でできる副菜" }
+];
 
 /* =========================
-   2. 画面切り替え
+   3. 画面切り替え
 ========================= */
-
 const pageNames = [
-  "home",
-  "meal",
-  "calendar",
-  "recipe",
-  "inventory",
-  "shopping",
-  "cost",
-  "bento",
-  "history",
-  "settings"
+  "home","meal","calendar","recipe","inventory","shopping","cost","bento","history","settings"
 ];
 
 function showTab(name) {
   pageNames.forEach(page => {
     const element = document.getElementById(page + "Page");
-    if (element) {
-      element.classList.toggle("hidden", page !== name);
-    }
+    if (element) element.classList.toggle("hidden", page !== name);
   });
-
   document.querySelectorAll(".tabs button").forEach(button => {
-    button.classList.toggle(
-      "active",
-      button.dataset.tab === name
-    );
+    button.classList.toggle("active", button.dataset.tab === name);
   });
-
   renderAll();
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 document.querySelectorAll(".tabs button").forEach(button => {
-  button.addEventListener("click", () => {
-    showTab(button.dataset.tab);
-  });
+  button.addEventListener("click", () => showTab(button.dataset.tab));
 });
 
-
 /* =========================
-   3. レシピ登録・編集
+   4. レシピ登録・編集・検索
 ========================= */
-
 function clearRecipeForm() {
   document.getElementById("recipeEditId").value = "";
   document.getElementById("recipeName").value = "";
@@ -1134,28 +1088,23 @@ function clearRecipeForm() {
   document.getElementById("recipeBudget").value = 300;
   document.getElementById("recipeRating").value = 5;
   document.getElementById("recipeMemo").value = "";
-  if (document.getElementById("recipeSourceUrl")) document.getElementById("recipeSourceUrl").value = "";
+  document.getElementById("recipeSourceUrl").value = "";
   document.getElementById("recipePhoto").value = "";
 }
 
 async function getRecipePhoto() {
   const file = document.getElementById("recipePhoto").files[0];
-
   if (!file) return null;
-
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-
     reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
-
     reader.readAsDataURL(file);
   });
 }
 
 document.getElementById("saveRecipe").addEventListener("click", async () => {
   const name = document.getElementById("recipeName").value.trim();
-
   if (!name) {
     alert("料理名を入力してください。");
     return;
@@ -1163,12 +1112,8 @@ document.getElementById("saveRecipe").addEventListener("click", async () => {
 
   const editId = document.getElementById("recipeEditId").value;
   const existing = recipes.find(r => r.id === editId);
-
   let photo = await getRecipePhoto();
-
-  if (!photo && existing) {
-    photo = existing.photo || null;
-  }
+  if (!photo && existing) photo = existing.photo || null;
 
   const recipe = {
     id: editId || uid(),
@@ -1181,7 +1126,7 @@ document.getElementById("saveRecipe").addEventListener("click", async () => {
     budget: Number(document.getElementById("recipeBudget").value) || 0,
     rating: Number(document.getElementById("recipeRating").value) || 5,
     memo: document.getElementById("recipeMemo").value.trim(),
-    sourceUrl: document.getElementById("recipeSourceUrl")?.value.trim() || existing?.sourceUrl || "",
+    sourceUrl: document.getElementById("recipeSourceUrl").value.trim() || existing?.sourceUrl || "",
     photo,
     createdAt: existing?.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -1198,18 +1143,45 @@ document.getElementById("saveRecipe").addEventListener("click", async () => {
   persistAll();
   clearRecipeForm();
   renderAll();
-
   alert(existing ? "レシピを更新しました。" : "レシピを登録しました。");
 });
 
-document.getElementById("cancelRecipeEdit").addEventListener("click", () => {
-  clearRecipeForm();
+document.getElementById("cancelRecipeEdit").addEventListener("click", clearRecipeForm);
+
+document.getElementById("loadPresetRecipes").addEventListener("click", () => {
+  let added = 0;
+  PRESET_RECIPES.forEach(p => {
+    const exists = recipes.some(r => r.name === p.name && r.category === p.category);
+    if (!exists) {
+      recipes.push({
+        id: uid(),
+        name: p.name,
+        category: p.category,
+        people: p.people,
+        ingredients: p.ingredients,
+        steps: p.steps,
+        time: p.time,
+        budget: p.budget,
+        rating: 4,
+        memo: p.memo || "",
+        sourceUrl: "",
+        photo: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        cookedCount: 0,
+        lastCooked: null
+      });
+      added++;
+    }
+  });
+  persistAll();
+  renderAll();
+  alert(added ? `定番レシピを${added}品追加しました！` : "定番レシピはすでに登録されています。");
 });
 
 function editRecipe(id) {
   const recipe = recipes.find(r => r.id === id);
   if (!recipe) return;
-
   document.getElementById("recipeEditId").value = recipe.id;
   document.getElementById("recipeName").value = recipe.name || "";
   document.getElementById("recipeCategory").value = recipe.category || "主菜";
@@ -1220,17 +1192,14 @@ function editRecipe(id) {
   document.getElementById("recipeBudget").value = recipe.budget || 0;
   document.getElementById("recipeRating").value = recipe.rating || 5;
   document.getElementById("recipeMemo").value = recipe.memo || "";
-  if (document.getElementById("recipeSourceUrl")) document.getElementById("recipeSourceUrl").value = recipe.sourceUrl || "";
-
+  document.getElementById("recipeSourceUrl").value = recipe.sourceUrl || "";
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function deleteRecipe(id) {
   if (!confirm("このレシピを削除しますか？")) return;
-
   recipes = recipes.filter(r => r.id !== id);
   variations = variations.filter(v => v.recipeId !== id);
-
   persistAll();
   renderAll();
 }
@@ -1238,46 +1207,29 @@ function deleteRecipe(id) {
 function markCooked(id) {
   const recipe = recipes.find(r => r.id === id);
   if (!recipe) return;
-
   recipe.cookedCount = (recipe.cookedCount || 0) + 1;
   recipe.lastCooked = todayString();
-
   cookingHistory.unshift({
     id: uid(),
     recipeId: id,
     name: recipe.name,
     date: todayString()
   });
-
   persistAll();
   renderAll();
-
   alert("調理履歴に記録しました！");
 }
 
-
-/* =========================
-   4. レシピ検索・表示
-========================= */
-
 function renderRecipes(keyword = "") {
   const list = document.getElementById("recipeList");
-
   const word = keyword.trim().toLowerCase();
-
   const filtered = recipes.filter(recipe => {
-    const text = [
-      recipe.name,
-      recipe.category,
-      recipe.ingredients,
-      recipe.memo
-    ].join(" ").toLowerCase();
-
+    const text = [recipe.name, recipe.category, recipe.ingredients, recipe.memo].join(" ").toLowerCase();
     return text.includes(word);
   });
 
   if (!filtered.length) {
-    list.innerHTML = "<p class='muted'>該当するレシピはありません。</p>";
+    list.innerHTML = "<p class='muted'>該当するレシピはありません。「📚 定番レシピを追加」から基本料理を取り込むこともできます。</p>";
     return;
   }
 
@@ -1287,36 +1239,16 @@ function renderRecipes(keyword = "") {
         <strong>${escapeHTML(recipe.name)}</strong>
         <span class="tag">${escapeHTML(recipe.category || "その他")}</span>
       </div>
-
-      <div class="small">
-        評価：${"★".repeat(recipe.rating || 0)}
-        ${"☆".repeat(5 - (recipe.rating || 0))}
-      </div>
-
-      <div class="small">
-        調理時間：約${Number(recipe.time || 0)}分
-        ／ ${Number(recipe.people || 1)}人分
-      </div>
-
-      <div class="small">
-        作成回数：${Number(recipe.cookedCount || 0)}回
-      </div>
-
-      ${recipe.photo ? `
-        <img class="photo" src="${recipe.photo}" alt="完成写真">
-      ` : ""}
-
+      <div class="small">評価：${"★".repeat(recipe.rating || 0)}${"☆".repeat(5 - (recipe.rating || 0))}</div>
+      <div class="small">調理時間：約${Number(recipe.time || 0)}分 ／ ${Number(recipe.people || 1)}人分 ／ 予算目安：${formatYen(recipe.budget || 0)}</div>
+      <div class="small">作成回数：${Number(recipe.cookedCount || 0)}回</div>
+      ${recipe.photo ? `<img class="photo" src="${recipe.photo}" alt="完成写真">` : ""}
       <h3>材料</h3>
       <p>${escapeHTML(recipe.ingredients || "").replace(/\n/g, "<br>")}</p>
-
       <h3>作り方</h3>
       <p>${escapeHTML(recipe.steps || "").replace(/\n/g, "<br>")}</p>
       ${recipe.sourceUrl ? `<p class="small">出典：<a href="${escapeHTML(recipe.sourceUrl)}" target="_blank" rel="noopener">レシピ元を開く</a></p>` : ""}
-
-      ${recipe.memo ? `
-        <p class="notice">${escapeHTML(recipe.memo)}</p>
-      ` : ""}
-
+      ${recipe.memo ? `<p class="notice">${escapeHTML(recipe.memo)}</p>` : ""}
       <div class="actions">
         <button onclick="editRecipe('${recipe.id}')">編集</button>
         <button onclick="markCooked('${recipe.id}')">作った！</button>
@@ -1329,49 +1261,37 @@ function renderRecipes(keyword = "") {
 document.getElementById("searchRecipe").addEventListener("click", () => {
   renderRecipes(document.getElementById("recipeSearch").value);
 });
-
 document.getElementById("recipeSearch").addEventListener("input", event => {
   renderRecipes(event.target.value);
 });
 
 function searchWebRecipe(site) {
   const word = document.getElementById("recipeSearch").value.trim();
-
   if (!word) {
     alert("検索したい料理名や食材を入力してください。");
     return;
   }
-
   const query = encodeURIComponent(word);
-
   const urls = {
     Google: "https://www.google.com/search?q=" + query + "+レシピ",
     Cookpad: "https://cookpad.com/search/" + query,
     "DELISH KITCHEN": "https://delishkitchen.tv/search?q=" + query
   };
-
   window.open(urls[site], "_blank");
 }
-
 
 /* =========================
    5. レシピのアレンジ保存
 ========================= */
-
 function renderVariations() {
   const select = document.getElementById("variationRecipe");
-
-  select.innerHTML = recipes.map(recipe => `
-    <option value="${recipe.id}">
-      ${escapeHTML(recipe.name)}
-    </option>
-  `).join("");
+  select.innerHTML = recipes.length
+    ? recipes.map(r => `<option value="${r.id}">${escapeHTML(r.name)}</option>`).join("")
+    : `<option value="">レシピを先に登録してください</option>`;
 
   const list = document.getElementById("variationList");
-
   list.innerHTML = variations.map(variation => {
     const recipe = recipes.find(r => r.id === variation.recipeId);
-
     return `
       <div class="result">
         <strong>${escapeHTML(recipe?.name || "削除済みレシピ")}</strong>
@@ -1388,12 +1308,10 @@ function renderVariations() {
 document.getElementById("saveVariation").addEventListener("click", () => {
   const recipeId = document.getElementById("variationRecipe").value;
   const name = document.getElementById("variationName").value.trim();
-
   if (!recipeId || !name) {
     alert("元のレシピとアレンジ名を入力してください。");
     return;
   }
-
   variations.unshift({
     id: uid(),
     recipeId,
@@ -1403,110 +1321,86 @@ document.getElementById("saveVariation").addEventListener("click", () => {
     memo: document.getElementById("variationMemo").value,
     createdAt: todayString()
   });
-
   persistAll();
-
   document.getElementById("variationName").value = "";
   document.getElementById("variationIngredients").value = "";
   document.getElementById("variationSteps").value = "";
   document.getElementById("variationMemo").value = "";
-
   renderVariations();
-
   alert("アレンジを保存しました！");
 });
 
 function deleteVariation(id) {
   if (!confirm("このアレンジを削除しますか？")) return;
-
   variations = variations.filter(v => v.id !== id);
-
   persistAll();
   renderVariations();
 }
 
-
 /* =========================
    6. 食材在庫の登録・管理
 ========================= */
+document.getElementById("stockSource")?.addEventListener("change", e => {
+  const priceEl = document.getElementById("stockPrice");
+  if (!priceEl) return;
+  if (e.target.value === "もらいもの") {
+    priceEl.value = 0;
+    priceEl.disabled = true;
+  } else {
+    priceEl.disabled = false;
+  }
+});
 
 document.getElementById("addStock").addEventListener("click", () => {
   const name = document.getElementById("stockName").value.trim();
-
   if (!name) {
     alert("食材名を入力してください。");
     return;
   }
-
   const source = document.getElementById("stockSource").value;
   const category = document.getElementById("stockCategory")?.value || "その他";
   const stockLevel = document.getElementById("stockLevel")?.value || "";
-
-  let price = Number(document.getElementById("stockPrice").value) || 0;
-
-  if (source === "もらいもの") {
-    price = 0;
-  }
-
+  const price = source === "もらいもの" ? 0 : (Number(document.getElementById("stockPrice").value) || 0);
   const amount = Number(document.getElementById("stockAmount").value) || 0;
   const unit = document.getElementById("stockUnit").value.trim();
+  const expiry = document.getElementById("stockExpiry").value;
 
   const existing = inventory.find(item =>
-    item.name === name &&
-    item.unit === unit &&
-    item.category === category &&
-    item.expiry === document.getElementById("stockExpiry").value
+    item.name === name && item.unit === unit && item.category === category && item.expiry === expiry
   );
 
   if (existing) {
-    existing.amount += amount;
-    existing.price += price;
+    existing.amount = Number(existing.amount || 0) + amount;
+    existing.price = Number(existing.price || 0) + price;
+    if (stockLevel) existing.stockLevel = stockLevel;
   } else {
     inventory.push({
-      id: uid(),
-      name,
-      amount,
-      unit,
-      expiry: document.getElementById("stockExpiry").value,
-      category,
-      stockLevel,
-      source,
-      price,
-      createdAt: todayString()
+      id: uid(), name, amount, unit, expiry, category, stockLevel, source, price, createdAt: todayString()
     });
   }
 
   if (price > 0) {
-    purchases.unshift({
-      id: uid(),
-      name,
-      quantity: amount,
-      unit,
-      price,
-      date: todayString(),
-      gift: source === "もらいもの"
+    purchases.push({
+      id: uid(), name, quantity: amount, unit, price, date: todayString(), gift: source === "もらいもの"
     });
   }
 
   persistAll();
-
   document.getElementById("stockName").value = "";
   document.getElementById("stockAmount").value = 1;
   document.getElementById("stockUnit").value = "";
   document.getElementById("stockExpiry").value = "";
-  if (document.getElementById("stockLevel")) document.getElementById("stockLevel").value = "";
+  document.getElementById("stockLevel").value = "";
+  document.getElementById("stockSource").value = "購入";
   document.getElementById("stockPrice").value = 0;
-
+  document.getElementById("stockPrice").disabled = false;
   renderAll();
-
   alert("在庫に登録しました！");
 });
 
 function deleteStock(id) {
   if (!confirm("この食材を在庫から削除しますか？")) return;
-
   inventory = inventory.filter(item => item.id !== id);
-
   persistAll();
   renderAll();
 }
@@ -1514,39 +1408,28 @@ function deleteStock(id) {
 function changeStock(id, delta) {
   const item = inventory.find(i => i.id === id);
   if (!item) return;
-
-  item.amount = Math.max(0, Number(item.amount) + delta);
-
-  if (item.amount === 0) {
-    if (confirm("在庫が0になりました。削除しますか？")) {
-      inventory = inventory.filter(i => i.id !== id);
-    }
+  item.amount = Math.max(0, Number((Number(item.amount) + delta).toFixed(2)));
+  if (item.amount === 0 && confirm("在庫が0になりました。削除しますか？")) {
+    inventory = inventory.filter(i => i.id !== id);
   }
-
   persistAll();
   renderAll();
 }
 
 function renderInventory() {
   const list = document.getElementById("inventoryList");
-
   if (!inventory.length) {
     list.innerHTML = "<p class='muted'>在庫はまだ登録されていません。</p>";
   } else {
     list.innerHTML = inventory.map(item => `
       <div class="result">
         <strong>${escapeHTML(item.name)}</strong>
-        <div>
-          ${Number(item.amount)}
-          ${escapeHTML(item.unit || "")}
-        </div>
-
+        <div>${Number(item.amount)} ${escapeHTML(item.unit || "")}</div>
         <div class="small">
           分類：${escapeHTML(item.category || "食材")}
           ／ 期限：${escapeHTML(item.expiry || "未設定")}
           ／ ${escapeHTML(item.stockLevel || item.source || "購入")}
         </div>
-
         <div class="actions">
           <button onclick="changeStock('${item.id}',-1)">−</button>
           <button onclick="changeStock('${item.id}',1)">＋</button>
@@ -1557,33 +1440,28 @@ function renderInventory() {
   }
 
   const home = document.getElementById("homeInventory");
-
-  home.innerHTML = inventory.length
-    ? inventory.slice(0, 5).map(item => `
-      <div class="row">
-        <span>${escapeHTML(item.name)}</span>
-        <span class="muted">${Number(item.amount)}${escapeHTML(item.unit || "")}</span>
-      </div>
-    `).join("")
-    : "<p class='muted'>在庫はありません。</p>";
-
+  if (home) {
+    home.innerHTML = inventory.length
+      ? inventory.slice(0, 5).map(item => `
+        <div class="row">
+          <span>${escapeHTML(item.name)}</span>
+          <span class="muted">${Number(item.amount)}${escapeHTML(item.unit || "")}</span>
+        </div>
+      `).join("")
+      : "<p class='muted'>在庫はありません。</p>";
+  }
   renderExpiry();
 }
 
 function renderExpiry() {
   const target = document.getElementById("expiryList");
-
   const today = new Date(todayString() + "T00:00:00");
-
   const near = inventory.filter(item => {
     if (!item.expiry) return false;
-
     const expiry = new Date(item.expiry + "T00:00:00");
     const days = (expiry - today) / 86400000;
-
     return days <= 7;
   });
-
   target.innerHTML = near.length
     ? near.map(item => `
       <div class="result">
@@ -1594,210 +1472,217 @@ function renderExpiry() {
     : "<p class='muted'>期限が近い食材はありません。</p>";
 }
 
-
 /* =========================
-   7. レシピを初期表示
+   7. 完全無料・ローカル献立エンジン
 ========================= */
-
-function renderAll() {
-  renderRecipes(document.getElementById("recipeSearch")?.value || "");
-  renderVariations();
-  renderInventory();
-  renderMealHistory();
-  renderBentoHistory();
-  renderCookingHistory();
-  renderCalendar();
-  renderSelectedDayMenu();
-  renderShopping();
-  renderCosts();
-  renderHome();
-}
-
-/* =========================
-   8. 在庫食材の優先判定
-========================= */
+const MEAL_CATEGORIES = ["主食", "主菜", "副菜", "汁物", "小鉢"];
 
 function getInventoryNames() {
-  return inventory
-    .filter(item => Number(item.amount) > 0)
-    .map(item => item.name);
+  return inventory.filter(item => Number(item.amount) > 0).map(item => item.name);
 }
 
 function recipeUsesInventory(recipe) {
-  const ingredients = recipe.ingredients || "";
-  const names = getInventoryNames();
+  const text = (recipe.name || "") + " " + (recipe.ingredients || "");
+  return getInventoryNames().filter(name => text.includes(name));
+}
 
-  return names.filter(name =>
-    ingredients.includes(name)
-  );
+function parseKeywords(str) {
+  return String(str || "")
+    .split(/[、,，\s]+/)
+    .map(x => x.trim().toLowerCase())
+    .filter(Boolean);
 }
 
 function recipeMatchesAvoid(recipe, avoid) {
-  if (!avoid) return false;
+  const words = parseKeywords(avoid);
+  if (!words.length) return false;
+  const text = ((recipe.name || "") + " " + (recipe.ingredients || "")).toLowerCase();
+  return words.some(word => text.includes(word));
+}
 
-  const words = avoid
-    .split(/[、,，\s]+/)
-    .map(x => x.trim())
-    .filter(Boolean);
-
-  return words.some(word =>
-    (recipe.name + " " + recipe.ingredients).includes(word)
-  );
+function countWantedMatches(recipe, wanted) {
+  const words = parseKeywords(wanted);
+  if (!words.length) return 0;
+  const text = ((recipe.name || "") + " " + (recipe.ingredients || "")).toLowerCase();
+  return words.filter(word => text.includes(word)).length;
 }
 
 function recipeMatchesWanted(recipe, wanted) {
-  if (!wanted) return true;
+  const words = parseKeywords(wanted);
+  if (!words.length) return true;
+  return countWantedMatches(recipe, wanted) > 0;
+}
 
-  const words = wanted
-    .split(/[、,，\s]+/)
-    .map(x => x.trim())
-    .filter(Boolean);
+function estimateCostForPeople(recipe, people) {
+  const basePeople = Math.max(1, Number(recipe.people || 4));
+  const baseBudget = Number(recipe.budget || 200);
+  return Math.round(baseBudget * people / basePeople);
+}
 
-  return words.some(word =>
-    (recipe.name + " " + recipe.ingredients).includes(word)
+function getAllRecipePool() {
+  const userPool = recipes.map(r => ({ ...r, isUserRecipe: true }));
+  const presetPool = PRESET_RECIPES
+    .filter(p => !userPool.some(u => u.name === p.name && u.category === p.category))
+    .map(p => ({ ...p, id: "preset-" + p.name, rating: 4, isUserRecipe: false }));
+  return [...userPool, ...presetPool];
+}
+
+function pickLocalRecipe(category, options, usedNames, recentNames) {
+  const { slot, people, avoid, wanted, maxTime, maxBudget } = options;
+  const pool = getAllRecipePool().filter(r => r.category === category);
+  if (!pool.length) return null;
+
+  // 条件に合う候補を段階的に緩めながら抽出（必須品が抜けないようにする）
+  let candidates = pool.filter(r =>
+    !recipeMatchesAvoid(r, avoid) &&
+    Number(r.time || 0) <= maxTime &&
+    (!r.mealSlot || r.mealSlot.includes(slot))
   );
-}
+  if (!candidates.length) {
+    candidates = pool.filter(r => !recipeMatchesAvoid(r, avoid) && (!r.mealSlot || r.mealSlot.includes(slot)));
+  }
+  if (!candidates.length) {
+    candidates = pool.filter(r => !recipeMatchesAvoid(r, avoid));
+  }
+  if (!candidates.length) candidates = pool;
 
+  const scored = candidates.map(r => {
+    const cost = estimateCostForPeople(r, people);
+    let score = 0;
+    if (r.isUserRecipe) score += 25;
+    score += recipeUsesInventory(r).length * 15;
+    score += countWantedMatches(r, wanted) * 20;
+    score += Number(r.rating || 3) * 2;
+    if (cost <= maxBudget) score += 10;
+    else score -= Math.min(20, (cost - maxBudget) / 30);
 
-/* =========================
-   9. 献立候補の選択
-========================= */
+    // 重複回避（主食のご飯類以外）
+    const isPlainRice = r.name === "白ごはん";
+    if (!isPlainRice && usedNames.has(r.name)) score -= 60;
+    if (!isPlainRice && recentNames.includes(r.name)) score -= 35;
 
-function getRecipeCandidates(category, options = {}) {
-  const {
-    used = [],
-    avoid = "",
-    wanted = "",
-    maxTime = 90,
-    budget = Infinity
-  } = options;
-
-  let candidates = recipes.filter(recipe => {
-    if (recipe.category !== category) return false;
-
-    if (used.includes(recipe.id)) return false;
-
-    if (recipeMatchesAvoid(recipe, avoid)) return false;
-
-    if (!recipeMatchesWanted(recipe, wanted)) return false;
-
-    if (Number(recipe.time || 0) > maxTime) return false;
-
-    if (Number(recipe.budget || 0) > budget) return false;
-
-    return true;
+    // 少しランダム性を混ぜて毎日同じ並びを防ぐ
+    score += Math.random() * 8;
+    return { recipe: r, score, cost };
   });
 
-  // 在庫にある食材を多く使う料理を優先
-  candidates.sort((a, b) => {
-    const aStock = recipeUsesInventory(a).length;
-    const bStock = recipeUsesInventory(b).length;
+  scored.sort((a, b) => b.score - a.score);
+  const top = scored.slice(0, Math.min(3, scored.length));
+  const picked = top[Math.floor(Math.random() * top.length)].recipe;
 
-    if (aStock !== bStock) {
-      return bStock - aStock;
-    }
-
-    // 評価の高い料理を優先
-    return Number(b.rating || 0) - Number(a.rating || 0);
-  });
-
-  return candidates;
-}
-
-function chooseRecipe(category, options = {}) {
-  const candidates = getRecipeCandidates(category, options);
-
-  if (!candidates.length) return null;
-
-  // 上位候補から選ぶ
-  const top = candidates.slice(0, Math.min(5, candidates.length));
-
-  return top[Math.floor(Math.random() * top.length)];
-}
-
-
-/* =========================
-   10. 1食分の献立を作成
-========================= */
-
-const MEAL_CATEGORIES = [
-  "主食",
-  "主菜",
-  "副菜",
-  "汁物",
-  "小鉢"
-];
-
-function createOneMeal(options, used) {
-  const meal = {};
-
-  MEAL_CATEGORIES.forEach(category => {
-    meal[category] = chooseRecipe(category, {
-      used,
-      avoid: options.avoid,
-      wanted: options.wanted,
-      maxTime: options.maxTime,
-      budget: options.budget
-    });
-
-    if (meal[category]) {
-      used.push(meal[category].id);
-    }
-  });
-
-  return meal;
-}
-
-
-/* =========================
-   11. 朝昼夕の献立作成
-========================= */
-
-function createDailyMenu(options, used) {
+  // 選択人数に材料量表記の目安コメントを付けたコピーを返す
   return {
-    breakfast: createOneMeal({
-      ...options,
-      budget: options.breakfastBudget
-    }, used),
-
-    lunch: createOneMeal({
-      ...options,
-      budget: options.lunchBudget
-    }, used),
-
-    dinner: createOneMeal({
-      ...options,
-      budget: options.dinnerBudget
-    }, used)
+    ...picked,
+    id: picked.id,
+    people,
+    budget: estimateCostForPeople(picked, people)
   };
 }
 
-function formatMealDate(date) {
-  const d = new Date(date + "T00:00:00");
+function generateLocalPlan() {
+  const people = Math.max(1, Number(document.getElementById("mealPeople").value) || 4);
+  const days = Math.min(14, Math.max(1, Number(document.getElementById("mealDays").value) || 7));
+  const startDate = document.getElementById("mealStartDate").value || todayString();
+  const budgets = {
+    breakfast: Math.max(0, Number(document.getElementById("breakfastBudget").value) || 150) * people,
+    lunch: Math.max(0, Number(document.getElementById("lunchBudget").value) || 250) * people,
+    dinner: Math.max(0, Number(document.getElementById("dinnerBudget").value) || 400) * people
+  };
+  const avoid = document.getElementById("mealAvoid").value.trim();
+  const wanted = document.getElementById("mealWanted").value.trim();
+  const maxTime = Number(document.getElementById("mealTime").value) || 30;
 
-  return `${d.getMonth() + 1}月${d.getDate()}日`;
+  const usedNames = new Set();
+  const recentNames = [];
+  const dateBase = new Date(startDate + "T00:00:00");
+  const result = [];
+
+  for (let i = 0; i < days; i++) {
+    const date = new Date(dateBase);
+    date.setDate(date.getDate() + i);
+    const dateStr = dateKey(date);
+    const menu = {};
+
+    ["breakfast", "lunch", "dinner"].forEach(slot => {
+      const slotBudget = budgets[slot];
+      const mealTimeLimit = slot === "breakfast" ? Math.min(maxTime, 15) : maxTime;
+      const meal = { "主食": null, "主菜": null, "副菜": null, "汁物": null, "小鉢": null };
+
+      // 必須3品（主食・主菜・汁物）
+      ["主食", "主菜", "汁物"].forEach(cat => {
+        const picked = pickLocalRecipe(cat, {
+          slot, people, avoid, wanted, maxTime: mealTimeLimit, maxBudget: slotBudget * 0.6
+        }, usedNames, recentNames);
+        meal[cat] = picked;
+        if (picked) {
+          usedNames.add(picked.name);
+          recentNames.push(picked.name);
+          if (recentNames.length > 15) recentNames.shift();
+        }
+      });
+
+      const baseCost = ["主食", "主菜", "汁物"].reduce((s, c) => s + (meal[c]?.budget || 0), 0);
+      const remain1 = slotBudget + 50 * people - baseCost;
+
+      // 予算に余裕があれば副菜を追加
+      if (remain1 > 100 * (people / 4)) {
+        const side = pickLocalRecipe("副菜", {
+          slot, people, avoid, wanted, maxTime: mealTimeLimit, maxBudget: remain1
+        }, usedNames, recentNames);
+        if (side) {
+          meal["副菜"] = side;
+          usedNames.add(side.name);
+        }
+      }
+
+      // さらに余裕があれば小鉢を追加
+      const withSideCost = baseCost + (meal["副菜"]?.budget || 0);
+      const remain2 = slotBudget + 50 * people - withSideCost;
+      if (slot !== "breakfast" && remain2 > 80 * (people / 4)) {
+        const kobachi = pickLocalRecipe("小鉢", {
+          slot, people, avoid, wanted, maxTime: mealTimeLimit, maxBudget: remain2
+        }, usedNames, recentNames);
+        if (kobachi) {
+          meal["小鉢"] = kobachi;
+          usedNames.add(kobachi.name);
+        }
+      }
+
+      menu[slot] = meal;
+    });
+
+    result.push({ id: uid(), date: dateStr, people, menu });
+  }
+
+  currentMealResult = result;
+  renderMealResult();
+  alert(`${days}日分の献立を作成しました！（完全無料・登録レシピ＆定番料理から作成）`);
 }
 
+document.getElementById("makeLocalPlan").addEventListener("click", generateLocalPlan);
 
 /* =========================
-   12. 献立作成ボタン
+   8. AI献立作成（7日超は分割・失敗時はローカル作成へフォールバック）
 ========================= */
-
 document.getElementById("makePlan").addEventListener("click", async () => {
   const endpoint = localStorage.getItem(STORAGE.aiEndpoint) || "";
   const code = localStorage.getItem(STORAGE.aiCode) || "";
+
   if (!endpoint || !code) {
-    alert("設定画面でAI連携URLと接続コードを保存してください。");
-    showTab("settings");
+    if (confirm("AI連携が未設定です。代わりに登録レシピ・定番レシピから完全無料で献立を作成しますか？")) {
+      generateLocalPlan();
+    }
     return;
   }
+
   const button = document.getElementById("makePlan");
   const oldText = button.textContent;
   button.disabled = true;
-  button.textContent = "献立を考えています…";
+  button.textContent = "AIで献立を考えています…";
+
   try {
     const people = Math.max(1, Number(document.getElementById("mealPeople").value) || 4);
-    const days = Math.min(7, Math.max(1, Number(document.getElementById("mealDays").value) || 7));
+    const totalDays = Math.min(14, Math.max(1, Number(document.getElementById("mealDays").value) || 7));
     const startDate = document.getElementById("mealStartDate").value || todayString();
     const budgets = {
       breakfast: Number(document.getElementById("breakfastBudget").value) || 0,
@@ -1808,482 +1693,262 @@ document.getElementById("makePlan").addEventListener("click", async () => {
     const wanted = document.getElementById("mealWanted").value.trim();
     const maxTime = Number(document.getElementById("mealTime").value) || 30;
     const pantry = inventory.filter(x => Number(x.amount) > 0).map(x => ({
-      name:x.name, amount:x.amount, unit:x.unit, category:x.category || "食材", stockLevel:x.stockLevel || ""
+      name: x.name, amount: x.amount, unit: x.unit, category: x.category || "食材", stockLevel: x.stockLevel || ""
     }));
     const expiry = {};
-    inventory.filter(x => x.expiry).forEach(x => expiry[x.name] = x.expiry);
-    const previous = mealPlans.flatMap(d => Object.values(d.menu || {}).flatMap(m => Object.values(m || {}).filter(Boolean).map(r => r.name)));
-    const existing = recipes.slice(0, 120).map(r => ({
-      name:r.name, category:r.category, ingredients:r.ingredients, steps:r.steps, time:r.time, budget:r.budget
+    inventory.filter(x => x.expiry).forEach(x => { expiry[x.name] = x.expiry; });
+    const previous = mealPlans.flatMap(d =>
+      Object.values(d.menu || {}).flatMap(m => Object.values(m || {}).filter(Boolean).map(r => r.name))
+    );
+    const existing = recipes.slice(0, 60).map(r => ({
+      name: r.name, category: r.category, time: r.time, budget: r.budget
     }));
-    const response = await fetch(endpoint.replace(/\/$/, "") + "/plan", {
-      method:"POST",
-      headers:{"Content-Type":"application/json","X-App-Code":code},
-      body:JSON.stringify({days, people, budgets, avoid:avoid.concat(maxTime ? [`調理時間${maxTime}分以内`] : []), wanted, existing, previous, pantry, expiry})
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || `献立作成に失敗しました（${response.status}）`);
-    if (!Array.isArray(data.days) || data.days.length < days) throw new Error("AIから必要な日数の献立が返りませんでした。");
-    const courseMap = {staple:"主食", main:"主菜", side:"副菜", soup:"汁物", kobachi:"小鉢"};
+
+    const courseMap = { staple: "主食", main: "主菜", side: "副菜", soup: "汁物", kobachi: "小鉢" };
     const dateBase = new Date(startDate + "T00:00:00");
-    currentMealResult = data.days.slice(0,days).map((row,index) => {
-      const date = new Date(dateBase); date.setDate(date.getDate()+index);
-      const dateString = [date.getFullYear(),String(date.getMonth()+1).padStart(2,"0"),String(date.getDate()).padStart(2,"0")].join("-");
-      const menu = {};
-      ["breakfast","lunch","dinner"].forEach(time => {
-        menu[time] = {};
-        (row.meals?.[time] || []).forEach(dish => {
-          const category = courseMap[dish.course] || dish.category || "その他";
-          const ingredients = (dish.ingredients || []).map(x => `${x.name} ${x.amount || ""}`.trim()).join("\n");
-          const recipe = {
-            id:uid(), name:dish.name || "料理", category, people,
-            ingredients, steps:Array.isArray(dish.steps) ? dish.steps.join("\n") : String(dish.steps || ""),
-            time:Number(dish.minutes || 0), budget:Math.round((Number(dish.cost_for_4)||0)*people/4),
-            rating:0, memo:dish.tip || "", photo:null, sourceUrl:dish.source_url || "",
-            createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), cookedCount:0, lastCooked:null,
-            generatedByAI:true
-          };
-          menu[time][category] = recipe;
-          // 自動登録：同名・同分類が既にあれば重複登録しない
-          const duplicate = recipes.find(r => r.name === recipe.name && r.category === recipe.category);
-          if (!duplicate) recipes.unshift(recipe);
-          else recipe.id = duplicate.id;
-        });
-        MEAL_CATEGORIES.forEach(category => { if (!menu[time][category]) menu[time][category] = null; });
+    const allGenerated = [];
+    let offset = 0;
+
+    // 7日ごとに分割してリクエスト（14日分対応）
+    while (offset < totalDays) {
+      const chunkDays = Math.min(7, totalDays - offset);
+      const response = await fetch(endpoint.replace(/\/$/, "") + "/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-App-Code": code },
+        body: JSON.stringify({
+          days: chunkDays,
+          people,
+          budgets,
+          avoid: avoid.concat(maxTime ? [`調理時間${maxTime}分以内`] : []),
+          wanted,
+          existing,
+          previous: previous.concat(allGenerated.flatMap(d => Object.values(d.menu).flatMap(m => Object.values(m).filter(Boolean).map(r => r.name)))),
+          pantry,
+          expiry
+        })
       });
-      return {id:uid(),date:dateString,people,menu};
-    });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `献立作成に失敗しました（${response.status}）`);
+      if (!Array.isArray(data.days) || data.days.length < chunkDays) {
+        throw new Error("AIから必要な日数の献立が返りませんでした。");
+      }
+
+      data.days.slice(0, chunkDays).forEach((row, index) => {
+        const date = new Date(dateBase);
+        date.setDate(date.getDate() + offset + index);
+        const dateString = dateKey(date);
+        const menu = {};
+
+        ["breakfast", "lunch", "dinner"].forEach(time => {
+          menu[time] = {};
+          (row.meals?.[time] || []).forEach(dish => {
+            const category = courseMap[dish.course] || (MEAL_CATEGORIES.includes(dish.category) ? dish.category : "副菜");
+            const ingredients = (dish.ingredients || []).map(x => `${x.name} ${x.amount || ""}`.trim()).join("\n");
+            const recipe = {
+              id: uid(),
+              name: dish.name || "料理",
+              category,
+              people,
+              ingredients,
+              steps: Array.isArray(dish.steps) ? dish.steps.join("\n") : String(dish.steps || ""),
+              time: Number(dish.minutes || 0),
+              budget: Math.round((Number(dish.cost_for_4) || 0) * people / 4),
+              rating: 0,
+              memo: dish.tip || "",
+              photo: null,
+              sourceUrl: dish.source_url || "",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              cookedCount: 0,
+              lastCooked: null,
+              generatedByAI: true
+            };
+            menu[time][category] = recipe;
+            const duplicate = recipes.find(r => r.name === recipe.name && r.category === recipe.category);
+            if (!duplicate) recipes.unshift(recipe);
+            else recipe.id = duplicate.id;
+          });
+          MEAL_CATEGORIES.forEach(category => {
+            if (!menu[time][category]) menu[time][category] = null;
+          });
+        });
+
+        allGenerated.push({ id: uid(), date: dateString, people, menu });
+      });
+
+      offset += chunkDays;
+    }
+
+    currentMealResult = allGenerated;
     persistAll();
     renderMealResult();
     renderAll();
-    alert("献立を作成しました。使用した料理はレシピ帳にも自動登録しました。");
+    alert("AIで献立を作成しました。新しい料理はレシピ帳にも登録しました。");
   } catch (error) {
-    alert(error.message || "献立を作成できませんでした。AI接続設定とWorkerを確認してください。");
+    const useLocal = confirm(
+      (error.message || "AIでの献立作成に失敗しました。") +
+      "\n\n代わりに「登録レシピ＋定番レシピ」から完全無料で今すぐ献立を作成しますか？"
+    );
+    if (useLocal) generateLocalPlan();
   } finally {
     button.disabled = false;
     button.textContent = oldText;
   }
 });
 
-
-/* =========================
-   13. 作成した献立の表示
-========================= */
+function renderDishItemHTML(category, recipe) {
+  if (!recipe) return "";
+  return `
+    <details class="dish-detail">
+      <summary>
+        <span class="tag">${escapeHTML(category)}</span>
+        <strong>${escapeHTML(recipe.name)}</strong>
+        <span class="small">${Number(recipe.time || 0)}分 / 約${formatYen(recipe.budget || 0)}</span>
+      </summary>
+      <div class="dish-body">
+        ${recipe.ingredients ? `<div><strong>材料（${Number(recipe.people || 4)}人分基準）：</strong><br>${escapeHTML(recipe.ingredients).replace(/\n/g, "<br>")}</div>` : ""}
+        ${recipe.steps ? `<div style="margin-top:6px"><strong>作り方：</strong><br>${escapeHTML(recipe.steps).replace(/\n/g, "<br>")}</div>` : ""}
+      </div>
+    </details>
+  `;
+}
 
 function renderMealResult() {
   const target = document.getElementById("mealResult");
-
   if (!currentMealResult.length) {
-    target.innerHTML =
-      "<p class='muted'>献立がまだありません。</p>";
+    target.innerHTML = "<p class='muted'>献立がまだありません。</p>";
     return;
   }
 
-  const timeNames = {
-    breakfast: "🌅 朝食",
-    lunch: "☀️ 昼食",
-    dinner: "🌙 夕食"
-  };
-
+  const timeNames = { breakfast: "🌅 朝食", lunch: "☀️ 昼食", dinner: "🌙 夕食" };
   target.innerHTML = currentMealResult.map(day => {
-
-    let html = `
-      <div class="result">
-        <h3>${formatMealDate(day.date)}</h3>
-        <div class="small">${day.people}人分</div>
-    `;
-
+    let html = `<div class="result"><h3>${formatDateJP(day.date)}</h3><div class="small">${day.people}人分（料理名タップで材料・作り方）</div>`;
     ["breakfast", "lunch", "dinner"].forEach(time => {
-      html += `
-        <h3>${timeNames[time]}</h3>
-      `;
-
+      html += `<h3>${timeNames[time]}</h3>`;
+      let any = false;
       MEAL_CATEGORIES.forEach(category => {
-        const recipe = day.menu[time][category];
-
-        html += `
-          <div class="row">
-            <span class="tag">${category}</span>
-            <strong>
-              ${recipe
-                ? escapeHTML(recipe.name)
-                : "未登録・候補なし"}
-            </strong>
-          </div>
-        `;
+        const recipe = day.menu[time]?.[category];
+        if (recipe) {
+          html += renderDishItemHTML(category, recipe);
+          any = true;
+        }
       });
+      if (!any) html += `<p class="muted">メニューなし</p>`;
     });
-
     html += `</div>`;
-
     return html;
   }).join("");
 }
 
-
-/* =========================
-   14. 献立の保存
-========================= */
-
 document.getElementById("saveMealPlan").addEventListener("click", () => {
-
   if (!currentMealResult.length) {
     alert("先に献立を作成してください。");
     return;
   }
-
   currentMealResult.forEach(day => {
-    const existingIndex = mealPlans.findIndex(
-      plan => plan.date === day.date
-    );
-
-    if (existingIndex >= 0) {
-      mealPlans[existingIndex] = day;
-    } else {
-      mealPlans.push(day);
-    }
+    const existingIndex = mealPlans.findIndex(plan => plan.date === day.date);
+    if (existingIndex >= 0) mealPlans[existingIndex] = day;
+    else mealPlans.push(day);
   });
-
   persistAll();
-
-  renderCalendar();
-  renderMealHistory();
-  renderHome();
-
-  alert("献立を保存しました！");
+  renderAll();
+  alert("献立をカレンダーに保存しました！");
 });
 
-
 /* =========================
-   15. 献立から買い物リストを作成
+   9. 買い物リスト・在庫差し引き・購入記録
 ========================= */
-
 function extractIngredients(text) {
-  return String(text || "")
-    .split(/\n/)
-    .map(line => line.trim())
-    .filter(Boolean);
+  return String(text || "").split(/\n/).map(line => line.trim()).filter(Boolean);
+}
+
+function normalizeFoodName(value) {
+  return String(value || "").trim().replace(/\s+/g, "").toLowerCase();
+}
+
+function parseIngredientLine(line) {
+  const text = String(line || "").trim();
+  if (!text) return null;
+  const m = text.match(/^(.+?)\s+([0-9]+(?:\.[0-9]+)?)\s*(.*)$/);
+  if (!m) return { name: text, amount: 1, unit: "" };
+  return { name: m[1].trim(), amount: Number(m[2]), unit: (m[3] || "").trim() };
 }
 
 function buildShoppingFromPlans() {
-  const map = {};
-
+  const totals = new Map();
   mealPlans.forEach(day => {
     Object.values(day.menu || {}).forEach(meal => {
       Object.values(meal || {}).forEach(recipe => {
         if (!recipe) return;
-
         extractIngredients(recipe.ingredients).forEach(line => {
-          const match = line.match(/^(.+?)\s+([\d.]+)\s*(.*)$/);
-
-          if (match) {
-            const name = match[1].trim();
-            const amount = Number(match[2]);
-            const unit = match[3].trim();
-
-            const key = name + "|" + unit;
-
-            if (!map[key]) {
-              map[key] = {
-                name,
-                amount: 0,
-                unit
-              };
-            }
-
-            map[key].amount += amount;
-          } else {
-            const name = line;
-
-            if (!map[name]) {
-              map[name] = {
-                name,
-                amount: 1,
-                unit: ""
-              };
-            }
-          }
+          const item = parseIngredientLine(line);
+          if (!item) return;
+          const key = normalizeFoodName(item.name) + "|" + item.unit;
+          if (!totals.has(key)) totals.set(key, { ...item });
+          else totals.get(key).amount += item.amount;
         });
       });
     });
   });
 
-  const stockNames = inventory.map(item => item.name);
-
-  shopping = Object.values(map)
-    .filter(item => !stockNames.includes(item.name))
-    .map(item => ({
-      id: uid(),
-      name: item.name,
-      amount: item.amount,
-      unit: item.unit,
-      checked: false,
-      purchased: false,
-      price: 0
-    }));
-
-  persistAll();
-
-  renderShopping();
-
-  alert("献立から買い物リストを作成しました！");
-}
-
-
-/* =========================
-   16. 買い物リスト作成ボタン
-========================= */
-
-document.getElementById("shoppingList").insertAdjacentHTML(
-  "beforeend",
-  "<button class='primary full' id='makeShoppingFromPlans'>献立から買い物リストを作る</button>"
-);
-
-document.getElementById("makeShoppingFromPlans").addEventListener(
-  "click",
-  buildShoppingFromPlans
-);
-
-
-/* =========================
-   17. 手動で食材を追加
-========================= */
-
-document.getElementById("addShoppingItem").addEventListener("click", () => {
-
-  const name = document.getElementById("shoppingNewName").value.trim();
-
-  if (!name) {
-    alert("食材名を入力してください。");
-    return;
-  }
-
-  shopping.push({
-    id: uid(),
-    name,
-    amount: Number(document.getElementById("shoppingNewAmount").value) || 1,
-    unit: document.getElementById("shoppingNewUnit").value.trim(),
-    checked: false,
-    purchased: false,
-    price: 0,
-    manual: true
-  });
-
-  persistAll();
-
-  document.getElementById("shoppingNewName").value = "";
-  document.getElementById("shoppingNewAmount").value = "";
-  document.getElementById("shoppingNewUnit").value = "";
-
-  renderShopping();
-});
-
-/* =========================
-   18. 献立の履歴表示
-========================= */
-
-function renderMealHistory() {
-  const target = document.getElementById("mealHistory");
-
-  if (!target) return;
-
-  if (!mealPlans.length) {
-    target.innerHTML =
-      "<p class='muted'>保存した献立はありません。</p>";
-    return;
-  }
-
-  target.innerHTML = [...mealPlans]
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(day => `
-      <div class="result">
-        <strong>${formatMealDate(day.date)}</strong>
-        <p class="small">${day.people || 1}人分</p>
-        <button onclick="showSavedDay('${day.date}')">
-          献立を見る
-        </button>
-        <button onclick="deleteMealPlan('${day.date}')">
-          削除
-        </button>
-      </div>
-    `).join("");
-}
-
-function showSavedDay(date) {
-  const plan = mealPlans.find(day => day.date === date);
-
-  if (!plan) return;
-
-  selectedCalendarDate = new Date(date + "T00:00:00");
-
-  renderCalendar();
-  renderSelectedDayMenu();
-  showTab("calendar");
-}
-
-function deleteMealPlan(date) {
-  if (!confirm("この日の献立を削除しますか？")) return;
-
-  mealPlans = mealPlans.filter(day => day.date !== date);
-
-  persistAll();
-
-  renderAll();
-}
-
-/* =====================================
-   第5回：カレンダー・費用・履歴の表示
-===================================== */
-
-// HTML要素を安全に取得
-function getElement(...ids) {
-  for (const id of ids) {
-    const el = document.getElementById(id);
-    if (el) return el;
-  }
-  return null;
-}
-
-// 日付を表示用に整える
-function formatDateJP(date) {
-  const d = new Date(date);
-  if (Number.isNaN(d.getTime())) return "";
-  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
-}
-
-// 金額表示
-function formatYen(value) {
-  return Math.round(Number(value) || 0).toLocaleString("ja-JP") + "円";
-}
-
-
-/* =====================================
-   カレンダー・ホーム画面
-===================================== */
-
-function dateKey(date) {
-  const d = new Date(date);
-  return [d.getFullYear(), String(d.getMonth()+1).padStart(2,"0"), String(d.getDate()).padStart(2,"0")].join("-");
-}
-
-function renderCalendar() {
-  const year = calendarMonth.getFullYear();
-  const month = calendarMonth.getMonth();
-  const firstDay = new Date(year, month, 1).getDay();
-  const lastDate = new Date(year, month + 1, 0).getDate();
-  const today = todayString();
-  const selected = dateKey(selectedCalendarDate);
-  const targets = [
-    {grid: document.getElementById("calendarGrid"), title: document.getElementById("calendarTitle")},
-    {grid: document.getElementById("homeCalendarGrid"), title: document.getElementById("homeCalendarTitle")}
-  ];
-
-  targets.forEach(({grid, title}) => {
-    if (title) title.textContent = `${year}年${month + 1}月`;
-    if (!grid) return;
-    let html = ["日","月","火","水","木","金","土"].map(day =>
-      `<div class="calendar-weekday">${day}</div>`
-    ).join("");
-    for (let i = 0; i < firstDay; i++) html += `<div class="calendar-day other"></div>`;
-    for (let day = 1; day <= lastDate; day++) {
-      const date = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-      const plan = mealPlans.find(item => item.date === date);
-      const isToday = date === today;
-      const isSelected = date === selected;
-      let mealLabels = "";
-      if (plan && plan.menu) {
-        const dinner = plan.menu.dinner || {};
-        const lunch = plan.menu.lunch || {};
-        const breakfast = plan.menu.breakfast || {};
-        const dish = meal => meal["主菜"]?.name || meal["主食"]?.name || "献立あり";
-        if (breakfast["主菜"] || breakfast["主食"]) mealLabels += `<span class="calendar-meal">朝 ${escapeHTML(dish(breakfast))}</span>`;
-        if (lunch["主菜"] || lunch["主食"]) mealLabels += `<span class="calendar-meal lunch">昼 ${escapeHTML(dish(lunch))}</span>`;
-        if (dinner["主菜"] || dinner["主食"]) mealLabels += `<span class="calendar-meal dinner">夕 ${escapeHTML(dish(dinner))}</span>`;
-      }
-      html += `<button type="button" class="calendar-day${isToday ? " today" : ""}${isSelected ? " selected" : ""}" onclick="selectCalendarDate('${date}')"><span class="calendar-number">${day}</span>${mealLabels}</button>`;
-    }
-    const cells = firstDay + lastDate;
-    const trailing = (7 - (cells % 7)) % 7;
-    for (let i = 0; i < trailing; i++) html += `<div class="calendar-day other"></div>`;
-    grid.innerHTML = html;
-  });
-}
-
-function changeCalendarMonth(amount) {
-  calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + amount, 1);
-  renderCalendar();
-}
-
-function selectCalendarDate(date) {
-  selectedCalendarDate = new Date(date + "T00:00:00");
-  // 選択した日が表示中の月と異なる場合にも表示を合わせる
-  calendarMonth = new Date(selectedCalendarDate.getFullYear(), selectedCalendarDate.getMonth(), 1);
-  renderCalendar();
-  renderSelectedDayMenu();
-}
-
-function renderSelectedDayMenu() {
-  const date = dateKey(selectedCalendarDate);
-  const plan = mealPlans.find(item => item.date === date);
-  const targets = ["selectedDayMenu", "homeSelectedDayMenu"]
-    .map(id => document.getElementById(id)).filter(Boolean);
-  const labels = {breakfast:"🌅 朝食", lunch:"☀️ 昼食", dinner:"🌙 夕食"};
-  targets.forEach(target => {
-    if (!plan) {
-      target.innerHTML = `<p class="muted">${formatDateJP(date)}の献立はまだ登録されていません。</p><button class="full" onclick="showTab('meal')">この日の献立を作る</button>`;
-      return;
-    }
-    let html = `<p class="small">${formatDateJP(date)} ・ ${Number(plan.people || 1)}人分</p>`;
-    Object.entries(labels).forEach(([key, label]) => {
-      html += `<h3>${label}</h3>`;
-      const meal = plan.menu?.[key] || {};
-      const order = ["主食","主菜","副菜","汁物","小鉢"];
-      order.forEach(category => {
-        const recipe = meal[category];
-        if (recipe) html += `<div class="row"><span class="tag">${category}</span><strong>${escapeHTML(recipe.name)}</strong></div>`;
+  const next = [];
+  totals.forEach(item => {
+    const keyName = normalizeFoodName(item.name);
+    const stock = inventory
+      .filter(s => normalizeFoodName(s.name) === keyName && (!s.unit || !item.unit || s.unit === item.unit))
+      .reduce((sum, s) => sum + Math.max(0, Number(s.amount) || 0), 0);
+    const remaining = Math.max(0, item.amount - stock);
+    if (remaining > 0) {
+      const old = shopping.find(x => normalizeFoodName(x.name) === keyName && (x.unit || "") === item.unit);
+      next.push({
+        id: old?.id || uid(),
+        name: item.name,
+        amount: Number(remaining.toFixed(2)),
+        unit: item.unit,
+        checked: false,
+        purchased: false,
+        price: 0
       });
-      if (!order.some(category => meal[category])) html += `<p class="muted">未登録</p>`;
-    });
-    target.innerHTML = html;
+    }
   });
+  shopping.filter(x => x.manual).forEach(x => next.push(x));
+  shopping = next;
+  persistAll();
+  renderShopping();
+  renderHome();
+  alert("保存済みの献立から、在庫を差し引いた買い物リストを作成しました。");
 }
-
-function renderHome() {
-  const today = todayString();
-  const monthRecords = purchases.filter(p => String(p.date || "").slice(0,7) === today.slice(0,7));
-  const monthTotal = monthRecords.reduce((sum,p) => sum + (Number(p.price)||0),0);
-  const homeCost = document.getElementById("homeCost");
-  if (homeCost) homeCost.innerHTML = `<strong class="home-cost-number">${formatYen(monthTotal)}</strong><span class="muted"> 今月の購入分（もらいものは0円）</span>`;
-  const homeShopping = document.getElementById("homeShopping");
-  if (homeShopping) {
-    const remaining = shopping.filter(item => !item.checked && !item.purchased);
-    homeShopping.innerHTML = remaining.length
-      ? `<strong>${remaining.length}品</strong><p class="small">${remaining.slice(0,3).map(item => escapeHTML(item.name)).join("・")}${remaining.length > 3 ? " ほか" : ""}</p>`
-      : `<p class="muted">買い物リストは空です。</p>`;
-  }
-}
-
-/* =====================================
-   買い物リスト
-===================================== */
 
 function renderShopping() {
   const box = document.getElementById("shoppingList");
   if (!box) return;
+  const makeButton = `<button class="primary full" id="makeShoppingFromPlans">献立から買い物リストを作る（在庫を差し引く）</button>`;
+
   if (!shopping.length) {
-    box.innerHTML = `<p class="muted">買い物リストはまだありません。献立から作成するか、食材を追加してください。</p>`;
+    box.innerHTML = `<p class="muted">買い物リストはまだありません。献立から作成するか、食材を追加してください。</p>${makeButton}`;
   } else {
     box.innerHTML = shopping.map(item => `
-      <div class="shopping-row">
-        <label>
-          <input type="checkbox" ${item.checked ? "checked" : ""} onchange="toggleShoppingItem('${item.id}', this.checked)">
-          <span>${escapeHTML(item.name)}</span>
-        </label>
-        <span>${Number(item.amount || 1)} ${escapeHTML(item.unit || "")}</span>
-        <button onclick="deleteShoppingItem('${item.id}')">削除</button>
+      <div class="result shopping-purchase-card">
+        <div class="row" style="justify-content:space-between">
+          <strong>${escapeHTML(item.name)}</strong>
+          <span>${Number(item.amount || 1)} ${escapeHTML(item.unit || "")}</span>
+        </div>
+        <div class="grid">
+          <div><label>実際に買った数量</label><input type="number" min="0.1" step="0.1" id="buyQty-${item.id}" value="${Number(item.amount || 1)}"></div>
+          <div><label>実際の金額（円）</label><input type="number" min="0" step="1" id="buyPrice-${item.id}" value="${Number(item.price || 0)}"></div>
+        </div>
+        <label>単位</label><input id="buyUnit-${item.id}" value="${escapeHTML(item.unit || "")}" placeholder="個・袋・gなど">
+        <div class="actions" style="margin-top:8px">
+          <label style="margin:0"><input type="checkbox" style="width:auto" ${item.checked ? "checked" : ""} onchange="toggleShoppingItem('${item.id}',this.checked)"> 購入済み</label>
+          <button class="primary" onclick="recordShoppingPurchase('${item.id}',false)">購入を記録</button>
+          <button onclick="recordShoppingPurchase('${item.id}',true)">もらいもの（0円）</button>
+          <button onclick="deleteShoppingItem('${item.id}')">削除</button>
+        </div>
       </div>
-    `).join("");
+    `).join("") + makeButton;
   }
+  document.getElementById("makeShoppingFromPlans")?.addEventListener("click", buildShoppingFromPlans);
 }
 
 function toggleShoppingItem(id, checked) {
@@ -2291,7 +1956,6 @@ function toggleShoppingItem(id, checked) {
   if (!item) return;
   item.checked = checked;
   persistAll();
-  renderShopping();
   renderHome();
 }
 
@@ -2302,52 +1966,47 @@ function deleteShoppingItem(id) {
   renderHome();
 }
 
-/* =====================================
-   食材費の集計
-===================================== */
+function recordShoppingPurchase(id, gift) {
+  const item = shopping.find(x => x.id === id);
+  if (!item) return;
+  const quantity = Number(document.getElementById(`buyQty-${id}`)?.value);
+  const price = gift ? 0 : Number(document.getElementById(`buyPrice-${id}`)?.value);
+  const unit = document.getElementById(`buyUnit-${id}`)?.value.trim() || item.unit || "個";
+  if (!(quantity > 0) || !Number.isFinite(quantity)) return alert("購入数量を正しく入力してください。");
+  if (!(price >= 0) || !Number.isFinite(price)) return alert("金額を正しく入力してください。");
 
-function renderCosts() {
-  const records = Array.isArray(purchases) ? purchases : [];
-  const today = new Date();
-  const startWeek = new Date(today);
-  startWeek.setDate(today.getDate() - ((today.getDay() + 6) % 7));
-  startWeek.setHours(0,0,0,0);
-  const startMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const total = records.reduce((sum,p) => sum + (Number(p.price)||0), 0);
-  const weekly = records.filter(p => new Date((p.date || todayString()) + "T00:00:00") >= startWeek)
-    .reduce((sum,p) => sum + (Number(p.price)||0), 0);
-  const monthly = records.filter(p => {
-    const d = new Date((p.date || todayString()) + "T00:00:00");
-    return d >= startMonth && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
-  }).reduce((sum,p) => sum + (Number(p.price)||0), 0);
-  const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = formatYen(value); };
-  setText("totalCost", total);
-  setText("weeklyCost", weekly);
-  setText("monthlyCost", monthly);
-  const history = document.getElementById("purchaseHistory");
-  if (history) history.innerHTML = records.length ? records.slice().reverse().map(p => `
-    <div class="purchase-row"><div class="row" style="justify-content:space-between"><strong>${escapeHTML(p.name)}</strong><strong>${formatYen(p.price)}</strong></div>
-    <div class="small">${formatDateJP(p.date)} ・ ${Number(p.quantity || p.amount || 0)} ${escapeHTML(p.unit || "")} ${p.gift ? "・もらいもの" : ""}</div></div>
-  `).join("") : `<p class="muted">購入履歴はまだありません。</p>`;
-  const chart = document.getElementById("costChart");
-  if (chart) {
-    const period = document.getElementById("costPeriod")?.value || "month";
-    const grouped = {};
-    records.forEach(p => {
-      const d = new Date((p.date || todayString()) + "T00:00:00");
-      if (Number.isNaN(d.getTime())) return;
-      const key = period === "week" ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}` : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
-      grouped[key] = (grouped[key] || 0) + (Number(p.price)||0);
-    });
-    const keys = Object.keys(grouped).sort().slice(period === "week" ? -7 : -6);
-    const max = Math.max(1, ...keys.map(k => grouped[k]));
-    chart.innerHTML = keys.length ? keys.map(k => `<div class="cost-bar-row"><span>${k}</span><div class="cost-bar"><span style="width:${grouped[k]/max*100}%"></span></div><strong>${formatYen(grouped[k])}</strong></div>`).join("") : `<p class="muted">集計できる購入記録がありません。</p>`;
-  }
+  const record = { id: uid(), name: item.name, quantity, unit, price, gift: !!gift, date: todayString() };
+  purchases.push(record);
+  addPurchaseToInventory(record);
+  shopping = shopping.filter(x => x.id !== id);
+  persistAll();
+  renderAll();
+  alert(gift ? "もらいものを0円で記録し、在庫に追加しました。" : "購入金額を記録し、在庫に追加しました。");
 }
 
-/* =====================================
-   購入記録フォーム
-===================================== */
+document.getElementById("addShoppingItem").addEventListener("click", () => {
+  const name = document.getElementById("shoppingNewName").value.trim();
+  if (!name) {
+    alert("食材名を入力してください。");
+    return;
+  }
+  shopping.push({
+    id: uid(),
+    name,
+    amount: Number(document.getElementById("shoppingNewAmount").value) || 1,
+    unit: document.getElementById("shoppingNewUnit").value.trim(),
+    checked: false,
+    purchased: false,
+    price: 0,
+    manual: true
+  });
+  persistAll();
+  document.getElementById("shoppingNewName").value = "";
+  document.getElementById("shoppingNewAmount").value = "";
+  document.getElementById("shoppingNewUnit").value = "";
+  renderShopping();
+  renderHome();
+});
 
 function addPurchaseForm() {
   const box = document.getElementById("purchaseEntry");
@@ -2363,7 +2022,7 @@ function addPurchaseForm() {
       <label><input id="purchaseGift" type="checkbox" style="width:auto"> もらいもの（0円で記録）</label>
       <label>購入・入手日</label><input id="purchaseDate" type="date" value="${todayString()}">
       <button class="primary full" id="savePurchase">購入内容を保存して在庫に追加</button>
-      <div id="purchaseStatus" class="status"></div>
+      <div id="purchaseStatus" class="small" style="margin-top:6px"></div>
     </div>`;
   document.getElementById("purchaseGift").addEventListener("change", e => {
     const price = document.getElementById("purchasePrice");
@@ -2381,15 +2040,18 @@ function savePurchaseRecord() {
   const price = gift ? 0 : Number(document.getElementById("purchasePrice").value);
   const date = document.getElementById("purchaseDate").value;
   const status = document.getElementById("purchaseStatus");
+
   if (!name) { status.textContent = "食材名を入力してください。"; return; }
   if (!(quantity > 0)) { status.textContent = "数量を正しく入力してください。"; return; }
   if (!(price >= 0) || !Number.isFinite(price)) { status.textContent = "金額を正しく入力してください。"; return; }
   if (!date) { status.textContent = "日付を入力してください。"; return; }
-  const record = {id:uid(), name, quantity, unit, price, gift, date};
+
+  const record = { id: uid(), name, quantity, unit, price, gift, date };
   purchases.push(record);
   addPurchaseToInventory(record);
   persistAll();
   status.textContent = "購入記録と在庫を保存しました！";
+
   document.getElementById("purchaseName").value = "";
   document.getElementById("purchaseQuantity").value = 1;
   document.getElementById("purchaseUnit").value = "";
@@ -2404,341 +2066,546 @@ function addPurchaseToInventory(purchase) {
   if (!name) return;
   const unit = purchase.unit || "個";
   const amount = Number(purchase.quantity || 0);
-  const existing = inventory.find(item => item.name?.trim().toLowerCase() === name.toLowerCase() && (item.unit || "個") === unit);
+  const existing = inventory.find(
+    item => item.name?.trim().toLowerCase() === name.toLowerCase() && (item.unit || "個") === unit
+  );
   if (existing) {
     existing.amount = (Number(existing.amount) || 0) + amount;
     existing.price = (Number(existing.price) || 0) + (Number(purchase.price) || 0);
     if (purchase.gift && existing.source !== "購入") existing.source = "もらいもの";
   } else {
-    inventory.unshift({id:uid(), name, amount, unit, expiry:"", source:purchase.gift ? "もらいもの" : "購入", price:Number(purchase.price)||0, createdAt:purchase.date || todayString()});
-  }
-}
-
-/* =====================================
-   お弁当履歴
-===================================== */
-
-function renderBentoHistory() {
-  const box = getElement(
-    "bentoHistory",
-    "savedBentoes",
-    "bentoRecords"
-  );
-
-  if (!box) return;
-
-  const records = Array.isArray(bentoHistory)
-    ? bentoHistory
-    : [];
-
-  if (!records.length) {
-    box.innerHTML = `<p class="muted">お弁当の保存履歴はまだありません。</p>`;
-    return;
-  }
-
-  box.innerHTML = records.slice().reverse().map(item => `
-    <div class="card">
-      <strong>${escapeHTML(item.title || item.name || "お弁当")}</strong>
-      <p class="muted">${formatDateJP(item.date || item.createdAt)}</p>
-      <p>${escapeHTML(item.memo || "")}</p>
-    </div>
-  `).join("");
-}
-
-
-/* =====================================
-   調理履歴
-===================================== */
-
-function renderCookingHistory() {
-  const box = getElement(
-    "cookingHistory",
-    "cookingRecords"
-  );
-
-  if (!box) return;
-
-  const records = Array.isArray(cookingHistory)
-    ? cookingHistory
-    : [];
-
-  if (!records.length) {
-    box.innerHTML = `<p class="muted">調理履歴はまだありません。</p>`;
-    return;
-  }
-
-  box.innerHTML = records.slice().reverse().map(item => `
-    <div class="card">
-      <strong>${escapeHTML(item.name || item.title || "料理")}</strong>
-      <p class="muted">${formatDateJP(item.date || item.createdAt)}</p>
-      <p>${escapeHTML(item.memo || "")}</p>
-    </div>
-  `).join("");
-}
-
-
-// 月移動ボタン・集計期間の操作
-document.getElementById("prevMonth")?.addEventListener("click", () => changeCalendarMonth(-1));
-document.getElementById("nextMonth")?.addEventListener("click", () => changeCalendarMonth(1));
-document.getElementById("homePrevMonth")?.addEventListener("click", () => changeCalendarMonth(-1));
-document.getElementById("homeNextMonth")?.addEventListener("click", () => changeCalendarMonth(1));
-document.getElementById("costPeriod")?.addEventListener("change", renderCosts);
-
-// 初回表示
-document.getElementById("mealStartDate").value = todayString();
-addPurchaseForm();
-renderAll();
-renderSelectedDayMenu();
-
-
-/* =====================================
-   追加改良：買い物・在庫連動／購入記録／お弁当作成
-   既存データ形式を維持して追加
-===================================== */
-
-// 安全な食材名比較
-function normalizeFoodName(value) {
-  return String(value || '').trim().replace(/\s+/g, '').toLowerCase();
-}
-
-// 材料行「食材名 数量 単位」を読み取る（読めない行は数量1として扱う）
-function parseIngredientLine(line) {
-  const text = String(line || '').trim();
-  if (!text) return null;
-  const m = text.match(/^(.+?)\s+([0-9]+(?:\.[0-9]+)?)\s*(.*)$/);
-  if (!m) return {name:text, amount:1, unit:''};
-  return {name:m[1].trim(), amount:Number(m[2]), unit:(m[3] || '').trim()};
-}
-
-// 献立から材料を集計し、在庫数量を差し引いて買い物リスト化
-function buildShoppingFromPlans() {
-  const totals = new Map();
-  mealPlans.forEach(day => {
-    Object.values(day.menu || {}).forEach(meal => {
-      Object.values(meal || {}).forEach(recipe => {
-        if (!recipe) return;
-        extractIngredients(recipe.ingredients).forEach(line => {
-          const item = parseIngredientLine(line);
-          if (!item) return;
-          const key = normalizeFoodName(item.name) + '|' + item.unit;
-          if (!totals.has(key)) totals.set(key, {...item});
-          else totals.get(key).amount += item.amount;
-        });
-      });
+    inventory.unshift({
+      id: uid(),
+      name,
+      amount,
+      unit,
+      expiry: "",
+      category: "その他",
+      source: purchase.gift ? "もらいもの" : "購入",
+      price: Number(purchase.price) || 0,
+      createdAt: purchase.date || todayString()
     });
-  });
-
-  const next = [];
-  totals.forEach(item => {
-    const keyName = normalizeFoodName(item.name);
-    const stock = inventory.filter(s => normalizeFoodName(s.name) === keyName && (!s.unit || !item.unit || s.unit === item.unit))
-      .reduce((sum, s) => sum + Math.max(0, Number(s.amount) || 0), 0);
-    const remaining = Math.max(0, item.amount - stock);
-    if (remaining > 0) {
-      const old = shopping.find(x => normalizeFoodName(x.name) === keyName && (x.unit || '') === item.unit);
-      next.push({id:old?.id || uid(), name:item.name, amount:Number(remaining.toFixed(2)), unit:item.unit, checked:false, purchased:false, price:0});
-    }
-  });
-  // 手入力品は保持
-  shopping.filter(x => x.manual).forEach(x => next.push(x));
-  shopping = next;
-  persistAll();
-  renderShopping();
-  renderHome();
-  alert('在庫の数量を差し引いて買い物リストを作成しました。');
-}
-
-// 買い物リスト：購入数量・金額をその場で入力して費用と在庫に反映
-function renderShopping() {
-  const box = document.getElementById('shoppingList');
-  if (!box) return;
-  const makeButton = `<button class="primary full" id="makeShoppingFromPlans">献立から買い物リストを作る（在庫を差し引く）</button>`;
-  if (!shopping.length) {
-    box.innerHTML = `<p class="muted">買い物リストはまだありません。献立から作成するか、食材を追加してください。</p>${makeButton}`;
-  } else {
-    box.innerHTML = shopping.map(item => `
-      <div class="result shopping-purchase-card">
-        <div class="row" style="justify-content:space-between">
-          <strong>${escapeHTML(item.name)}</strong>
-          <span>${Number(item.amount || 1)} ${escapeHTML(item.unit || '')}</span>
-        </div>
-        <div class="grid">
-          <div><label>実際に買った数量</label><input type="number" min="0.1" step="0.1" id="buyQty-${item.id}" value="${Number(item.amount || 1)}"></div>
-          <div><label>実際の金額（円）</label><input type="number" min="0" step="1" id="buyPrice-${item.id}" value="${Number(item.price || 0)}"></div>
-        </div>
-        <label>単位</label><input id="buyUnit-${item.id}" value="${escapeHTML(item.unit || '')}" placeholder="個・袋・gなど">
-        <div class="actions">
-          <label style="margin:0"><input type="checkbox" style="width:auto" ${item.checked ? 'checked' : ''} onchange="toggleShoppingItem('${item.id}',this.checked)"> 購入済み</label>
-          <button class="primary" onclick="recordShoppingPurchase('${item.id}',false)">購入を記録</button>
-          <button onclick="recordShoppingPurchase('${item.id}',true)">もらいもの（0円）</button>
-          <button onclick="deleteShoppingItem('${item.id}')">削除</button>
-        </div>
-      </div>`).join('') + makeButton;
   }
-  document.getElementById('makeShoppingFromPlans')?.addEventListener('click', buildShoppingFromPlans);
 }
 
-function recordShoppingPurchase(id, gift) {
-  const item = shopping.find(x => x.id === id);
-  if (!item) return;
-  const quantity = Number(document.getElementById(`buyQty-${id}`)?.value);
-  const price = gift ? 0 : Number(document.getElementById(`buyPrice-${id}`)?.value);
-  const unit = document.getElementById(`buyUnit-${id}`)?.value.trim() || item.unit || '個';
-  if (!(quantity > 0) || !Number.isFinite(quantity)) return alert('購入数量を正しく入力してください。');
-  if (!(price >= 0) || !Number.isFinite(price)) return alert('金額を正しく入力してください。');
-  const record = {id:uid(), name:item.name, quantity, unit, price, gift:!!gift, date:todayString()};
-  purchases.push(record);
-  addPurchaseToInventory(record);
-  shopping = shopping.filter(x => x.id !== id);
+/* =========================
+   10. カレンダー・ホーム・履歴・費用
+========================= */
+function renderCalendar() {
+  const year = calendarMonth.getFullYear();
+  const month = calendarMonth.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const lastDate = new Date(year, month + 1, 0).getDate();
+  const today = todayString();
+  const selected = dateKey(selectedCalendarDate);
+  const targets = [
+    { grid: document.getElementById("calendarGrid"), title: document.getElementById("calendarTitle") },
+    { grid: document.getElementById("homeCalendarGrid"), title: document.getElementById("homeCalendarTitle") }
+  ];
+
+  targets.forEach(({ grid, title }) => {
+    if (title) title.textContent = `${year}年${month + 1}月`;
+    if (!grid) return;
+    let html = ["日", "月", "火", "水", "木", "金", "土"].map(day =>
+      `<div class="calendar-weekday">${day}</div>`
+    ).join("");
+    for (let i = 0; i < firstDay; i++) html += `<div class="calendar-day other"></div>`;
+    for (let day = 1; day <= lastDate; day++) {
+      const date = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const plan = mealPlans.find(item => item.date === date);
+      const isToday = date === today;
+      const isSelected = date === selected;
+      let mealLabels = "";
+      if (plan && plan.menu) {
+        const dish = meal => meal?.["主菜"]?.name || meal?.["主食"]?.name || "";
+        if (dish(plan.menu.breakfast)) mealLabels += `<span class="calendar-meal">朝 ${escapeHTML(dish(plan.menu.breakfast))}</span>`;
+        if (dish(plan.menu.lunch)) mealLabels += `<span class="calendar-meal lunch">昼 ${escapeHTML(dish(plan.menu.lunch))}</span>`;
+        if (dish(plan.menu.dinner)) mealLabels += `<span class="calendar-meal dinner">夕 ${escapeHTML(dish(plan.menu.dinner))}</span>`;
+      }
+      html += `<button type="button" class="calendar-day${isToday ? " today" : ""}${isSelected ? " selected" : ""}" onclick="selectCalendarDate('${date}')"><span class="calendar-number">${day}</span>${mealLabels}</button>`;
+    }
+    const cells = firstDay + lastDate;
+    const trailing = (7 - (cells % 7)) % 7;
+    for (let i = 0; i < trailing; i++) html += `<div class="calendar-day other"></div>`;
+    grid.innerHTML = html;
+  });
+}
+
+function changeCalendarMonth(amount) {
+  calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + amount, 1);
+  renderCalendar();
+}
+
+function selectCalendarDate(date) {
+  selectedCalendarDate = new Date(date + "T00:00:00");
+  calendarMonth = new Date(selectedCalendarDate.getFullYear(), selectedCalendarDate.getMonth(), 1);
+  renderCalendar();
+  renderSelectedDayMenu();
+}
+
+function renderSelectedDayMenu() {
+  const date = dateKey(selectedCalendarDate);
+  const plan = mealPlans.find(item => item.date === date);
+  const targets = ["selectedDayMenu", "homeSelectedDayMenu"].map(id => document.getElementById(id)).filter(Boolean);
+  const labels = { breakfast: "🌅 朝食", lunch: "☀️ 昼食", dinner: "🌙 夕食" };
+
+  targets.forEach(target => {
+    if (!plan) {
+      target.innerHTML = `<p class="muted">${formatDateJP(date)}の献立はまだ登録されていません。</p><button class="full" onclick="showTab('meal')">この日の献立を作る</button>`;
+      return;
+    }
+    let html = `<p class="small">${formatDateJP(date)} ・ ${Number(plan.people || 1)}人分</p>`;
+    Object.entries(labels).forEach(([key, label]) => {
+      html += `<h3>${label}</h3>`;
+      const meal = plan.menu?.[key] || {};
+      let any = false;
+      MEAL_CATEGORIES.forEach(category => {
+        const recipe = meal[category];
+        if (recipe) {
+          html += renderDishItemHTML(category, recipe);
+          any = true;
+        }
+      });
+      if (!any) html += `<p class="muted">未登録</p>`;
+    });
+    target.innerHTML = html;
+  });
+}
+
+function renderHome() {
+  const today = todayString();
+  const monthRecords = purchases.filter(p => String(p.date || "").slice(0, 7) === today.slice(0, 7));
+  const monthTotal = monthRecords.reduce((sum, p) => sum + (Number(p.price) || 0), 0);
+  const homeCost = document.getElementById("homeCost");
+  if (homeCost) {
+    homeCost.innerHTML = `<strong class="home-cost-number">${formatYen(monthTotal)}</strong><span class="muted"> 今月の購入分（もらいものは0円）</span>`;
+  }
+  const homeShopping = document.getElementById("homeShopping");
+  if (homeShopping) {
+    const remaining = shopping.filter(item => !item.checked && !item.purchased);
+    homeShopping.innerHTML = remaining.length
+      ? `<strong>${remaining.length}品</strong><p class="small">${remaining.slice(0, 3).map(item => escapeHTML(item.name)).join("・")}${remaining.length > 3 ? " ほか" : ""}</p>`
+      : `<p class="muted">買い物リストは空です。</p>`;
+  }
+}
+
+function renderMealHistory() {
+  const target = document.getElementById("mealHistory");
+  if (!target) return;
+  if (!mealPlans.length) {
+    target.innerHTML = "<p class='muted'>保存した献立はありません。</p>";
+    return;
+  }
+  target.innerHTML = [...mealPlans]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(day => `
+      <div class="result">
+        <strong>${formatDateJP(day.date)}</strong>
+        <p class="small">${day.people || 1}人分</p>
+        <div class="actions">
+          <button onclick="showSavedDay('${day.date}')">献立を見る</button>
+          <button onclick="deleteMealPlan('${day.date}')">削除</button>
+        </div>
+      </div>
+    `).join("");
+}
+
+function showSavedDay(date) {
+  const plan = mealPlans.find(day => day.date === date);
+  if (!plan) return;
+  selectedCalendarDate = new Date(date + "T00:00:00");
+  calendarMonth = new Date(selectedCalendarDate.getFullYear(), selectedCalendarDate.getMonth(), 1);
+  showTab("calendar");
+}
+
+function deleteMealPlan(date) {
+  if (!confirm("この日の献立を削除しますか？")) return;
+  mealPlans = mealPlans.filter(day => day.date !== date);
   persistAll();
   renderAll();
-  alert(gift ? 'もらいものを0円で記録し、在庫に追加しました。' : '購入金額を記録し、在庫に追加しました。');
 }
 
-// お弁当：専用レシピ＋前日夕食の残り物から30分以内で組み立て
+function renderCosts() {
+  const records = Array.isArray(purchases) ? purchases : [];
+  const today = new Date();
+  const startWeek = new Date(today);
+  startWeek.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  startWeek.setHours(0, 0, 0, 0);
+  const startMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  const total = records.reduce((sum, p) => sum + (Number(p.price) || 0), 0);
+  const weekly = records
+    .filter(p => new Date((p.date || todayString()) + "T00:00:00") >= startWeek)
+    .reduce((sum, p) => sum + (Number(p.price) || 0), 0);
+  const monthly = records
+    .filter(p => {
+      const d = new Date((p.date || todayString()) + "T00:00:00");
+      return d >= startMonth && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+    })
+    .reduce((sum, p) => sum + (Number(p.price) || 0), 0);
+
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = formatYen(value);
+  };
+  setText("totalCost", total);
+  setText("weeklyCost", weekly);
+  setText("monthlyCost", monthly);
+
+  const history = document.getElementById("purchaseHistory");
+  if (history) {
+    history.innerHTML = records.length ? records.slice().reverse().map(p => `
+      <div class="purchase-row">
+        <div class="row" style="justify-content:space-between">
+          <strong>${escapeHTML(p.name)}</strong>
+          <strong>${formatYen(p.price)}</strong>
+        </div>
+        <div class="small">${formatDateJP(p.date)} ・ ${Number(p.quantity || p.amount || 0)} ${escapeHTML(p.unit || "")} ${p.gift ? "・もらいもの" : ""}</div>
+      </div>
+    `).join("") : `<p class="muted">購入履歴はまだありません。</p>`;
+  }
+
+  const chart = document.getElementById("costChart");
+  if (chart) {
+    const period = document.getElementById("costPeriod")?.value || "month";
+    const grouped = {};
+    records.forEach(p => {
+      const d = new Date((p.date || todayString()) + "T00:00:00");
+      if (Number.isNaN(d.getTime())) return;
+      const key = period === "week"
+        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+        : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      grouped[key] = (grouped[key] || 0) + (Number(p.price) || 0);
+    });
+    const keys = Object.keys(grouped).sort().slice(period === "week" ? -7 : -6);
+    const max = Math.max(1, ...keys.map(k => grouped[k]));
+    chart.innerHTML = keys.length ? keys.map(k => `
+      <div class="cost-bar-row">
+        <span>${k}</span>
+        <div class="cost-bar"><span style="width:${grouped[k] / max * 100}%"></span></div>
+        <strong>${formatYen(grouped[k])}</strong>
+      </div>
+    `).join("") : `<p class="muted">集計できる購入記録がありません。</p>`;
+  }
+}
+
+/* =========================
+   11. お弁当作成＆履歴
+========================= */
 function renderLeftoverChoices() {
-  const box = document.getElementById('leftoverList');
+  const box = document.getElementById("leftoverList");
   if (!box) return;
-  const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
-  const key = [yesterday.getFullYear(),String(yesterday.getMonth()+1).padStart(2,'0'),String(yesterday.getDate()).padStart(2,'0')].join('-');
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const key = dateKey(yesterday);
   const plan = mealPlans.find(p => p.date === key);
   const dishes = [];
-  if (plan?.menu?.dinner) Object.values(plan.menu.dinner).forEach(r => { if (r) dishes.push(r); });
-  box.innerHTML = dishes.length ? dishes.map(r => `<label><input type="checkbox" class="leftover-choice" value="${r.id}" style="width:auto"> ${escapeHTML(r.name)}</label>`).join('') : `<p class="muted">前日の夕食の保存献立がありません。</p>`;
+  if (plan?.menu?.dinner) {
+    Object.values(plan.menu.dinner).forEach(r => { if (r) dishes.push(r); });
+  }
+  box.innerHTML = dishes.length
+    ? dishes.map(r => `<label><input type="checkbox" class="leftover-choice" value="${escapeHTML(r.id)}" style="width:auto"> ${escapeHTML(r.name)}</label>`).join("")
+    : `<p class="muted">前日の夕食の保存献立がありません。</p>`;
 }
 
 function makeBento() {
-  const people = Math.max(1, Math.min(8, Number(document.getElementById('bentoPeople').value)||4));
-  const budget = Number(document.getElementById('bentoBudget').value)||Infinity;
-  const maxTime = Math.min(30, Number(document.getElementById('bentoTime').value)||30);
-  const wanted = document.getElementById('bentoWanted').value.trim();
-  const avoid = document.getElementById('bentoAvoid').value.trim();
-  const selectedLeftovers = [...document.querySelectorAll('.leftover-choice:checked')].map(x => x.value);
-  const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
-  const dateKeyY = [yesterday.getFullYear(),String(yesterday.getMonth()+1).padStart(2,'0'),String(yesterday.getDate()).padStart(2,'0')].join('-');
-  const dinner = mealPlans.find(p => p.date === dateKeyY)?.menu?.dinner || {};
-  const leftovers = Object.values(dinner).filter(r => r && selectedLeftovers.includes(r.id));
+  const people = Math.max(1, Math.min(8, Number(document.getElementById("bentoPeople").value) || 4));
+  const budget = Number(document.getElementById("bentoBudget").value) || Infinity;
+  const maxTime = Math.min(30, Number(document.getElementById("bentoTime").value) || 30);
+  const wanted = document.getElementById("bentoWanted").value.trim();
+  const avoid = document.getElementById("bentoAvoid").value.trim();
+
+  const selectedLeftovers = [...document.querySelectorAll(".leftover-choice:checked")].map(x => x.value);
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const dinner = mealPlans.find(p => p.date === dateKey(yesterday))?.menu?.dinner || {};
+  const leftovers = Object.values(dinner).filter(r => r && selectedLeftovers.includes(String(r.id)));
+
   const used = new Set();
   const picks = [];
-  leftovers.forEach(r => { if (!used.has(r.id)) {picks.push({...r, bentoType:'前日の夕食'});used.add(r.id);} });
-  const categories = ['弁当','主菜','副菜','小鉢'];
-  const candidates = recipes.filter(r => categories.includes(r.category) && !used.has(r.id) && !recipeMatchesAvoid(r,avoid) && recipeMatchesWanted(r,wanted) && Number(r.time||0)<=maxTime && Number(r.budget||0)<=budget);
-  candidates.sort((a,b) => (recipeUsesInventory(b).length-recipeUsesInventory(a).length) || (Number(b.rating||0)-Number(a.rating||0)) || (Number(a.time||0)-Number(b.time||0)));
-  candidates.slice(0, Math.max(0,4-picks.length)).forEach(r => picks.push({...r,bentoType:r.category}));
-  currentBentoResult = {id:uid(), title:`${people}人分のお弁当`, date:todayString(), people, budget, time:maxTime, items:picks, memo:''};
-  const target = document.getElementById('bentoResult');
-  target.innerHTML = `<div class="result"><h3>${people}人分のお弁当</h3><p class="small">目安：${maxTime}分以内／1人予算 ${formatYen(budget)}</p>${picks.map(r=>`<div class="row"><span class="tag">${escapeHTML(r.bentoType)}</span><strong>${escapeHTML(r.name)}</strong></div>`).join('')}${picks.length ? '' : '<p class="muted">条件に合うレシピがありません。レシピ帳に「弁当」「主菜」「副菜」「小鉢」を登録してください。</p>'}</div>`;
-  if (picks.length < 3) alert('お弁当レシピが少ないため、登録済みの候補だけで作成しました。');
+  leftovers.forEach(r => {
+    if (!used.has(r.name)) {
+      picks.push({ ...r, bentoType: "前日の夕食" });
+      used.add(r.name);
+    }
+  });
+
+  const categories = ["弁当", "主菜", "副菜", "小鉢"];
+  const pool = getAllRecipePool().filter(r =>
+    categories.includes(r.category) &&
+    !used.has(r.name) &&
+    !recipeMatchesAvoid(r, avoid) &&
+    Number(r.time || 0) <= maxTime &&
+    estimateCostForPeople(r, 1) <= budget
+  );
+
+  pool.sort((a, b) =>
+    (countWantedMatches(b, wanted) - countWantedMatches(a, wanted)) ||
+    (recipeUsesInventory(b).length - recipeUsesInventory(a).length) ||
+    (Number(b.rating || 0) - Number(a.rating || 0)) ||
+    (Number(a.time || 0) - Number(b.time || 0))
+  );
+
+  for (const r of pool) {
+    if (picks.length >= 4) break;
+    if (!used.has(r.name)) {
+      picks.push({ ...r, bentoType: r.category, budget: estimateCostForPeople(r, people) });
+      used.add(r.name);
+    }
+  }
+
+  currentBentoResult = {
+    id: uid(),
+    title: `${people}人分のお弁当`,
+    date: todayString(),
+    people,
+    budget,
+    time: maxTime,
+    items: picks,
+    memo: ""
+  };
+
+  const target = document.getElementById("bentoResult");
+  target.innerHTML = `
+    <div class="result">
+      <h3>${people}人分のお弁当</h3>
+      <p class="small">目安：${maxTime}分以内／1人予算 ${formatYen(budget)}</p>
+      ${picks.map(r => renderDishItemHTML(r.bentoType, r)).join("")}
+      ${picks.length ? "" : '<p class="muted">条件に合うレシピがありません。避けたい食材や予算を見直してください。</p>'}
+    </div>`;
 }
 
-document.getElementById('makeBento')?.addEventListener('click', makeBento);
-document.getElementById('saveBento')?.addEventListener('click', () => {
-  if (!currentBentoResult || !currentBentoResult.items?.length) return alert('先にお弁当を作成してください。');
+document.getElementById("makeBento")?.addEventListener("click", makeBento);
+document.getElementById("saveBento")?.addEventListener("click", () => {
+  if (!currentBentoResult || !currentBentoResult.items?.length) {
+    return alert("先にお弁当を作成してください。");
+  }
   bentoHistory.push(currentBentoResult);
-  persistAll(); renderBentoHistory();
-  alert('お弁当を保存しました。');
+  persistAll();
+  renderBentoHistory();
+  alert("お弁当を保存しました。");
 });
 
-// お弁当履歴を詳細表示・削除可能に
 function renderBentoHistory() {
-  const box = getElement('bentoHistory','savedBentoes','bentoRecords');
+  const box = document.getElementById("bentoHistory");
   if (!box) return;
-  box.innerHTML = bentoHistory.length ? bentoHistory.slice().reverse().map(item => `
-    <div class="result"><strong>${escapeHTML(item.title || item.name || 'お弁当')}</strong>
-    <p class="small">${formatDateJP(item.date || item.createdAt)} ・ ${Number(item.people||1)}人分</p>
-    ${(item.items||[]).map(r=>`<div>${escapeHTML(r.name || '')}</div>`).join('')}
-    <button onclick="deleteBento('${item.id}')">削除</button></div>`).join('') : `<p class="muted">お弁当の保存履歴はまだありません。</p>`;
+  box.innerHTML = bentoHistory.length
+    ? bentoHistory.slice().reverse().map(item => `
+      <div class="result">
+        <strong>${escapeHTML(item.title || item.name || "お弁当")}</strong>
+        <p class="small">${formatDateJP(item.date || item.createdAt)} ・ ${Number(item.people || 1)}人分</p>
+        ${(item.items || []).map(r => `<div>・${escapeHTML(r.name || "")}</div>`).join("")}
+        <button style="margin-top:8px" onclick="deleteBento('${item.id}')">削除</button>
+      </div>`).join("")
+    : `<p class="muted">お弁当の保存履歴はまだありません。</p>`;
 }
-function deleteBento(id) { if (!confirm('このお弁当履歴を削除しますか？')) return; bentoHistory=bentoHistory.filter(x=>x.id!==id); persistAll(); renderBentoHistory(); }
 
-// AI接続設定を保存（実際のAI呼び出しはWorker側API仕様が必要）
-function loadAISettings() {
-  const endpoint = localStorage.getItem(STORAGE.aiEndpoint) || '';
-  const code = localStorage.getItem(STORAGE.aiCode) || '';
-  const a = document.getElementById('aiEndpoint'); if (a) a.value = endpoint;
-  const c = document.getElementById('aiAccessCode'); if (c) c.value = code;
-  const status = document.getElementById('aiEndpointStatus');
-  if (status) status.textContent = endpoint ? '接続先を保存済みです。' : 'AI接続は未設定です。';
+function deleteBento(id) {
+  if (!confirm("このお弁当履歴を削除しますか？")) return;
+  bentoHistory = bentoHistory.filter(x => x.id !== id);
+  persistAll();
+  renderBentoHistory();
 }
-document.getElementById('saveAiEndpoint')?.addEventListener('click', () => {
-  const endpoint = document.getElementById('aiEndpoint').value.trim().replace(/\/$/,'');
-  const code = document.getElementById('aiAccessCode').value.trim();
-  if (endpoint && !/^https:\/\//i.test(endpoint)) return alert('AI連携URLは https:// から入力してください。');
-  localStorage.setItem(STORAGE.aiEndpoint, endpoint);
-  localStorage.setItem(STORAGE.aiCode, code);
-  document.getElementById('aiEndpointStatus').textContent = endpoint ? '接続設定を保存しました。' : 'AI接続は未設定です。';
-  alert('AI接続設定を保存しました。');
-});
 
+function renderCookingHistory() {
+  const box = document.getElementById("cookingHistory");
+  if (!box) return;
+  box.innerHTML = cookingHistory.length
+    ? cookingHistory.slice().reverse().map(item => `
+      <div class="result">
+        <strong>${escapeHTML(item.name || item.title || "料理")}</strong>
+        <p class="small">${formatDateJP(item.date || item.createdAt)}</p>
+        ${item.memo ? `<p>${escapeHTML(item.memo)}</p>` : ""}
+      </div>`).join("")
+    : `<p class="muted">調理履歴はまだありません。</p>`;
+}
 
 /* =========================
-   味付け早見表：黄金比・煮物・たれ・汁物
+   12. 味付け早見表
 ========================= */
 const TASTE_GUIDE = [
- {name:"照り焼きだれ",group:"黄金比・たれ",ratio:"醤油：みりん：酒：砂糖＝2：2：2：1",amount:"醤油大さじ2・みりん大さじ2・酒大さじ2・砂糖大さじ1",base:4,tip:"鶏肉・ぶり・豆腐に。煮詰めて照りを出す。"},
- {name:"甘辛だれ",group:"黄金比・たれ",ratio:"醤油：みりん：砂糖＝2：2：1",amount:"醤油大さじ2・みりん大さじ2・砂糖大さじ1",base:4,tip:"炒め物、肉団子、いも類に。"},
- {name:"生姜焼きだれ",group:"たれ",ratio:"醤油：みりん：酒＝1：1：1",amount:"各大さじ2＋おろし生姜適量",base:4,tip:"玉ねぎを加えると甘みが出る。"},
- {name:"南蛮だれ",group:"黄金比・たれ",ratio:"醤油：酢：砂糖＝1：1：1",amount:"各大さじ2",base:4,tip:"揚げ物や焼いた魚・鶏肉に。"},
- {name:"三杯酢",group:"黄金比・たれ",ratio:"酢：醤油：砂糖＝3：1：2",amount:"酢大さじ3・醤油大さじ1・砂糖大さじ2",base:4,tip:"酢の物に。酸味は好みで調整。"},
- {name:"ごまドレッシング",group:"ドレッシング",ratio:"すりごま：マヨネーズ：酢：醤油＝2：2：1：1",amount:"各大さじ2・大さじ2・大さじ1・大さじ1",base:4,tip:"水や牛乳で濃度を調整。"},
- {name:"和風ドレッシング",group:"ドレッシング",ratio:"醤油：酢：油＝1：1：1",amount:"各大さじ1",base:2,tip:"砂糖ひとつまみ・ごま油少量を加えても。"},
- {name:"フレンチドレッシング",group:"ドレッシング",ratio:"酢：油＝1：3",amount:"酢大さじ1・油大さじ3",base:2,tip:"塩・こしょう・少量の砂糖で調える。"},
- {name:"筑前煮",group:"煮物",ratio:"だし：醤油：みりん：酒：砂糖＝10：1：1：1：0.5",amount:"だし400ml・醤油大さじ2・みりん大さじ2・酒大さじ2・砂糖大さじ1",base:4,tip:"具材を炒めてから煮る。根菜に火が通ったら煮汁を煮含める。"},
- {name:"治部煮",group:"煮物",ratio:"だし：醤油：みりん：酒＝10：1：1：1",amount:"だし400ml・醤油大さじ2・みりん大さじ2・酒大さじ2",base:4,tip:"鶏肉に片栗粉を薄くまぶし、とろみをつける。わさびを添える。"},
- {name:"若竹煮",group:"煮物",ratio:"だし：薄口醤油：みりん＝20：1：1",amount:"だし400ml・薄口醤油大さじ1・みりん大さじ1",base:4,tip:"たけのこを先に煮含め、わかめは最後に加える。"},
- {name:"肉じゃが",group:"煮物",ratio:"だし：醤油：みりん：酒：砂糖＝10：1：1：1：1",amount:"だし300ml・醤油大さじ2・みりん大さじ2・酒大さじ2・砂糖大さじ2",base:4,tip:"煮汁は具材の半分程度。落とし蓋で煮る。"},
- {name:"かぼちゃの煮物",group:"煮物",ratio:"だし：醤油：みりん：砂糖＝10：1：1：1",amount:"だし200ml・醤油大さじ1・みりん大さじ1・砂糖大さじ1",base:4,tip:"皮を下にして並べ、煮崩れを防ぐ。"},
- {name:"里芋の煮っころがし",group:"煮物",ratio:"だし：醤油：みりん：砂糖＝8：1：1：1",amount:"だし200ml・醤油大さじ1・みりん大さじ1・砂糖大さじ1",base:4,tip:"ぬめりを軽く取ってから煮る。最後に煮汁を絡める。"},
- {name:"ぶり大根",group:"煮物",ratio:"水：酒：醤油：みりん：砂糖＝5：2：1：1：1",amount:"水150ml・酒60ml・醤油大さじ2・みりん大さじ2・砂糖大さじ2",base:4,tip:"ぶりは湯通しし、大根は下ゆですると臭みが出にくい。"},
- {name:"さばの味噌煮",group:"煮物",ratio:"水：酒：味噌：みりん：砂糖＝4：4：2：1：1",amount:"水100ml・酒100ml・味噌大さじ2・みりん大さじ1・砂糖大さじ1",base:4,tip:"煮汁を煮立ててから魚を入れ、煮汁をかけながら煮る。"},
- {name:"大根と鶏肉の煮物",group:"煮物",ratio:"だし：醤油：みりん：酒＝10：1：1：1",amount:"だし400ml・醤油大さじ2・みりん大さじ2・酒大さじ2",base:4,tip:"大根は下ゆですると味が染みやすい。"},
- {name:"ひじきの煮物",group:"煮物",ratio:"だし：醤油：みりん：砂糖＝10：1：1：1",amount:"だし200ml・醤油大さじ1・みりん大さじ1・砂糖大さじ1",base:4,tip:"油揚げや大豆を加えてもおいしい。"},
- {name:"切り干し大根",group:"煮物",ratio:"戻し汁＋だし：醤油：みりん＝10：1：1",amount:"煮汁約200ml・醤油大さじ1・みりん大さじ1",base:4,tip:"戻し汁を使うと旨みが出る。"},
- {name:"高野豆腐の含め煮",group:"煮物",ratio:"だし：薄口醤油：みりん：砂糖＝15：1：1：1",amount:"だし300ml・薄口醤油大さじ1・みりん大さじ1・砂糖大さじ1",base:4,tip:"弱めの火で煮含め、冷ます間に味を含ませる。"},
- {name:"魚の煮付け",group:"煮物",ratio:"酒：水：醤油：みりん：砂糖＝2：2：1：1：1",amount:"酒100ml・水100ml・醤油大さじ2・みりん大さじ2・砂糖大さじ2",base:4,tip:"煮汁を先に煮立て、魚を入れて落とし蓋。"},
- {name:"味噌汁",group:"汁物",ratio:"だし200mlに味噌大さじ1〜1.5",amount:"だし800ml・味噌大さじ4〜6",base:4,tip:"味噌を溶いた後は煮立てすぎない。"},
- {name:"中華スープ",group:"汁物",ratio:"水：鶏ガラスープの素＝200ml：小さじ1",amount:"水800ml・鶏ガラスープの素小さじ4",base:4,tip:"塩・こしょう・ごま油で調整。"},
- {name:"コンソメスープ",group:"汁物",ratio:"水300mlに固形コンソメ1個（目安）",amount:"水600ml・固形コンソメ2個",base:4,tip:"製品ごとに塩分が違うので表示を確認。"}
+  { name:"照り焼きだれ", group:"黄金比・たれ", ratio:"醤油：みりん：酒：砂糖＝2：2：2：1", amount:"醤油大さじ2・みりん大さじ2・酒大さじ2・砂糖大さじ1", base:4, tip:"鶏肉・ぶり・豆腐に。煮詰めて照りを出す。" },
+  { name:"甘辛だれ", group:"黄金比・たれ", ratio:"醤油：みりん：砂糖＝2：2：1", amount:"醤油大さじ2・みりん大さじ2・砂糖大さじ1", base:4, tip:"炒め物、肉団子、いも類に。" },
+  { name:"生姜焼きだれ", group:"たれ", ratio:"醤油：みりん：酒＝1：1：1", amount:"各大さじ2＋おろし生姜適量", base:4, tip:"玉ねぎを加えると甘みが出る。" },
+  { name:"南蛮だれ", group:"黄金比・たれ", ratio:"醤油：酢：砂糖＝1：1：1", amount:"各大さじ2", base:4, tip:"揚げ物や焼いた魚・鶏肉に。" },
+  { name:"三杯酢", group:"黄金比・たれ", ratio:"酢：醤油：砂糖＝3：1：2", amount:"酢大さじ3・醤油大さじ1・砂糖大さじ2", base:4, tip:"酢の物に。酸味は好みで調整。" },
+  { name:"ごまドレッシング", group:"ドレッシング", ratio:"すりごま：マヨネーズ：酢：醤油＝2：2：1：1", amount:"各大さじ2・大さじ2・大さじ1・大さじ1", base:4, tip:"水や牛乳で濃度を調整。" },
+  { name:"和風ドレッシング", group:"ドレッシング", ratio:"醤油：酢：油＝1：1：1", amount:"各大さじ1", base:2, tip:"砂糖ひとつまみ・ごま油少量を加えても。" },
+  { name:"フレンチドレッシング", group:"ドレッシング", ratio:"酢：油＝1：3", amount:"酢大さじ1・油大さじ3", base:2, tip:"塩・こしょう・少量の砂糖で調える。" },
+  { name:"筑前煮", group:"煮物", ratio:"だし：醤油：みりん：酒：砂糖＝10：1：1：1：0.5", amount:"だし400ml・醤油大さじ2・みりん大さじ2・酒大さじ2・砂糖大さじ1", base:4, tip:"具材を炒めてから煮る。根菜に火が通ったら煮汁を煮含める。" },
+  { name:"治部煮", group:"煮物", ratio:"だし：醤油：みりん：酒＝10：1：1：1", amount:"だし400ml・醤油大さじ2・みりん大さじ2・酒大さじ2", base:4, tip:"鶏肉に片栗粉を薄くまぶし、とろみをつける。わさびを添える。" },
+  { name:"若竹煮", group:"煮物", ratio:"だし：薄口醤油：みりん＝20：1：1", amount:"だし400ml・薄口醤油大さじ1・みりん大さじ1", base:4, tip:"たけのこを先に煮含め、わかめは最後に加える。" },
+  { name:"肉じゃが", group:"煮物", ratio:"だし：醤油：みりん：酒：砂糖＝10：1：1：1：1", amount:"だし300ml・醤油大さじ2・みりん大さじ2・酒大さじ2・砂糖大さじ2", base:4, tip:"煮汁は具材の半分程度。落とし蓋で煮る。" },
+  { name:"かぼちゃの煮物", group:"煮物", ratio:"だし：醤油：みりん：砂糖＝10：1：1：1", amount:"だし200ml・醤油大さじ1・みりん大さじ1・砂糖大さじ1", base:4, tip:"皮を下にして並べ、煮崩れを防ぐ。" },
+  { name:"里芋の煮っころがし", group:"煮物", ratio:"だし：醤油：みりん：砂糖＝8：1：1：1", amount:"だし200ml・醤油大さじ1・みりん大さじ1・砂糖大さじ1", base:4, tip:"ぬめりを軽く取ってから煮る。最後に煮汁を絡める。" },
+  { name:"ぶり大根", group:"煮物", ratio:"水：酒：醤油：みりん：砂糖＝5：2：1：1：1", amount:"水150ml・酒60ml・醤油大さじ2・みりん大さじ2・砂糖大さじ2", base:4, tip:"ぶりは湯通しし、大根は下ゆですると臭みが出にくい。" },
+  { name:"さばの味噌煮", group:"煮物", ratio:"水：酒：味噌：みりん：砂糖＝4：4：2：1：1", amount:"水100ml・酒100ml・味噌大さじ2・みりん大さじ1・砂糖大さじ1", base:4, tip:"煮汁を煮立ててから魚を入れ、煮汁をかけながら煮る。" },
+  { name:"大根と鶏肉の煮物", group:"煮物", ratio:"だし：醤油：みりん：酒＝10：1：1：1", amount:"だし400ml・醤油大さじ2・みりん大さじ2・酒大さじ2", base:4, tip:"大根は下ゆですると味が染みやすい。" },
+  { name:"ひじきの煮物", group:"煮物", ratio:"だし：醤油：みりん：砂糖＝10：1：1：1", amount:"だし200ml・醤油大さじ1・みりん大さじ1・砂糖大さじ1", base:4, tip:"油揚げや大豆を加えてもおいしい。" },
+  { name:"切り干し大根", group:"煮物", ratio:"戻し汁＋だし：醤油：みりん＝10：1：1", amount:"煮汁約200ml・醤油大さじ1・みりん大さじ1", base:4, tip:"戻し汁を使うと旨みが出る。" },
+  { name:"高野豆腐の含め煮", group:"煮物", ratio:"だし：薄口醤油：みりん：砂糖＝15：1：1：1", amount:"だし300ml・薄口醤油大さじ1・みりん大さじ1・砂糖大さじ1", base:4, tip:"弱めの火で煮含め、冷ます間に味を含ませる。" },
+  { name:"魚の煮付け", group:"煮物", ratio:"酒：水：醤油：みりん：砂糖＝2：2：1：1：1", amount:"酒100ml・水100ml・醤油大さじ2・みりん大さじ2・砂糖大さじ2", base:4, tip:"煮汁を先に煮立て、魚を入れて落とし蓋。" },
+  { name:"味噌汁", group:"汁物", ratio:"だし200mlに味噌大さじ1〜1.5", amount:"だし800ml・味噌大さじ4〜6", base:4, tip:"味噌を溶いた後は煮立てすぎない。" },
+  { name:"中華スープ", group:"汁物", ratio:"水：鶏ガラスープの素＝200ml：小さじ1", amount:"水800ml・鶏ガラスープの素小さじ4", base:4, tip:"塩・こしょう・ごま油で調整。" },
+  { name:"コンソメスープ", group:"汁物", ratio:"水300mlに固形コンソメ1個（目安）", amount:"水600ml・固形コンソメ2個", base:4, tip:"製品ごとに塩分が違うので表示を確認。" }
 ];
+
 let tasteFilter = "すべて";
-let tasteFavs = JSON.parse(localStorage.getItem("uchiTasteFavorites") || "[]");
+let tasteFavs = loadData("uchiTasteFavorites", []);
+
 function renderTasteGuide() {
   const box = document.getElementById("tasteGuideList");
   if (!box) return;
   const q = (document.getElementById("tasteSearch")?.value || "").trim().toLowerCase();
   const people = Number(document.getElementById("tastePeople")?.value || 4);
   const favOnly = document.getElementById("tasteFavorites")?.value === "fav";
+
   const rows = TASTE_GUIDE.filter(x =>
     (tasteFilter === "すべて" || x.group.includes(tasteFilter) || (tasteFilter === "黄金比" && x.ratio)) &&
     (!favOnly || tasteFavs.includes(x.name)) &&
-    (!q || [x.name,x.group,x.ratio,x.tip].join(" ").toLowerCase().includes(q))
+    (!q || [x.name, x.group, x.ratio, x.tip].join(" ").toLowerCase().includes(q))
   );
+
   box.innerHTML = rows.length ? rows.map(x => {
     const scale = people / x.base;
-    const amounts = x.amount.replace(/大さじ(\d+(?:\.\d+)?)/g, (_,n) => `大さじ${(Number(n)*scale).toFixed(1).replace(/\.0$/,"")}`)
-      .replace(/小さじ(\d+(?:\.\d+)?)/g, (_,n) => `小さじ${(Number(n)*scale).toFixed(1).replace(/\.0$/,"")}`)
-      .replace(/(\d+(?:\.\d+)?)ml/g, (_,n) => `${Math.round(Number(n)*scale)}ml`);
-    return `<article class="taste-card"><div class="row" style="justify-content:space-between"><h3>${escapeHTML(x.name)}</h3><button type="button" onclick="toggleTasteFavorite('${escapeHTML(x.name)}')">${tasteFavs.includes(x.name)?"★":"☆"}</button></div><div class="tag">${escapeHTML(x.group)}</div><p class="taste-ratio">${escapeHTML(x.ratio)}</p><p><strong>${people}人分の目安：</strong>${escapeHTML(amounts)}</p><p class="small">コツ：${escapeHTML(x.tip)}</p></article>`;
+    const amounts = x.amount
+      .replace(/大さじ(\d+(?:\.\d+)?)/g, (_, n) => `大さじ${(Number(n) * scale).toFixed(1).replace(/\.0$/, "")}`)
+      .replace(/小さじ(\d+(?:\.\d+)?)/g, (_, n) => `小さじ${(Number(n) * scale).toFixed(1).replace(/\.0$/, "")}`)
+      .replace(/(\d+(?:\.\d+)?)ml/g, (_, n) => `${Math.round(Number(n) * scale)}ml`);
+    const isFav = tasteFavs.includes(x.name);
+    return `
+      <article class="taste-card">
+        <div class="row" style="justify-content:space-between">
+          <h3>${escapeHTML(x.name)}</h3>
+          <button type="button" data-fav-name="${escapeHTML(x.name)}" onclick="toggleTasteFavorite(this.dataset.favName)">${isFav ? "★" : "☆"}</button>
+        </div>
+        <div class="tag">${escapeHTML(x.group)}</div>
+        <p class="taste-ratio">${escapeHTML(x.ratio)}</p>
+        <p><strong>${people}人分の目安：</strong>${escapeHTML(amounts)}</p>
+        <p class="small">コツ：${escapeHTML(x.tip)}</p>
+      </article>`;
   }).join("") : `<p class="muted">該当する味付けがありません。</p>`;
 }
+
 function toggleTasteFavorite(name) {
-  tasteFavs = tasteFavs.includes(name) ? tasteFavs.filter(x=>x!==name) : [...tasteFavs,name];
-  localStorage.setItem("uchiTasteFavorites",JSON.stringify(tasteFavs)); renderTasteGuide();
+  tasteFavs = tasteFavs.includes(name) ? tasteFavs.filter(x => x !== name) : [...tasteFavs, name];
+  saveData("uchiTasteFavorites", tasteFavs);
+  renderTasteGuide();
 }
-document.getElementById("tasteSearch")?.addEventListener("input",renderTasteGuide);
-document.getElementById("tastePeople")?.addEventListener("change",renderTasteGuide);
-document.getElementById("tasteFavorites")?.addEventListener("change",renderTasteGuide);
-document.querySelectorAll("[data-taste-filter]").forEach(b=>b.addEventListener("click",()=>{
-  tasteFilter=b.dataset.tasteFilter;
-  document.querySelectorAll("[data-taste-filter]").forEach(x=>x.classList.toggle("active",x===b));
+
+document.getElementById("tasteSearch")?.addEventListener("input", renderTasteGuide);
+document.getElementById("tastePeople")?.addEventListener("change", renderTasteGuide);
+document.getElementById("tasteFavorites")?.addEventListener("change", renderTasteGuide);
+document.querySelectorAll("[data-taste-filter]").forEach(b => b.addEventListener("click", () => {
+  tasteFilter = b.dataset.tasteFilter;
+  document.querySelectorAll("[data-taste-filter]").forEach(x => x.classList.toggle("active", x === b));
   renderTasteGuide();
 }));
 
-// 初期化時に追加表示を整える
+/* =========================
+   13. 設定（AI設定・バックアップ／復元）
+========================= */
+function loadAISettings() {
+  const endpoint = localStorage.getItem(STORAGE.aiEndpoint) || "";
+  const code = localStorage.getItem(STORAGE.aiCode) || "";
+  const a = document.getElementById("aiEndpoint");
+  if (a) a.value = endpoint;
+  const c = document.getElementById("aiAccessCode");
+  if (c) c.value = code;
+  const status = document.getElementById("aiEndpointStatus");
+  if (status) status.textContent = endpoint ? "AI接続先を保存済みです。" : "AI接続は未設定です（未設定でもレシピ献立作成は使えます）。";
+}
+
+document.getElementById("saveAiEndpoint")?.addEventListener("click", () => {
+  const endpoint = document.getElementById("aiEndpoint").value.trim().replace(/\/$/, "");
+  const code = document.getElementById("aiAccessCode").value.trim();
+  if (endpoint && !/^https:\/\//i.test(endpoint)) {
+    return alert("AI連携URLは https:// から入力してください。");
+  }
+  localStorage.setItem(STORAGE.aiEndpoint, endpoint);
+  localStorage.setItem(STORAGE.aiCode, code);
+  document.getElementById("aiEndpointStatus").textContent = endpoint ? "接続設定を保存しました。" : "AI接続は未設定です。";
+  alert("接続設定を保存しました。");
+});
+
+document.getElementById("exportData")?.addEventListener("click", () => {
+  const backup = {
+    recipes,
+    inventory,
+    variations,
+    mealPlans,
+    shopping,
+    purchases,
+    bentoHistory,
+    cookingHistory,
+    tasteFavs,
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `uchinogohan-backup-${todayString()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById("importData")?.addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (Array.isArray(data.recipes)) recipes = data.recipes;
+    if (Array.isArray(data.inventory)) inventory = data.inventory;
+    if (Array.isArray(data.variations)) variations = data.variations;
+    if (Array.isArray(data.mealPlans)) mealPlans = data.mealPlans;
+    if (Array.isArray(data.shopping)) shopping = data.shopping;
+    if (Array.isArray(data.purchases)) purchases = data.purchases;
+    if (Array.isArray(data.bentoHistory)) bentoHistory = data.bentoHistory;
+    if (Array.isArray(data.cookingHistory)) cookingHistory = data.cookingHistory;
+    if (Array.isArray(data.tasteFavs)) {
+      tasteFavs = data.tasteFavs;
+      saveData("uchiTasteFavorites", tasteFavs);
+    }
+    persistAll();
+    renderAll();
+    renderTasteGuide();
+    alert("バックアップを読み込みました！");
+  } catch (err) {
+    alert("バックアップファイルの読み込みに失敗しました：" + err.message);
+  } finally {
+    e.target.value = "";
+  }
+});
+
+/* =========================
+   14. 全体描画・初期化
+========================= */
+function renderAll() {
+  renderRecipes(document.getElementById("recipeSearch")?.value || "");
+  renderVariations();
+  renderInventory();
+  renderMealHistory();
+  renderBentoHistory();
+  renderCookingHistory();
+  renderLeftoverChoices();
+  renderCalendar();
+  renderSelectedDayMenu();
+  renderShopping();
+  renderCosts();
+  renderHome();
+}
+
+document.getElementById("prevMonth")?.addEventListener("click", () => changeCalendarMonth(-1));
+document.getElementById("nextMonth")?.addEventListener("click", () => changeCalendarMonth(1));
+document.getElementById("homePrevMonth")?.addEventListener("click", () => changeCalendarMonth(-1));
+document.getElementById("homeNextMonth")?.addEventListener("click", () => changeCalendarMonth(1));
+document.getElementById("costPeriod")?.addEventListener("change", renderCosts);
+
+document.getElementById("mealStartDate").value = todayString();
+addPurchaseForm();
 loadAISettings();
 renderTasteGuide();
-renderLeftoverChoices();
-
+renderAll();
 </script>
 </body>
 </html>

@@ -1,23 +1,27 @@
 /**
  * うちのごはん - Cloudflare Worker
- * 無料枠での安定性・フォールバック強化版
+ * Gemma 4優先 ＋ 無料AIフォールバック強化版
  */
 const ALLOWED_ORIGINS = [
   "https://kk611025.github.io"
 ];
 
+const MODELS_GEMMA = [
+  "gemma-4-31b-it",
+  "gemma-4-26b-a4b-it",
+  "gemma-3-27b-it"
+];
+
 const MODELS_INTERACTIONS = [
   "gemini-3.8-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-4-hydrogen",
   "gemini-3.6-flash",
   "gemini-3.5-flash",
-  "gemini-4-hydrogen",
-  "gemini-3.5-flash-lite",
   "gemini-3.1-flash-lite"
 ];
 
 const MODELS_GENERATE = [
-  "gemini-2.5-flash-lite",
-  "gemini-2.5-flash",
   "gemini-3.5-flash-lite",
   "gemini-3.8-flash",
   "gemini-3.6-flash",
@@ -63,8 +67,10 @@ function extractText(data) {
   }
   if (blocks.length) return blocks.join("\n");
 
-  return data.candidates?.[0]?.content?.parts
-    ?.map(p => p.text || "").join("\n") || "";
+  const parts = data.candidates?.[0]?.content?.parts || [];
+  const answerParts = parts.filter(p => !p.thought && p.text);
+  if (answerParts.length) return answerParts.map(p => p.text).join("\n");
+  return parts.map(p => p.text || "").join("\n");
 }
 
 function parseJson(text) {
@@ -76,13 +82,13 @@ function parseJson(text) {
   const end = cleaned.lastIndexOf("}");
 
   if (start < 0 || end <= start) {
-    throw new Error("AIの返答がJSON形式ではありません。出力が途中で切れた可能性があります。");
+    throw new Error("AIの返答がJSON形式ではありません。日数を減らして試してください。");
   }
 
   try {
     return JSON.parse(cleaned.slice(start, end + 1));
   } catch (_) {
-    throw new Error("AIのJSONが途中で切れています。日数を減らして試してください。");
+    throw new Error("AIのJSONが途中で切れています。日数を1〜3日に減らして試してください。");
   }
 }
 
@@ -158,25 +164,29 @@ function normalizeDays(parsed, days) {
   return out;
 }
 
-async function callGemini(env, prompt, maxTokens) {
+async function callAI(env, prompt, maxTokens) {
   const errors = [];
 
-  const tasks = [
-    ...MODELS_GENERATE.map(model => ({ model, mode: "generateContent" })),
-    ...MODELS_INTERACTIONS.map(model => ({ model, mode: "interactions" }))
-  ];
+  // 1. Google Gemini API（Gemma 4 → Gemini Interactions → Gemini GenerateContent の順）
+  if (env.GEMINI_API_KEY) {
+    const tasks = [
+      ...MODELS_GEMMA.map(model => ({ model, mode: "gemma" })),
+      ...MODELS_INTERACTIONS.map(model => ({ model, mode: "interactions" })),
+      ...MODELS_GENERATE.map(model => ({ model, mode: "generateContent" }))
+    ];
 
-  for (const { model, mode } of tasks) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 35000);
+    for (const { model, mode } of tasks) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 35000);
 
-    try {
-      const url = mode === "interactions"
-        ? "https://generativelanguage.googleapis.com/v1beta/interactions"
-        : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+      try {
+        const url = mode === "interactions"
+          ? "https://generativelanguage.googleapis.com/v1beta/interactions"
+          : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-      const payload = mode === "interactions"
-        ? {
+        let payload;
+        if (mode === "interactions") {
+          payload = {
             model,
             input: prompt,
             store: false,
@@ -184,77 +194,120 @@ async function callGemini(env, prompt, maxTokens) {
               max_output_tokens: maxTokens,
               thinking_level: "low"
             }
-          }
-        : {
+          };
+        } else if (mode === "gemma") {
+          payload = {
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              maxOutputTokens: Math.min(maxTokens, 8192)
+            }
+          };
+        } else {
+          payload = {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             generationConfig: {
               maxOutputTokens: maxTokens,
               responseMimeType: "application/json"
             }
           };
+        }
 
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": env.GEMINI_API_KEY
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": env.GEMINI_API_KEY
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
 
-      const rawText = await response.text();
-      let raw = null;
-      try {
-        raw = JSON.parse(rawText);
-      } catch (_) {
-        raw = { error: { message: rawText.slice(0, 200) } };
-      }
+        const rawText = await response.text();
+        let raw = null;
+        try {
+          raw = JSON.parse(rawText);
+        } catch (_) {
+          raw = { error: { message: rawText.slice(0, 200) } };
+        }
 
-      if (response.ok) {
-        if (mode === "interactions" && raw.status !== "completed") {
-          const msg = "処理状態：" + (raw.status || "不明");
-          errors.push(`${model}(${mode})：${msg}`);
-          if (raw.status === "incomplete" || raw.status === "budget_exceeded") {
-            throw new Error(`${model}：${msg}。日数を減らして試してください。`);
+        if (response.ok) {
+          if (mode === "interactions" && raw.status !== "completed") {
+            errors.push(`${model}(${mode})：処理状態 ${raw.status || "不明"}`);
+            continue;
           }
-          continue;
+          if (mode !== "interactions" && raw.candidates?.[0]?.finishReason === "MAX_TOKENS") {
+            errors.push(`${model}(${mode})：出力上限で途切れ`);
+            continue;
+          }
+          const text = extractText(raw);
+          if (!text) {
+            errors.push(`${model}(${mode})：回答が空でした`);
+            continue;
+          }
+          return parseJson(text);
         }
 
-        if (mode === "generateContent" && raw.candidates?.[0]?.finishReason === "MAX_TOKENS") {
-          throw new Error(`${model}：出力が途中で切れました。日数を減らして試してください。`);
+        const status = response.status;
+        const message = raw?.error?.message || ("HTTP " + status);
+        errors.push(`${model}(${mode} HTTP ${status})：${message}`);
+
+        if (status === 401 || status === 403) {
+          throw new Error("Gemini APIキーの認証エラー：" + message);
         }
-
-        const text = extractText(raw);
-        if (!text) {
-          errors.push(`${model}(${mode})：回答が空でした。`);
-          continue;
+        if (status === 503 || status === 429) {
+          await new Promise(resolve => setTimeout(resolve, 400));
         }
-        return parseJson(text);
+      } catch (e) {
+        if (e.message?.startsWith("Gemini APIキーの認証エラー：")) throw e;
+        const message = e.name === "AbortError" ? "タイムアウト" : ("通信エラー：" + e.message);
+        errors.push(`${model}(${mode})：${message}`);
+      } finally {
+        clearTimeout(timeout);
       }
-
-      const status = response.status;
-      const message = raw?.error?.message || ("HTTP " + status);
-      errors.push(`${model}(${mode} HTTP ${status})：${message}`);
-
-      if (status === 401 || status === 403) {
-        throw new Error("Gemini APIキーの認証エラー：" + message);
-      }
-
-      if (status === 503 || status === 429) {
-        await new Promise(resolve => setTimeout(resolve, 600));
-      }
-    } catch (e) {
-      if (e.message?.startsWith("Gemini APIキーの認証エラー：")) throw e;
-      if (e.message?.includes("日数を減らして")) throw e;
-      const message = e.name === "AbortError" ? "タイムアウト" : ("通信エラー：" + e.message);
-      errors.push(`${model}(${mode})：${message}`);
-    } finally {
-      clearTimeout(timeout);
     }
   }
 
-  throw new Error("すべてのGeminiモデルで失敗しました。\n" + errors.join("\n"));
+  // 2. Groq 無料枠（環境変数 GROQ_API_KEY が設定されている場合）
+  if (env.GROQ_API_KEY) {
+    for (const model of ["openai/gpt-oss-120b", "qwen/qwen3.8-27b"]) {
+      try {
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + env.GROQ_API_KEY
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.5,
+            response_format: { type: "json_object" }
+          })
+        });
+        const data = await res.json();
+        const content = data?.choices?.[0]?.message?.content;
+        if (res.ok && content) return parseJson(content);
+        errors.push(`Groq(${model} HTTP ${res.status})：${data?.error?.message || "失敗"}`);
+      } catch (e) {
+        errors.push(`Groq(${model})：${e.message}`);
+      }
+    }
+  }
+
+  // 3. Cloudflare Workers AI（バインディング AI が設定されている場合）
+  if (env.AI) {
+    try {
+      const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 4096
+      });
+      if (result?.response) return parseJson(result.response);
+    } catch (e) {
+      errors.push(`Workers AI：${e.message}`);
+    }
+  }
+
+  throw new Error("すべてのAIモデルで失敗しました。\n" + errors.join("\n"));
 }
 
 function recipeRules() {
@@ -262,17 +315,16 @@ function recipeRules() {
 各食に主食(staple)・主菜(main)・汁物(soup)を各1品必ず含める。
 予算内に収まる場合だけ副菜(side)、さらに余裕がある場合だけ小鉢(kobachi)を加える。
 昼食・夕食の主菜は肉または魚。朝食の主菜は卵料理可。
-副菜は野菜中心、小鉢はサラダ・酢の物・和え物など。副菜と小鉢は似た料理にしない。
+副菜は野菜中心、小鉢はサラダ・酢の物・和え物など。
 朝は簡単、昼は満足感、夕食は主菜と野菜のバランス重視。料理名の重複を避ける。
 
 各料理は4人分の材料量、cost_for_4（4人分の食材費・円）、
-ingredients（材料名と分量）、steps（短い3工程程度）、
+ingredients（材料名と分量）、steps（短い2〜3工程）、
 minutes、tip、source_urlを含める。
-参考URLは検索結果にあるURLだけを使い、なければ空欄にする。
 JSON以外の文章やMarkdownは返さない。
 
 料理オブジェクト形式：
-{"course":"staple","name":"料理名","category":"分類","minutes":15,"cost_for_4":300,"ingredients":[{"name":"材料","amount":"分量"}],"steps":["手順1","手順2","手順3"],"tip":"","source_url":""}
+{"course":"staple","name":"料理名","category":"分類","minutes":15,"cost_for_4":300,"ingredients":[{"name":"材料","amount":"分量"}],"steps":["手順1","手順2"],"tip":"","source_url":""}
 `;
 }
 
@@ -284,7 +336,7 @@ function buildWeekPrompt(body, context) {
 
   return `
 あなたは家庭料理に詳しい献立作成AIです。
-${people}人分の${days}日間の献立を一括作成してください。
+${people}人分の${days}日間の献立を作成してください。
 
 【1人あたり予算】
 朝食：${budgets.breakfast}円 / 昼食：${budgets.lunch}円 / 夕食：${budgets.dinner}円
@@ -311,12 +363,12 @@ ${JSON.stringify(avoid)}
 【優先して使いたい食材】
 ${JSON.stringify(body.wanted || "")}
 
-【ネット検索結果】
+【参考検索結果】
 ${JSON.stringify(searchResults)}
 
 【重要】
 1日目から${days}日目まで、朝食・昼食・夕食（合計${days * 3}食）をすべて作成してください。
-材料と作り方は簡潔にしてください。
+材料と手順はできるだけ簡潔に書いてください。
 必ず次の形式のJSONだけを返してください。
 
 {
@@ -347,8 +399,8 @@ ${recipeRules()}
 家にある食材：${JSON.stringify(context.pantry)}
 避けたい食材：${JSON.stringify(context.avoid)}
 
-対象のdayと食事（breakfast/lunch/dinner）だけを作り直し、予算に収まらない場合は副菜・小鉢を省いてください。
-必ず各要素の "day" に作り直した元の日数番号を入れてJSONだけを返してください。
+対象のdayと食事だけを作り直し、予算に収まらない場合は副菜・小鉢を省いてください。
+必ず各要素の "day" に元の日数番号を入れてJSONだけを返してください。
 
 {
   "days": [
@@ -484,8 +536,8 @@ export default {
         }
       }
 
-      if (!env.GEMINI_API_KEY) {
-        return json({ error: "Gemini APIキーが設定されていません。" }, 500, origin);
+      if (!env.GEMINI_API_KEY && !env.GROQ_API_KEY && !env.AI) {
+        return json({ error: "AIキーが設定されていません。" }, 500, origin);
       }
 
       const days = Math.min(7, Math.max(1, Number(body.days) || 7));
@@ -501,20 +553,20 @@ export default {
         people,
         budgets,
         avoid: safeArray(body.avoid, 100),
-        existing: safeArray(body.existing, 120),
-        previous: safeArray(body.previous, 200),
-        pantry: safeArray(body.pantry, 100),
+        existing: safeArray(body.existing, 80),
+        previous: safeArray(body.previous, 150),
+        pantry: safeArray(body.pantry, 80),
         expiry: body.expiry && typeof body.expiry === "object" ? body.expiry : {},
         searchResults: []
       };
 
-      const pantryWords = context.pantry.map(x => x?.name || "").filter(Boolean).slice(0, 12);
+      const pantryWords = context.pantry.map(x => x?.name || "").filter(Boolean).slice(0, 10);
       const wantedWords = Array.isArray(body.wanted)
         ? body.wanted
         : String(body.wanted || "").split(/[、,，]/).map(x => x.trim()).filter(Boolean);
 
       const searchController = new AbortController();
-      const searchTimer = setTimeout(() => searchController.abort(), 3500);
+      const searchTimer = setTimeout(() => searchController.abort(), 3000);
       try {
         const query = encodeURIComponent([
           "家庭料理 献立 レシピ " + pantryWords.slice(0, 5).join(" "),
@@ -528,7 +580,7 @@ export default {
           const html = await searchResponse.text();
           context.searchResults = [
             ...html.matchAll(/class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)
-          ].slice(0, 8).map(match => ({
+          ].slice(0, 5).map(match => ({
             url: match[1],
             title: match[2].replace(/<[^>]+>/g, "").trim()
           }));
@@ -539,7 +591,7 @@ export default {
       }
 
       const prompt = buildWeekPrompt(body, context);
-      const generated = await callGemini(env, prompt, 16000);
+      const generated = await callAI(env, prompt, 12000);
       const week = normalizeDays(generated, days);
 
       const overBudget = [];
@@ -568,7 +620,7 @@ export default {
         try {
           retryUsed = true;
           const retryPrompt = buildRetryPrompt(overBudget, context);
-          const retryResult = await callGemini(env, retryPrompt, 10000);
+          const retryResult = await callAI(env, retryPrompt, 8000);
           const retryRows = Array.isArray(retryResult.days) ? retryResult.days : [];
 
           for (const slot of overBudget) {
@@ -584,9 +636,7 @@ export default {
               }
             } catch (_) {}
           }
-        } catch (_) {
-          // 予算再調整で失敗しても1回目の献立はそのまま返す
-        }
+        } catch (_) {}
       }
 
       return json({

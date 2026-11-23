@@ -161,17 +161,14 @@ function normalizeDays(parsed, days) {
 
 async function callGemini(env, prompt, maxTokens) {
   const errors = [];
-  const delays = [1000, 3000, 6000];
 
   for (const model of MODELS) {
-    let modelSucceeded = false;
-
-    for (let attempt = 0; attempt < 4; attempt++) {
+    for (let attempt = 0; attempt < 2; attempt++) {
       const controller = new AbortController();
-      const timeout = setTimeout(
-        () => controller.abort(),
-        90000
-      );
+
+      const timeout = setTimeout(() => {
+        controller.abort();
+      }, 90000);
 
       let response = null;
       let raw = null;
@@ -207,15 +204,13 @@ async function callGemini(env, prompt, maxTokens) {
 
         errors.push(model + "：" + message);
 
-        if (e.name === "AbortError") {
-          break;
-        }
+        break;
 
       } finally {
         clearTimeout(timeout);
       }
 
-      if (response && response.ok) {
+      if (response.ok) {
         if (raw.status !== "completed") {
           const message =
             "処理状態：" + (raw.status || "不明");
@@ -245,7 +240,8 @@ async function callGemini(env, prompt, maxTokens) {
         return parseJson(text);
       }
 
-      const status = response ? response.status : 0;
+      const status = response.status;
+
       const message =
         raw?.error?.message ||
         ("HTTP " + status);
@@ -260,17 +256,16 @@ async function callGemini(env, prompt, maxTokens) {
         );
       }
 
-      // 混雑・一時的な制限の場合は待って再試行
-      if (
-        [429, 500, 502, 503, 504].includes(status) &&
-        attempt < delays.length
-      ) {
+      // 503だけ1回再試行
+      if (status === 503 && attempt === 0) {
         await new Promise(resolve =>
-          setTimeout(resolve, delays[attempt])
+          setTimeout(resolve, 1000)
         );
+
         continue;
       }
 
+      // 429や2回目の503は次のモデルへ
       break;
     }
   }

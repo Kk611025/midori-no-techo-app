@@ -160,15 +160,22 @@ function normalizeDays(parsed, days) {
 }
 
 async function callGemini(env, prompt, maxTokens) {
-  let lastError = "AIとの通信に失敗しました。";
-  for (let i = 0; i < MODELS.length; i++) {
-    const model = MODELS[i];
-    // 503の場合は最大1回だけ再試行
-    for (let attempt = 0; attempt < 2; attempt++) {
+  const errors = [];
+  const delays = [1000, 3000, 6000];
+
+  for (const model of MODELS) {
+    let modelSucceeded = false;
+
+    for (let attempt = 0; attempt < 4; attempt++) {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 90000);
-      let response;
-      let raw;
+      const timeout = setTimeout(
+        () => controller.abort(),
+        90000
+      );
+
+      let response = null;
+      let raw = null;
+
       try {
         response = await fetch(
           "https://generativelanguage.googleapis.com/v1beta/interactions",
@@ -190,54 +197,88 @@ async function callGemini(env, prompt, maxTokens) {
             signal: controller.signal
           }
         );
+
         raw = await response.json();
+
       } catch (e) {
-        lastError = e.name === "AbortError"
-          ? "AIの応答が90秒以内に完了しませんでした。"
-          : "AIとの通信に失敗しました。";
+        const message = e.name === "AbortError"
+          ? "90秒でタイムアウト"
+          : "通信エラー：" + e.message;
+
+        errors.push(model + "：" + message);
+
         if (e.name === "AbortError") {
-          throw new Error(lastError);
+          break;
         }
+
       } finally {
         clearTimeout(timeout);
       }
+
       if (response && response.ok) {
         if (raw.status !== "completed") {
+          const message =
+            "処理状態：" + (raw.status || "不明");
+
+          errors.push(model + "：" + message);
+
           if (
             raw.status === "incomplete" ||
             raw.status === "budget_exceeded"
           ) {
             throw new Error(
-              "AIの回答が途中で切れました。献立の量を減らすか、もう一度試してください。"
+              model + "：" + message +
+              "。献立の量を減らして再試行してください。"
             );
           }
-          throw new Error(
-            "AIの処理が正常に完了しませんでした（" +
-            (raw.status || "状態不明") + "）。"
-          );
+
+          break;
         }
+
         const text = extractText(raw);
+
         if (!text) {
-          throw new Error("AIから文章が返りませんでした。");
+          errors.push(model + "：回答が空でした。");
+          break;
         }
+
         return parseJson(text);
       }
+
       const status = response ? response.status : 0;
-      lastError = raw?.error?.message ||
-        ("AI APIエラー（HTTP " + status + "）");
-      // 503だけ、1秒待って同じモデルを再試行
-      if (status === 503 && attempt === 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      const message =
+        raw?.error?.message ||
+        ("HTTP " + status);
+
+      errors.push(
+        model + "（HTTP " + status + "）：" + message
+      );
+
+      if ([400, 401, 403].includes(status)) {
+        throw new Error(
+          "Gemini APIの設定エラー：" + message
+        );
+      }
+
+      // 混雑・一時的な制限の場合は待って再試行
+      if (
+        [429, 500, 502, 503, 504].includes(status) &&
+        attempt < delays.length
+      ) {
+        await new Promise(resolve =>
+          setTimeout(resolve, delays[attempt])
+        );
         continue;
       }
-      // 認証・設定エラーは再試行しない
-      if ([400, 401, 403].includes(status)) {
-        throw new Error(lastError);
-      }
+
       break;
     }
   }
-  throw new Error(lastError);
+
+  throw new Error(
+    "すべてのGeminiモデルで失敗しました。\n" +
+    errors.join("\n")
+  );
 }
 function recipeRules() {
   return `

@@ -1,6 +1,6 @@
 /**
  * うちのごはん - Cloudflare Worker
- * 並列生成・モデル自動学習・高速JSON修復 強化版
+ * 予算厳守・並列高速生成・モデル自動学習・無料AIフォールバック完全版
  */
 const ALLOWED_ORIGINS = [
   "https://kk611025.github.io"
@@ -31,6 +31,86 @@ const MODELS_WORKERS_AI = [
   "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
   "@cf/zai-org/glm-4.7-flash"
 ];
+
+// 予算超過時に自動で差し替える節約定番メニュー（4人分基準）
+const SAVING_FALLBACK = {
+  staple: [
+    {
+      course: "staple",
+      name: "白ごはん（節約盛り）",
+      minutes: 5,
+      cost_for_4: 140,
+      ingredients: [{ name: "米", amount: "2.5合" }],
+      steps: ["米を研いで炊く"],
+      tip: "",
+      source_url: ""
+    },
+    {
+      course: "staple",
+      name: "塩むすび",
+      minutes: 8,
+      cost_for_4: 140,
+      ingredients: [{ name: "ご飯", amount: "4膳" }, { name: "塩", amount: "少々" }],
+      steps: ["手に塩を付けて握る"],
+      tip: "",
+      source_url: ""
+    }
+  ],
+  main: [
+    {
+      course: "main",
+      name: "もやしと卵のあんかけ炒め",
+      minutes: 10,
+      cost_for_4: 150,
+      ingredients: [{ name: "もやし", amount: "1袋" }, { name: "卵", amount: "3個" }, { name: "醤油", amount: "大さじ1.5" }],
+      steps: ["もやしを炒めて卵でとじる", "醤油あんで調える"],
+      tip: "",
+      source_url: ""
+    },
+    {
+      course: "main",
+      name: "豆腐ステーキ",
+      minutes: 12,
+      cost_for_4: 160,
+      ingredients: [{ name: "木綿豆腐", amount: "2丁" }, { name: "醤油", amount: "大さじ2" }, { name: "みりん", amount: "大さじ2" }],
+      steps: ["水切り豆腐を両面焼く", "醤油とみりんを絡める"],
+      tip: "",
+      source_url: ""
+    },
+    {
+      course: "main",
+      name: "納豆とねぎの卵焼き",
+      minutes: 10,
+      cost_for_4: 180,
+      ingredients: [{ name: "納豆", amount: "2パック" }, { name: "卵", amount: "4個" }, { name: "長ねぎ", amount: "適量" }],
+      steps: ["材料を混ぜ合わせる", "フライパンで両面焼く"],
+      tip: "",
+      source_url: ""
+    }
+  ],
+  soup: [
+    {
+      course: "soup",
+      name: "わかめとねぎのスープ",
+      minutes: 5,
+      cost_for_4: 80,
+      ingredients: [{ name: "乾燥わかめ", amount: "大さじ1" }, { name: "長ねぎ", amount: "1/3本" }, { name: "鶏ガラスープの素", amount: "小さじ3" }],
+      steps: ["湯にスープの素と具材を入れて温める"],
+      tip: "",
+      source_url: ""
+    },
+    {
+      course: "soup",
+      name: "もやしとねぎの味噌汁",
+      minutes: 10,
+      cost_for_4: 100,
+      ingredients: [{ name: "もやし", amount: "1/2袋" }, { name: "長ねぎ", amount: "1/3本" }, { name: "味噌", amount: "大さじ3" }],
+      steps: ["もやしを煮る", "火を弱めて味噌を溶く"],
+      tip: "",
+      source_url: ""
+    }
+  ]
+};
 
 // 直近で成功したAIを記憶して次回から最優先で呼ぶ
 let lastWinner = null;
@@ -94,7 +174,6 @@ function parseJson(text) {
     throw new Error("AIの返答がJSON形式ではありません。");
   }
 
-  // 末尾カンマなど軽微なJSON崩れを自動修復
   const slice = cleaned
     .slice(start, end + 1)
     .replace(/,\s*([}\]])/g, "$1");
@@ -102,7 +181,7 @@ function parseJson(text) {
   try {
     return JSON.parse(slice);
   } catch (_) {
-    throw new Error("AIのJSONが途中で切れています。");
+    throw new Error("AIのJSONが途中で切れました。");
   }
 }
 
@@ -114,23 +193,37 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+// フロントエンドの計算式と1円単位まで一致させる
 function costOf(dishes, people) {
   return dishes.reduce(
-    (sum, d) => sum + (Number(d.cost_for_4) || 0) * people / 4,
+    (sum, d) => sum + Math.round((Number(d.cost_for_4) || 0) * people / 4),
     0
   );
 }
 
-function checkMeal(inputDishes, people, perPersonBudget) {
+function checkMeal(inputDishes, people, perPersonBudget, dayNumber = 1) {
   const dishes = clone(inputDishes);
   const budget = Math.max(0, Number(perPersonBudget) || 0) * people;
-  const allowedBudget = budget + 50 * people;
   const totalCost = () => costOf(dishes, people);
 
+  // 1円でも予算を超える場合は小鉢・副菜を削除
   for (const course of ["kobachi", "side"]) {
-    if (totalCost() <= allowedBudget) break;
+    if (totalCost() <= budget) break;
     const index = dishes.findIndex(d => d.course === course);
     if (index >= 0) dishes.splice(index, 1);
+  }
+
+  // 必須3品だけでも予算を超える場合は、高い料理から順に節約メニューへ自動置換
+  for (const course of ["main", "staple", "soup"]) {
+    if (totalCost() <= budget) break;
+    const index = dishes.findIndex(d => d.course === course);
+    const list = SAVING_FALLBACK[course] || [];
+    if (index >= 0 && list.length) {
+      const fb = list[(dayNumber - 1) % list.length];
+      if ((Number(dishes[index].cost_for_4) || 0) > fb.cost_for_4) {
+        dishes[index] = clone(fb);
+      }
+    }
   }
 
   const required = ["staple", "main", "soup"];
@@ -264,7 +357,11 @@ async function runSingleCandidate(env, task, prompt, maxTokens) {
 
       const rawText = await response.text();
       let raw = null;
-      try { raw = JSON.parse(rawText); } catch (_) { raw = { error: { message: rawText.slice(0, 150) } }; }
+      try {
+        raw = JSON.parse(rawText);
+      } catch (_) {
+        raw = { error: { message: rawText.slice(0, 150) } };
+      }
 
       if (response.ok) {
         if (mode === "interactions" && raw.status !== "completed") {
@@ -312,7 +409,6 @@ async function callAI(env, prompt, maxTokens) {
     MODELS_WORKERS_AI.forEach(model => candidates.push({ provider: "workers_ai", model, mode: "run" }));
   }
 
-  // 直近で成功したモデルがあれば先頭に移動して爆速化
   if (lastWinner) {
     const idx = candidates.findIndex(
       c => c.provider === lastWinner.provider && c.model === lastWinner.model && c.mode === lastWinner.mode
@@ -343,8 +439,13 @@ function buildChunkPrompt(body, context, startDay, endDay, styleHint) {
   const lightPantry = pantry.slice(0, 25).map(p => `${p.name}${p.amount || ""}${p.unit || ""}`).join("、");
 
   return `日本の家庭料理の献立AIとして${people}人分の${startDay}日目〜${endDay}日目の献立を作成してください。
-【1人1食予算】朝${budgets.breakfast}円/昼${budgets.lunch}円/夕${budgets.dinner}円（cost_for_4×${people}÷4で計算し予算厳守）
-【各食必須】staple(主食),main(主菜),soup(汁物)各1品。予算余裕時のみside(副菜),kobachi(小鉢)を追加。
+【1人1食予算（1円も超過禁止・厳守）】
+・朝食：1人${budgets.breakfast}円以下（${people}人合計${budgets.breakfast * people}円以下）
+・昼食：1人${budgets.lunch}円以下（${people}人合計${budgets.lunch * people}円以下）
+・夕食：1人${budgets.dinner}円以下（${people}人合計${budgets.dinner * people}円以下）
+※ 各料理の食材費は「cost_for_4 × ${people} ÷ 4」で計算し、1食の合計が必ず上記金額以下になるようにしてください。
+※ 予算が厳しい時は副菜・小鉢を付けず、もやし・豆腐・卵・鶏むね肉などの安い食材を使うこと。
+【各食必須】staple(主食),main(主菜),soup(汁物)各1品。予算内に余裕がある時だけside(副菜),kobachi(小鉢)を追加。
 【献立の質】
 ・朝は15分以内（ご飯+味噌汁+卵/魚 または パン+スープ+卵など）
 ・昼夕の主菜は肉・魚・卵・豆腐が偏らないよう交互に変える
@@ -359,7 +460,7 @@ function buildChunkPrompt(body, context, startDay, endDay, styleHint) {
 
 stepsは短い2工程、ingredientsは主要4〜6点のみで簡潔に。JSONのみ返すこと。
 形式:{"days":[{"day":${startDay},"meals":{"breakfast":[料理],"lunch":[料理],"dinner":[料理]}}]}
-料理:{"course":"staple|main|side|soup|kobachi","name":"料理名","minutes":15,"cost_for_4":300,"ingredients":[{"name":"材料","amount":"4人分量"}],"steps":["手順1","手順2"]}`;
+料理:{"course":"staple|main|side|soup|kobachi","name":"料理名","minutes":15,"cost_for_4":160,"ingredients":[{"name":"材料","amount":"4人分量"}],"steps":["手順1","手順2"]}`;
 }
 
 export default {
@@ -395,7 +496,9 @@ export default {
         const recipeUrl = String(body.url || "").trim();
         if (!recipeUrl) return json({ error: "レシピURLがありません。" }, 400, origin);
         let parsedUrl;
-        try { parsedUrl = new URL(recipeUrl); } catch (_) {
+        try {
+          parsedUrl = new URL(recipeUrl);
+        } catch (_) {
           return json({ error: "URLの形式が正しくありません。" }, 400, origin);
         }
         if (!["http:", "https:"].includes(parsedUrl.protocol)) {
@@ -515,7 +618,7 @@ export default {
 
       for (const row of week) {
         for (const mealName of ["breakfast", "lunch", "dinner"]) {
-          const checked = checkMeal(row.meals[mealName], people, budgets[mealName]);
+          const checked = checkMeal(row.meals[mealName], people, budgets[mealName], row.day);
           if (!checked.valid) {
             throw new Error(row.day + "日目の" + mealName + "に主食・主菜・汁物がそろっていません。");
           }

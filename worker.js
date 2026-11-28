@@ -1,6 +1,6 @@
 /**
  * うちのごはん - Cloudflare Worker 完成版
- * 5種類の無料AI対応・コース自動補正・初心者向け詳しい作り方＆コツ生成・予算1円超過禁止
+ * 最速AIレース高速化・テーマ統一・夕飯パン/飲み物ブロック・詳しい4工程作り方・予算厳守
  */
 const ALLOWED_ORIGINS = ["https://kk611025.github.io"];
 
@@ -19,8 +19,10 @@ const COURSE_ALIAS = {
   k: "kobachi", kobachi: "kobachi", "小鉢": "kobachi"
 };
 
-const STAPLE_RE = /(ご飯|ごはん|白米|雑穀|玄米|むすび|おにぎり|パン|トースト|うどん|そば|蕎麦|パスタ|スパゲティ|麺|ラーメン|チャーハン|炒飯|ピラフ|雑炊|おかゆ|丼|カレーライス|オムライス|焼きそば|そうめん)/;
+const STAPLE_RE = /(ご飯|ごはん|白米|雑穀|玄米|むすび|おにぎり|パン|トースト|クロワッサン|ベーグル|ロールパン|バゲット|サンドイッチ|ホットケーキ|パンケーキ|うどん|そば|蕎麦|パスタ|スパゲティ|麺|ラーメン|チャーハン|炒飯|ピラフ|ドリア|雑炊|おかゆ|丼|カレーライス|オムライス|焼きそば|そうめん)/;
 const SOUP_RE = /(汁|スープ|みそ汁|味噌汁|豚汁|けんちん|ポタージュ|チャウダー|吸い物|すまし)/;
+const DRINK_RE = /^(牛乳|ミルク|豆乳|コーヒー|紅茶|お茶|緑茶|麦茶|ジュース|オレンジジュース|カフェオレ|ヨーグルト|飲むヨーグルト|ホットミルク)$/;
+const PAN_ONIGIRI_RE = /(パン|トースト|クロワッサン|ベーグル|ロールパン|バゲット|サンドイッチ|むすび|おにぎり|そうめん)/;
 const MAIN_RE = /(ハンバーグ|唐揚げ|から揚げ|からあげ|照り焼き|生姜焼き|焼き鮭|塩焼き|煮付け|味噌煮|ホイル焼き|ムニエル|ステーキ|ソテー|カツ|フライ|天ぷら|肉じゃが|麻婆|炒め|回鍋肉|青椒肉絲|酢豚|餃子|焼売|オムレツ|卵焼き|だし巻き|目玉焼き|ハムエッグ|納豆|焼肉|ロールキャベツ|シチュー|筑前煮|ぶり大根)/;
 
 const SAVING_FALLBACK = {
@@ -29,23 +31,12 @@ const SAVING_FALLBACK = {
       course: "staple", name: "白ごはん（節約）", minutes: 5, cost_for_4: 140,
       ingredients: [{ name: "お米 2.5合", amount: "" }],
       steps: [
-        "ボウルまたは内釜にお米を入れ、たっぷりの水を注いで大きく2回混ぜたら、ぬかの臭いを吸わないよう最初の水はすぐに捨てる。",
-        "水を切った状態で指を立てて20回ほどやさしくシャカシャカ研ぎ、水を入れて濁りを流す作業を2〜3回繰り返す。",
-        "炊飯釜の目盛りに合わせて水を入れ、30分ほど浸水させてから炊飯スイッチを押す。",
-        "炊き上がったら10分ほど蒸らし、しゃもじで十字に切れ目を入れて底からふんわりほぐす。"
+        "ボウルにお米を入れ最初の水はぬか臭を防ぐためすぐ捨てる。",
+        "指を立て20回ほどやさしく研ぎ、水を換えて2〜3回すすぐ。",
+        "目盛り通りの水を入れて30分浸水してから炊飯スイッチを押す。",
+        "炊き上がったら10分蒸らして底からふんわりほぐす。"
       ],
-      tip: "最初の水を素早く捨てることと、炊く前に30分浸水させることで安いお米でも芯が残らずふっくら甘く炊き上がります。", source_url: ""
-    },
-    {
-      course: "staple", name: "塩むすび", minutes: 8, cost_for_4: 140,
-      ingredients: [{ name: "お米 2合", amount: "" }, { name: "塩 少々", amount: "" }],
-      steps: [
-        "手を清潔に洗ったあと水でさっと濡らし、余分な水気を軽く払う（ご飯が手にくっつくのを防ぎます）。",
-        "塩を1つまみ手のひら全体に薄くすり込むように広げる。",
-        "お茶碗1杯分の温かいご飯を手のひらに乗せ、指をそろえて軽く包み込む。",
-        "力を入れすぎず、くるっと向きを変えながら3〜4回やさしく握って三角形に整える。"
-      ],
-      tip: "ぎゅっと力を入れて握ると固くなります。表面だけ形作るようにやさしく握ると口の中でほろっとほどけるおにぎりになります。", source_url: ""
+      tip: "最初の水を素早く捨てることと30分浸水させることでふっくら甘く炊き上がります。", source_url: ""
     }
   ],
   main: [
@@ -53,49 +44,60 @@ const SAVING_FALLBACK = {
       course: "main", name: "もやしと卵のあんかけ炒め", minutes: 10, cost_for_4: 150,
       ingredients: [{ name: "もやし 1袋", amount: "" }, { name: "卵 3個", amount: "" }, { name: "醤油 大さじ1.5", amount: "" }, { name: "片栗粉 小さじ2", amount: "" }],
       steps: [
-        "卵はボウルに割り入れて溶きほぐす。小皿に水大さじ3・醤油・片栗粉を入れてよく混ぜ、あんの液を作っておく。",
-        "フライパンに油大さじ1をひいて中火で温め、水洗いして水気を切ったもやしを入れて約1分〜1分半さっと炒め、塩こしょうを振ってお皿に盛る。",
-        "同じフライパンに油を少し足して中火にかけ、溶き卵を流し入れる。フチが固まってきたら大きく2〜3回混ぜ、半熟トロトロで火を止めもやしの上に乗せる。",
-        "空いたフライパンに混ぜておいた醤油あん（入れる直前に再度混ぜる）を入れ、弱めの中火で混ぜながらとろみがつくまで30秒加熱し卵の上にかける。"
+        "卵を溶きほぐし、小皿に水大さじ3・醤油・片栗粉を混ぜてあんを作る。",
+        "フライパンに油を熱して中火でもやしを1分半ほど手早く炒め皿に盛る。",
+        "溶き卵を半熟状にふんわり焼いて、炒めたもやしの上に乗せる。",
+        "あんを弱めの中火で混ぜながら30秒煮詰めてとろみをつけ、卵の上にかける。"
       ],
-      tip: "もやしは炒めすぎると水っぽくなるので1分程度で引き上げることと、あんは混ぜながら温めるのがダマにならないポイントです。", source_url: ""
+      tip: "もやしは炒めすぎないことと、あんは入れる直前にもう一度混ぜるのがダマにならないコツです。", source_url: ""
     },
     {
       course: "main", name: "豆腐ステーキ", minutes: 12, cost_for_4: 160,
       ingredients: [{ name: "木綿豆腐 2丁", amount: "" }, { name: "片栗粉 大さじ2", amount: "" }, { name: "醤油 大さじ2", amount: "" }, { name: "みりん 大さじ2", amount: "" }],
       steps: [
-        "木綿豆腐をキッチンペーパー2枚で包み、耐熱皿に乗せてラップをせず600Wの電子レンジで2分加熱し、そのまま5分置いてしっかり水切りをする。",
-        "粗熱が取れたら横半分・厚さ1.5cmほどに切り、全体に片栗粉を薄くまぶす。小皿に醤油とみりんを混ぜておく。",
-        "フライパンに油大さじ1をひいて中火にかけ豆腐を並べる。最初の3分間は崩れやすいので触らずに焼き、焼き目がついたら裏返して反対側も3分焼く。",
-        "弱火に落とし、混ぜた醤油とみりんをフチから回し入れ、スプーンで煮汁を豆腐にかけながら30秒ほどツヤよく絡める。"
+        "豆腐をキッチンペーパーで包み600Wで2分加熱し5分置いて水切りする。",
+        "厚さ1.5cmに切り、崩れ防止に片栗粉を薄くまぶす。",
+        "油をひいたフライパンで中火にかけ、触らずに3分ずつ両面に焼き色をつける。",
+        "弱火にし、混ぜた醤油とみりんを回し入れて30秒ほどツヤよく絡める。"
       ],
-      tip: "しっかり水切りをして片栗粉をまぶすことで油はねを防ぎ、外はカリッと中はふんわり・たれがよく絡む仕上がりになります。", source_url: ""
+      tip: "しっかり水切りして片栗粉をまぶすことで油はねを防ぎ外はカリッと中はふんわり仕上がります。", source_url: ""
     }
   ],
-  soup: [
-    {
-      course: "soup", name: "わかめとねぎのスープ", minutes: 5, cost_for_4: 80,
-      ingredients: [{ name: "乾燥わかめ 大さじ1", amount: "" }, { name: "長ねぎ 1/3本", amount: "" }, { name: "鶏ガラスープの素 小さじ3", amount: "" }],
-      steps: [
-        "長ねぎは根元を少し切り落とし、端から2〜3mm幅の薄い小口切りにしておく。",
-        "鍋に水800mlと鶏ガラスープの素を入れて中火にかけ、全体がブクブク沸騰するまで温める。",
-        "沸騰したら弱火にし、乾燥わかめ（戻さずそのままでOK）と刻んだ長ねぎを加えて1分ほど温め火を止める。",
-        "味見をして薄ければ塩ひとつまみを足し、仕上げに香り付けのごま油を2〜3滴垂らして完成。"
-      ],
-      tip: "乾燥わかめは湯に入れると大きく膨らむので入れすぎないのがコツです。ねぎとごま油を最後に加えると香りが飛びません。", source_url: ""
-    },
-    {
+  soup: {
+    "和食": {
       course: "soup", name: "もやしとねぎの味噌汁", minutes: 10, cost_for_4: 100,
       ingredients: [{ name: "もやし 1/2袋", amount: "" }, { name: "長ねぎ 1/3本", amount: "" }, { name: "だしの素 小さじ2", amount: "" }, { name: "味噌 大さじ3", amount: "" }],
       steps: [
-        "もやしは水でさっと振り洗いして水気を切り、長ねぎは薄い小口切りにしておく。",
-        "鍋に水800ml・だしの素・もやしを入れて中火にかけ、沸騰したら弱めの中火で2分ほど煮て火を通す。",
-        "一度火を止め、お玉に味噌を取って鍋の汁を少し混ぜながらダマがなくなるまで溶かし入れる。",
-        "刻んだ長ねぎを加えて弱火にかけ、お鍋のフチが小さくふつふつと動き始めた瞬間（沸騰直前）に火を止める。"
+        "もやしは水でさっと洗い、長ねぎは薄い小口切りにする。",
+        "鍋に水800ml・だしの素・もやしを入れて中火で沸かし、弱めの中火で2分煮る。",
+        "一度火を止め、お玉に味噌を取って汁で溶き入れる。",
+        "刻んだ長ねぎを加えて弱火にかけ、沸騰する直前で火を止める。"
       ],
-      tip: "味噌を入れたあとにグラグラ沸騰させると香りが飛んでしまうため、必ず沸騰直前で火を止めるのが美味しさの秘訣です。", source_url: ""
+      tip: "味噌を入れたあとに沸騰させると風味が飛ぶため、必ず沸騰直前で火を止めましょう。", source_url: ""
+    },
+    "洋食": {
+      course: "soup", name: "玉ねぎとキャベツのコンソメスープ", minutes: 10, cost_for_4: 110,
+      ingredients: [{ name: "玉ねぎ 1/2個", amount: "" }, { name: "キャベツ 2枚", amount: "" }, { name: "固形コンソメ 2個", amount: "" }],
+      steps: [
+        "玉ねぎは薄切り、キャベツは食べやすい一口大に切る。",
+        "鍋に少量の油を熱して野菜を中火で1分ほどさっと炒める。",
+        "水800mlとコンソメを加えて沸騰したら弱火で5〜6分煮て野菜を柔らかくする。",
+        "味を見て塩・黒こしょう少々で味を調える。"
+      ],
+      tip: "野菜を最初に軽く炒めてから煮ることで、お肉なしでも甘みとコクのあるスープになります。", source_url: ""
+    },
+    "中華": {
+      course: "soup", name: "わかめとねぎの中華スープ", minutes: 5, cost_for_4: 80,
+      ingredients: [{ name: "乾燥わかめ 大さじ1", amount: "" }, { name: "長ねぎ 1/3本", amount: "" }, { name: "鶏ガラスープの素 小さじ3", amount: "" }],
+      steps: [
+        "長ねぎは根元を落とし、端から2〜3mm幅の薄い小口切りにする。",
+        "鍋に水800mlと鶏ガラスープの素を入れて中火で沸騰させる。",
+        "弱火にして乾燥わかめと長ねぎを加え、1分ほど温めて火を止める。",
+        "仕上げにごま油を2〜3滴垂らして香りを立てる。"
+      ],
+      tip: "乾燥わかめは湯に入れると大きく増えるため入れすぎないのがちょうど良いコツです。", source_url: ""
     }
-  ]
+  }
 };
 
 let lastWinner = null;
@@ -137,6 +139,8 @@ const costOf = (dishes, people) => dishes.reduce((s, d) => s + Math.round((Numbe
 function expandDish(raw) {
   if (!raw || typeof raw !== "object") return null;
   const name = String(raw.n ?? raw.name ?? "料理").trim();
+  if (DRINK_RE.test(name)) return null; // 牛乳・お茶等の飲み物を除外
+
   let course = COURSE_ALIAS[String(raw.c ?? raw.course ?? "").trim().toLowerCase()] || COURSE_ALIAS[raw.course] || "";
   if (SOUP_RE.test(name)) course = "soup";
   else if (STAPLE_RE.test(name) && !/肉じゃが|生姜焼き|照り焼き/.test(name)) course = "staple";
@@ -157,18 +161,24 @@ function expandDish(raw) {
   };
 }
 
-function checkMeal(inputDishes, people, perPersonBudget, dayNum = 1) {
+function getFallbackSoup(theme) {
+  if (theme === "洋食") return SAVING_FALLBACK.soup["洋食"];
+  if (theme === "中華") return SAVING_FALLBACK.soup["中華"];
+  return SAVING_FALLBACK.soup["和食"];
+}
+
+function checkMeal(inputDishes, people, perPersonBudget, dayNum = 1, mealName = "dinner", theme = "和食") {
   const byCourse = {};
   for (const d of inputDishes) {
-    if (!d.course) continue;
+    if (!d || !d.course) continue;
+    // 夕食の主食にパン・おにぎり系が来たら強制除外して白ごはんへ
+    if (mealName === "dinner" && d.course === "staple" && PAN_ONIGIRI_RE.test(d.name)) continue;
     if (!byCourse[d.course]) byCourse[d.course] = clone(d);
   }
-  for (const req of ["staple", "main", "soup"]) {
-    if (!byCourse[req]) {
-      const list = SAVING_FALLBACK[req];
-      byCourse[req] = clone(list[(dayNum - 1) % list.length]);
-    }
-  }
+  if (!byCourse.staple) byCourse.staple = clone(SAVING_FALLBACK.staple[0]);
+  if (!byCourse.main) byCourse.main = clone(SAVING_FALLBACK.main[(dayNum - 1) % SAVING_FALLBACK.main.length]);
+  if (!byCourse.soup) byCourse.soup = clone(getFallbackSoup(theme));
+
   const dishes = ["staple", "main", "side", "soup", "kobachi"].map(c => byCourse[c]).filter(Boolean);
   const budget = Math.max(0, Number(perPersonBudget) || 0) * people;
   const totalCost = () => costOf(dishes, people);
@@ -181,17 +191,18 @@ function checkMeal(inputDishes, people, perPersonBudget, dayNum = 1) {
   for (const course of ["main", "staple", "soup"]) {
     if (totalCost() <= budget) break;
     const idx = dishes.findIndex(d => d.course === course);
-    const list = SAVING_FALLBACK[course] || [];
-    if (idx >= 0 && list.length) {
-      const fb = list[(dayNum - 1) % list.length];
-      if ((Number(dishes[idx].cost_for_4) || 0) > fb.cost_for_4) dishes[idx] = clone(fb);
+    const fb = course === "soup"
+      ? getFallbackSoup(theme)
+      : SAVING_FALLBACK[course][(dayNum - 1) % SAVING_FALLBACK[course].length];
+    if (idx >= 0 && fb && (Number(dishes[idx].cost_for_4) || 0) > fb.cost_for_4) {
+      dishes[idx] = clone(fb);
     }
   }
   const valid = ["staple", "main", "soup"].every(c => dishes.some(d => d.course === c));
   return { dishes, valid };
 }
 
-function normalizeDays(parsed, days) {
+function normalizeDays(parsed, days, fallbackTheme) {
   let rows = Array.isArray(parsed.days) ? parsed.days : null;
   if (!rows && (parsed.meals || parsed.b) && days === 1) rows = [parsed];
   if (!rows || rows.length < days) throw new Error(`AIから${days}日分の献立が返りませんでした。`);
@@ -200,8 +211,10 @@ function normalizeDays(parsed, days) {
     const row = rows.find(x => Number(x.day) === i + 1) || rows[i];
     if (!row) throw new Error(`${i + 1}日目の献立がありません。`);
     const bRaw = row.meals?.breakfast || row.b || [], lRaw = row.meals?.lunch || row.l || [], dRaw = row.meals?.dinner || row.d || [];
+    const dayTheme = String(row.theme || (fallbackTheme === "auto" ? ["和食", "洋食", "中華"][i % 3] : fallbackTheme));
     out.push({
       day: i + 1,
+      theme: dayTheme,
       meals: {
         breakfast: bRaw.map(expandDish).filter(Boolean),
         lunch: lRaw.map(expandDish).filter(Boolean),
@@ -215,7 +228,7 @@ function normalizeDays(parsed, days) {
 async function runSingleCandidate(env, task, prompt, maxTokens) {
   const { provider, model, mode } = task;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 35000);
+  const timeout = setTimeout(() => controller.abort(), 16000); // 高速16秒タイムアウト
   try {
     if (provider === "groq" || provider === "mistral" || provider === "openrouter") {
       const urls = { groq: "https://api.groq.com/openai/v1/chat/completions", mistral: "https://api.mistral.ai/v1/chat/completions", openrouter: "https://openrouter.ai/api/v1/chat/completions" };
@@ -252,7 +265,6 @@ async function runSingleCandidate(env, task, prompt, maxTokens) {
       }
       const st = response.status, msg = raw?.error?.message || ("HTTP " + st);
       if (st === 401 || st === 403) return { ok: false, fatal: true, error: "Gemini認証エラー：" + msg };
-      if (st === 503 || st === 429) await new Promise(r => setTimeout(r, 150));
       return { ok: false, error: `${model}(${mode} ${st})：${msg}` };
     }
     return { ok: false, error: "未対応" };
@@ -262,22 +274,58 @@ async function runSingleCandidate(env, task, prompt, maxTokens) {
 }
 
 async function callAI(env, prompt, maxTokens) {
-  const cands = [];
-  if (env.GROQ_API_KEY) MODELS_GROQ.forEach(m => cands.push({ provider: "groq", model: m, mode: "chat" }));
-  if (env.MISTRAL_API_KEY) MODELS_MISTRAL.forEach(m => cands.push({ provider: "mistral", model: m, mode: "chat" }));
-  if (env.OPENROUTER_API_KEY) MODELS_OPENROUTER.forEach(m => cands.push({ provider: "openrouter", model: m, mode: "chat" }));
+  const allCands = [];
+  const raceStarters = [];
+
+  if (env.GROQ_API_KEY) {
+    raceStarters.push({ provider: "groq", model: MODELS_GROQ[0], mode: "chat" });
+    MODELS_GROQ.slice(1).forEach(m => allCands.push({ provider: "groq", model: m, mode: "chat" }));
+  }
+  if (env.MISTRAL_API_KEY) {
+    raceStarters.push({ provider: "mistral", model: MODELS_MISTRAL[0], mode: "chat" });
+    MODELS_MISTRAL.slice(1).forEach(m => allCands.push({ provider: "mistral", model: m, mode: "chat" }));
+  }
+  if (env.OPENROUTER_API_KEY) {
+    raceStarters.push({ provider: "openrouter", model: MODELS_OPENROUTER[0], mode: "chat" });
+    MODELS_OPENROUTER.slice(1).forEach(m => allCands.push({ provider: "openrouter", model: m, mode: "chat" }));
+  }
+  if (env.AI) {
+    raceStarters.push({ provider: "workers_ai", model: MODELS_WORKERS_AI[0], mode: "run" });
+    MODELS_WORKERS_AI.slice(1).forEach(m => allCands.push({ provider: "workers_ai", model: m, mode: "run" }));
+  }
   if (env.GEMINI_API_KEY) {
-    MODELS_GEMMA.forEach(m => cands.push({ provider: "google", model: m, mode: "gemma" }));
-    MODELS_GEMINI.forEach(m => cands.push({ provider: "google", model: m, mode: "generateContent" }));
-    MODELS_GEMINI.slice(0, 2).forEach(m => cands.push({ provider: "google", model: m, mode: "interactions" }));
+    raceStarters.push({ provider: "google", model: MODELS_GEMMA[0], mode: "gemma" });
+    MODELS_GEMMA.slice(1).forEach(m => allCands.push({ provider: "google", model: m, mode: "gemma" }));
+    MODELS_GEMINI.forEach(m => allCands.push({ provider: "google", model: m, mode: "generateContent" }));
   }
-  if (env.AI) MODELS_WORKERS_AI.forEach(m => cands.push({ provider: "workers_ai", model: m, mode: "run" }));
-  if (lastWinner) {
-    const idx = cands.findIndex(c => c.provider === lastWinner.provider && c.model === lastWinner.model && c.mode === lastWinner.mode);
-    if (idx > 0) { const [w] = cands.splice(idx, 1); cands.unshift(w); }
-  }
+
+  // 1. 直近の勝者があれば最初に1回だけ試す（最速ルート）
   const errors = [];
-  for (const task of cands) {
+  if (lastWinner) {
+    const res = await runSingleCandidate(env, lastWinner, prompt, maxTokens);
+    if (res.ok) return { parsed: res.data, modelUsed: `${lastWinner.provider}:${lastWinner.model}` };
+    if (res.fatal) throw new Error(res.error);
+    errors.push(res.error);
+  }
+
+  // 2. 未確定または前回勝者失敗時は、別プロバイダ最大3つを同時レース（最速勝ち抜き）
+  const raceList = raceStarters.filter(t => !lastWinner || t.provider !== lastWinner.provider || t.model !== lastWinner.model).slice(0, 3);
+  if (raceList.length > 0) {
+    try {
+      const winner = await Promise.any(raceList.map(async task => {
+        const res = await runSingleCandidate(env, task, prompt, maxTokens);
+        if (res.ok) return { parsed: res.data, task };
+        throw new Error(res.error || "失敗");
+      }));
+      lastWinner = winner.task;
+      return { parsed: winner.parsed, modelUsed: `${winner.task.provider}:${winner.task.model}` };
+    } catch (aggErr) {
+      if (Array.isArray(aggErr.errors)) aggErr.errors.forEach(e => errors.push(e.message));
+    }
+  }
+
+  // 3. 予備モデルで順番にフォロー
+  for (const task of allCands) {
     const res = await runSingleCandidate(env, task, prompt, maxTokens);
     if (res.ok) { lastWinner = task; return { parsed: res.data, modelUsed: `${task.provider}:${task.model}` }; }
     if (res.fatal) throw new Error(res.error);
@@ -287,27 +335,33 @@ async function callAI(env, prompt, maxTokens) {
 }
 
 function buildCompactPrompt(body, context) {
-  const { days, people, budgets, avoid, existing, previous, pantry, expiry } = context;
+  const { days, people, budgets, theme, avoid, existing, previous, pantry, expiry } = context;
   const max4B = Math.floor(budgets.breakfast * 4), max4L = Math.floor(budgets.lunch * 4), max4D = Math.floor(budgets.dinner * 4);
   const lightEx = existing.slice(0, 20).map(r => r.name).join("、"), lightPan = pantry.slice(0, 25).map(p => p.name).join("、");
+  const themeInstruction = theme === "auto"
+    ? "1日ごとに「和食」「洋食」「中華」のテーマを決め（例：1日目和食、2日目洋食、3日目中華）、各日の昼食・夕食は必ずその日のテーマで統一し、和洋中がチグハグに混ざらないようにしてください。各日のオブジェクトに \"theme\":\"和食\" 等を入れてください。"
+    : `すべて【${theme}】のテーマで統一し、主食・主菜・汁物・副菜が【${theme}】でまとまるようにしてください。各日のオブジェクトに \"theme\":\"${theme}\" を入れてください。`;
 
   return `家庭料理AIとして${people}人分の${days}日間の献立を作成。
 【4人分合計の予算上限(1円も超過禁止)】朝:${max4B}円以下/昼:${max4L}円以下/夕:${max4D}円以下(各料理のpの合計を必ずこの額以下にすること)
-【各食必須・分類厳守】
-・c:"s"(主食)＝必ずご飯・おにぎり・パン・麺類のみ！ハンバーグやおかずを絶対に入れないこと。
+【テーマ統一・バランス（厳守）】
+・${themeInstruction}
+【各食必須・禁止事項（厳守）】
+・c:"s"(主食)＝ご飯・おにぎり・パン・麺類のみ。クロワッサンやパン類を絶対にc:"m"(主菜)に入れないこと。
+・夕食(d)の主食にパン・トースト・クロワッサン・おにぎり・サンドイッチは禁止！必ず温かいご飯・麺・丼等にすること。
 ・c:"m"(主菜)＝肉・魚・卵・豆腐のおかず1品
-・c:"p"(汁物)＝味噌汁・スープ等1品
+・c:"p"(汁物)＝味噌汁やスープ等のみ！牛乳・お茶・ジュース等の飲み物は絶対に入れないこと。
 ・予算余裕時のみc:"d"(副菜),c:"k"(小鉢)追加。朝は15分以内。
-【初めて作る人にもわかりやすい作り方・コツ（超重要）】
-・s(作り方配列)は料理初心者でも迷わず作れるよう「野菜の切り方と大きさ」「火加減（弱火/中火/強火）」「加熱時間（約○分）」「見た目の仕上がり目安（きつね色・しんなり等）」「調味料を加える順番」まで詳しく書いた4工程前後にしてください。
-・k(ポイント・コツ)は、初心者向けに「失敗しないポイントとなぜそうすると美味しくなるのか」を2文程度で丁寧に必ず書いてください。
+【初めて作る人にもわかりやすい作り方・コツ】
+・s(作り方配列)は切り方・火加減・加熱時間(約○分)・仕上がりの目安まで書いた詳しい4工程前後にすること。
+・k(ポイント・コツ)は失敗しないコツと美味しくなる理由を丁寧に1〜2文書くこと。
 【在庫優先】${lightPan || "なし"}【期限注意】${JSON.stringify(expiry)}
 【登録レシピ】${lightEx || "なし"}【重複禁止】${previous.slice(0, 35).join("、") || "なし"}
 【避ける】${avoid.join("、") || "なし"}【使いたい】${body.wanted || "なし"}
 
 以下のJSONのみ出力(Markdown不要):
-{"days":[{"day":1,"b":[料理],"l":[料理],"d":[料理]}]}
-料理:{"c":"s|m|d|p|k","n":"料理名","t":15,"p":160,"i":["材料名 4人分量"],"s":["1. 下ごしらえと切り方...","2. 火加減と加熱目安...","3. 味付けと仕上げ...","4. 盛り付け..."],"k":"失敗しないポイントと美味しくなる理由"}`;
+{"days":[{"day":1,"theme":"和食","b":[料理],"l":[料理],"d":[料理]}]}
+料理:{"c":"s|m|d|p|k","n":"料理名","t":15,"p":160,"i":["材料名 4人分量"],"s":["1. 下ごしらえ...","2. 火加減と加熱...","3. 味付け...","4. 仕上げ..."],"k":"失敗しないコツと理由"}`;
 }
 
 export default {
@@ -349,21 +403,22 @@ export default {
       }
       const days = Math.min(7, Math.max(1, Number(body.days) || 7));
       const people = Math.min(40, Math.max(1, Number(body.people) || 4));
+      const theme = String(body.theme || "auto");
       const budgets = { breakfast: Math.max(0, Number(body.budgets?.breakfast) || 0), lunch: Math.max(0, Number(body.budgets?.lunch) || 0), dinner: Math.max(0, Number(body.budgets?.dinner) || 0) };
-      const context = { days, people, budgets, avoid: safeArray(body.avoid, 40), existing: safeArray(body.existing, 30), previous: safeArray(body.previous, 50), pantry: safeArray(body.pantry, 35), expiry: body.expiry && typeof body.expiry === "object" ? body.expiry : {} };
+      const context = { days, people, theme, budgets, avoid: safeArray(body.avoid, 40), existing: safeArray(body.existing, 30), previous: safeArray(body.previous, 50), pantry: safeArray(body.pantry, 35), expiry: body.expiry && typeof body.expiry === "object" ? body.expiry : {} };
 
       const prompt = buildCompactPrompt(body, context);
       const res = await callAI(env, prompt, 8000);
-      const week = normalizeDays(res.parsed, days);
+      const week = normalizeDays(res.parsed, days, theme);
 
       for (const row of week) {
         for (const mealName of ["breakfast", "lunch", "dinner"]) {
-          const checked = checkMeal(row.meals[mealName], people, budgets[mealName], row.day);
+          const checked = checkMeal(row.meals[mealName], people, budgets[mealName], row.day, mealName, row.theme);
           if (!checked.valid) throw new Error(`${row.day}日目の${mealName}に必須品がありません。`);
           row.meals[mealName] = checked.dishes;
         }
       }
-      return json({ days: week, meta: { days, people, modelUsed: res.modelUsed } }, 200, origin);
+      return json({ days: week, meta: { days, people, theme, modelUsed: res.modelUsed } }, 200, origin);
     } catch (error) {
       return json({ error: error.message || "献立の作成に失敗しました。" }, 500, origin);
     }

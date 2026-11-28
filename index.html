@@ -31,7 +31,7 @@ button:active{transform:translateY(1px)}
 button.active,.primary{background:var(--accent);color:white;border-color:var(--accent)}
 button:disabled{opacity:.5;cursor:not-allowed}
 .mini-btn{padding:4px 9px;font-size:11px;border-radius:8px;background:#fff8ea}
-section.card{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px 15px 15px;margin:16px 0;box-shadow:3px 4px 0 rgba(112,92,66,.1)}
+section.card{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px 15px 15px;margin:16px 0;box-shadow:3px 4px 0 rgba(112,92,66,.1);scroll-margin-top:14px}
 section.card::before{content:"";position:absolute;top:-7px;left:50%;transform:translateX(-50%) rotate(-1.6deg);width:72px;height:14px;pointer-events:none;background:rgba(167,187,151,.5);border-left:1px dashed rgba(255,255,255,.7);border-right:1px dashed rgba(255,255,255,.7)}
 section.card:nth-of-type(even)::before{background:rgba(227,191,118,.5);transform:translateX(-50%) rotate(1.5deg)}
 input,select,textarea{width:100%;min-width:0;padding:11px;border:1px solid #d9ccb8;border-radius:9px;background:#fffefb;color:var(--ink);font:inherit}
@@ -129,7 +129,7 @@ details.dish-detail .dish-body{margin-top:8px;padding-top:8px;border-top:1px das
   <section class="card home-calendar-card">
     <div class="calendar-head"><button id="homePrevMonth" aria-label="前の月">◀</button><div class="calendar-title" id="homeCalendarTitle"></div><button id="homeNextMonth" aria-label="次の月">▶</button></div>
     <div class="calendar-grid" id="homeCalendarGrid"></div>
-    <div class="calendar-legend small">日付をタップすると、その日の献立を確認できます。</div>
+    <div class="calendar-legend small">日付をタップすると、その日の献立へ自動で移動します。</div>
   </section>
 
   <section class="card expiry-alert-card">
@@ -156,7 +156,7 @@ details.dish-detail .dish-body{margin-top:8px;padding-top:8px;border-top:1px das
     </button>
   </div>
 
-  <section class="card">
+  <section class="card" id="homeSelectedCard">
     <div class="row" style="justify-content:space-between"><h2>🍽 選択した日の献立</h2><button onclick="showTab('meal')">献立を作る</button></div>
     <div id="homeSelectedDayMenu"><p class="muted">カレンダーから日付を選んでね。</p></div>
   </section>
@@ -211,9 +211,9 @@ details.dish-detail .dish-body{margin-top:8px;padding-top:8px;border-top:1px das
   <section class="card">
     <div class="calendar-head"><button id="prevMonth">◀</button><div class="calendar-title" id="calendarTitle"></div><button id="nextMonth">▶</button></div>
     <div class="calendar-grid" id="calendarGrid"></div>
-    <div class="notice">日付をタップすると、その日の献立を確認できます。</div>
+    <div class="notice">日付をタップすると、下の献立欄へ自動で移動します。</div>
   </section>
-  <section class="card"><h2>選択した日の献立</h2><div id="selectedDayMenu"><p class="muted">カレンダーから日付を選択してください。</p></div></section>
+  <section class="card" id="calendarSelectedCard"><h2>選択した日の献立</h2><div id="selectedDayMenu"><p class="muted">カレンダーから日付を選択してください。</p></div></section>
 </div>
 
 <div id="recipePage" class="hidden">
@@ -391,6 +391,12 @@ details.dish-detail .dish-body{margin-top:8px;padding-top:8px;border-top:1px das
     x.fillStyle="#e8c476";x.beginPath();x.arc(82,96,15,0,Math.PI*2);x.fill();
     const l=document.getElementById("appleIcon");if(l)l.href=c.toDataURL("image/png");
   }catch(_){}
+  try{
+    const mt=document.getElementById("mealTime");
+    if(mt&&!document.getElementById("mealTheme")){
+      mt.insertAdjacentHTML("afterend",`<label>料理のテーマ</label><select id="mealTheme"><option value="auto" selected>おまかせ（和食・洋食・中華を日替わり）</option><option value="和食">和食中心</option><option value="洋食">洋食中心</option><option value="中華">中華中心</option></select>`);
+    }
+  }catch(_){}
 })();
 
 const STORAGE={recipes:"uchiRecipes",inventory:"uchiInventory",variations:"uchiVariations",mealPlans:"uchiMealPlans",shopping:"uchiShopping",purchases:"uchiPurchases",bentoHistory:"uchiBentoHistory",cookingHistory:"uchiCookingHistory",aiEndpoint:"uchiAiWorkerEndpoint",aiCode:"uchiAiAccessCode"};
@@ -402,6 +408,7 @@ let mealPlans=loadData(STORAGE.mealPlans),shopping=loadData(STORAGE.shopping),pu
 let bentoHistory=loadData(STORAGE.bentoHistory),cookingHistory=loadData(STORAGE.cookingHistory);
 let currentMealResult=[],currentBentoResult=null,selectedCalendarDate=new Date(),calendarMonth=new Date();
 
+const MEAL_CATEGORIES=["主食","主菜","副菜","汁物","小鉢"];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const todayString=()=>{const d=new Date();return[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")};
 const escapeHTML=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
@@ -410,89 +417,116 @@ const formatYen=v=>Math.round(Number(v||0)).toLocaleString("ja-JP")+"円";
 const dateKey=date=>{const d=new Date(date);return[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")};
 const persistAll=()=>{saveData(STORAGE.recipes,recipes);saveData(STORAGE.inventory,inventory);saveData(STORAGE.variations,variations);saveData(STORAGE.mealPlans,mealPlans);saveData(STORAGE.shopping,shopping);saveData(STORAGE.purchases,purchases);saveData(STORAGE.bentoHistory,bentoHistory);saveData(STORAGE.cookingHistory,cookingHistory);};
 
-const STAPLE_RE=/(ご飯|ごはん|白米|雑穀|玄米|むすび|おにぎり|パン|トースト|うどん|そば|蕎麦|パスタ|スパゲティ|麺|ラーメン|チャーハン|炒飯|ピラフ|雑炊|おかゆ|丼|カレーライス|オムライス|焼きそば|そうめん)/;
+const STAPLE_RE=/(ご飯|ごはん|白米|雑穀|玄米|むすび|おにぎり|パン|トースト|クロワッサン|ベーグル|ロールパン|バゲット|サンドイッチ|ホットケーキ|パンケーキ|うどん|そば|蕎麦|パスタ|スパゲティ|麺|ラーメン|チャーハン|炒飯|ピラフ|ドリア|雑炊|おかゆ|丼|カレーライス|オムライス|焼きそば|そうめん)/;
 const SOUP_RE=/(汁|スープ|みそ汁|味噌汁|豚汁|けんちん|ポタージュ|チャウダー|吸い物|すまし)/;
+const DRINK_RE=/^(牛乳|ミルク|豆乳|コーヒー|紅茶|お茶|緑茶|麦茶|ジュース|オレンジジュース|カフェオレ|ヨーグルト|飲むヨーグルト|ホットミルク)$/;
+const PAN_ONIGIRI_RE=/(パン|トースト|クロワッサン|ベーグル|ロールパン|バゲット|サンドイッチ|むすび|おにぎり|そうめん)/;
 const MAIN_RE=/(ハンバーグ|唐揚げ|から揚げ|からあげ|照り焼き|生姜焼き|焼き鮭|塩焼き|煮付け|味噌煮|ホイル焼き|ムニエル|ステーキ|ソテー|カツ|フライ|天ぷら|肉じゃが|麻婆|炒め|回鍋肉|青椒肉絲|酢豚|餃子|焼売|オムレツ|卵焼き|だし巻き|目玉焼き|ハムエッグ|納豆|焼肉|ロールキャベツ|シチュー|筑前煮|ぶり大根)/;
 
 function fixRecipeCategory(name,cat){
   const n=String(name||"");
+  if(DRINK_RE.test(n))return"その他";
   if(SOUP_RE.test(n))return"汁物";
   if(STAPLE_RE.test(n)&&!/肉じゃが|生姜焼き|照り焼き/.test(n))return"主食";
   if(cat==="主食"&&(!STAPLE_RE.test(n)||MAIN_RE.test(n)))return"主菜";
   return cat||"副菜";
 }
+function inferTheme(r){
+  if(Array.isArray(r.themes)&&r.themes.length)return r.themes;
+  const t=(r.name||"")+" "+(r.ingredients||"");
+  if(/白ごはん|ご飯/.test(r.name||""))return["和食","洋食","中華"];
+  if(/(パン|トースト|パスタ|ナポリタン|ハンバーグ|ムニエル|ウインナー|ベーコン|コンソメ|バター|チーズ|コールスロー|ポテト)/.test(t))return["洋食"];
+  if(/(チャーハン|麻婆|中華|ナムル|ごま油|鶏ガラスープ|オイスター|あんかけ)/.test(t))return["中華"];
+  return["和食"];
+}
 
 const PRESET_RECIPES=[
-  {name:"白ごはん",category:"主食",protein:"none",people:4,time:5,budget:160,mealSlot:["breakfast","lunch","dinner"],ingredients:"お米 2.5合",steps:"ボウルにお米を入れ、たっぷりの水を注いで大きく2回混ぜたら、ぬかの臭いを吸わないよう最初の水はすぐに捨てる。\n水を切った状態で指を立てて20回ほどやさしくシャカシャカ研ぎ、水を入れて濁りを流す作業を2〜3回繰り返す。\n炊飯釜の目盛りに合わせて水を入れ、30分ほど浸水させてから炊飯スイッチを押す。\n炊き上がったら10分ほど蒸らし、しゃもじで十字に切れ目を入れて底からふんわりほぐす。",memo:"最初の水を素早く捨てることと、炊く前に30分浸水させることで芯が残らずふっくら甘く炊けます。"},
-  {name:"塩むすび",category:"主食",protein:"none",people:4,time:8,budget:140,mealSlot:["breakfast","lunch"],ingredients:"お米 2合\n塩 少々",steps:"手を清潔に洗ったあと、水でさっと濡らして余分な水気を軽く払う（ご飯が手につくのを防ぐため）。\n塩を1つまみ手のひら全体に薄くすり込むように広げる。\nお茶碗1杯分の温かいご飯を手のひらに乗せ、指をそろえて軽く包み込む。\n力を入れすぎず、くるっと向きを変えながら3〜4回やさしく握って三角形に整える。",memo:"ぎゅっと力を入れて握ると固くなるので、空気を含ませるように表面だけやさしく握るのがコツです。"},
-  {name:"わかめご飯",category:"主食",protein:"none",people:4,time:10,budget:190,mealSlot:["breakfast","lunch","dinner"],ingredients:"お米 2.5合\n乾燥わかめ 大さじ2\n塩 小さじ1",steps:"乾燥わかめをたっぷりの水で5分ほど戻し、キッチンペーパーで包んで水気をしっかり絞ってから細かく刻む。\n炊き上がった温かいご飯に塩を全体に振りかけ、刻んだわかめを加える。\nしゃもじを立ててご飯粒を潰さないように切るように混ぜ合わせる。",memo:"わかめの水気をしっかり絞っておかないとご飯が水っぽくなるので要注意です。"},
-  {name:"バタートースト",category:"主食",protein:"none",people:4,time:5,budget:160,mealSlot:["breakfast"],ingredients:"食パン 4枚\nバター 15g",steps:"トースターを1分ほど予熱して庫内を温めておく。\n食パンの表面に包丁で浅い格子状の切り込みを少しだけ入れ、きつね色になるまで約3分焼く。\n焼きたての熱いうちにバターを全体に均等に塗る。",memo:"焼き目をつけてからバターを塗ると香りが飛ばずサクッと美味しく仕上がります。"},
-  {name:"焼うどん",category:"主食",protein:"meat",people:4,time:15,budget:340,mealSlot:["lunch"],ingredients:"うどん 4玉\n豚こま肉 120g\nキャベツ 3枚\n醤油 大さじ2\nサラダ油 大さじ1",steps:"キャベツは3〜4cm角のざく切り、豚肉は食べやすい一口大に切る。ゆでうどんは袋のまま600Wのレンジで1分半温めてほぐれやすくする。\nフライパンに油を熱して中火で豚肉を炒め、色が変わったらキャベツを加えて約1分、少ししんなりするまで炒める。\nうどんを加えて全体を混ぜ合わせ、フライパンのフチ（鍋肌）から醤油を回し入れて香ばしく炒める。",memo:"事前にレンジでうどんを温めるとフライパンの中で切れたりくっついたりせず手早く仕上がります。"},
-  {name:"ナポリタン",category:"主食",protein:"meat",people:4,time:20,budget:400,mealSlot:["lunch"],ingredients:"スパゲティ 360g\nウインナー 6本\n玉ねぎ 1個\nピーマン 2個\nケチャップ 大さじ6",steps:"玉ねぎは薄切り、ピーマンは輪切り、ウインナーは斜め切りにする。大きめの鍋に湯を沸かし塩少しを入れて麺を表示時間通り茹でる。\nフライパンに油を熱して中火でウインナーと玉ねぎを炒め、しんなりしたらピーマンを加えて1分炒める。\n具材を端に寄せ、空いた場所でケチャップを中火で30秒ほど軽く炒めてから、茹でた麺と茹で汁大さじ2を加えて全体に絡める。",memo:"麺を入れる前にケチャップだけを先に軽く炒めて酸味を飛ばすと、喫茶店のような甘みとコクが出ます。"},
-  {name:"卵チャーハン",category:"主食",protein:"egg",people:4,time:15,budget:260,mealSlot:["lunch","dinner"],ingredients:"お米 2合\n卵 4個\n長ねぎ 1/2本\n醤油 大さじ1.5\nごま油 大さじ1",steps:"長ねぎは小口切りにし、卵はボウルに割りほぐしておく。温かいご飯をすぐ入れられるよう近くに準備する。\nフライパンにごま油を熱して強めの中火にし、溶き卵を流し入れてすぐ温かいご飯を乗せ、木べらで切るように炒める。\nご飯がパラッとしたら長ねぎと塩こしょうを加え、最後に鍋肌から醤油を垂らしてさっと混ぜる。",memo:"卵が完全に固まる前にご飯を乗せて混ぜるとご飯一粒ずつが卵で包まれてパラパラになります。"},
+  {name:"白ごはん",category:"主食",themes:["和食","洋食","中華"],protein:"none",people:4,time:5,budget:160,mealSlot:["breakfast","lunch","dinner"],ingredients:"お米 2.5合",steps:"ボウルにお米を入れ最初の水はぬか臭を防ぐためすぐ捨てる。\n指を立て20回ほどやさしく研ぎ、水を換えて2〜3回すすぐ。\n目盛り通りの水を入れて30分浸水してから炊飯し、炊き上がったら10分蒸らしてほぐす。",memo:"最初の水を素早く捨てることと30分浸水させることでふっくら甘く炊けます。"},
+  {name:"わかめご飯",category:"主食",themes:["和食"],protein:"none",people:4,time:10,budget:190,mealSlot:["breakfast","lunch","dinner"],ingredients:"お米 2.5合\n乾燥わかめ 大さじ2\n塩 小さじ1",steps:"乾燥わかめを水で5分戻し、ペーパーで水気を絞って細かく刻む。\n温かいご飯に塩を振り、わかめを加えてしゃもじで切るように混ぜる。",memo:"わかめの水気をしっかり絞るとご飯がベチャッとしません。"},
+  {name:"バタートースト",category:"主食",themes:["洋食"],protein:"none",people:4,time:5,budget:160,mealSlot:["breakfast"],ingredients:"食パン 4枚\nバター 15g",steps:"トースターを1分予熱し、食パンに浅い格子状の切り込みを入れてきつね色まで約3分焼く。\n焼きたての熱いうちにバターを全体に塗る。",memo:"焼き目をつけてから塗ると香りが飛ばずサクッと仕上がります。"},
+  {name:"焼うどん",category:"主食",themes:["和食"],protein:"meat",people:4,time:15,budget:340,mealSlot:["lunch"],ingredients:"うどん 4玉\n豚こま肉 120g\nキャベツ 3枚\n醤油 大さじ2\nサラダ油 大さじ1",steps:"キャベツはざく切り、豚肉は一口大に切り、うどんは袋のまま600Wで1分半温める。\nフライパンに油を熱して中火で豚肉を炒め、色が変わったらキャベツを1分炒める。\nうどんを加えて混ぜ、鍋肌から醤油を回し入れて香ばしく炒める。",memo:"うどんを事前にレンジで温めるとほぐれやすく切れません。"},
+  {name:"ナポリタン",category:"主食",themes:["洋食"],protein:"meat",people:4,time:20,budget:400,mealSlot:["lunch","dinner"],ingredients:"スパゲティ 360g\nウインナー 6本\n玉ねぎ 1個\nピーマン 2個\nケチャップ 大さじ6",steps:"玉ねぎは薄切り、ピーマンは輪切り、ウインナーは斜め切りにし麺を茹でる。\nフライパンで中火でウインナーと玉ねぎを炒め、しんなりしたらピーマンを加える。\n具材を寄せケチャップを30秒炒めて酸味を飛ばし、麺と茹で汁大さじ2を絡める。",memo:"ケチャップを先に軽く炒めるとお店のような甘みとコクが出ます。"},
+  {name:"卵チャーハン",category:"主食",themes:["中華"],protein:"egg",people:4,time:15,budget:260,mealSlot:["lunch","dinner"],ingredients:"お米 2合\n卵 4個\n長ねぎ 1/2本\n醤油 大さじ1.5\nごま油 大さじ1",steps:"長ねぎは小口切り、卵は溶きほぐしておく。\nフライパンにごま油を熱して強めの中火にし、溶き卵を流してすぐ温かいご飯を乗せ切るように炒める。\nパラッとしたら長ねぎと塩こしょうを加え、鍋肌から醤油を垂らしさっと混ぜる。",memo:"卵が固まる前にご飯を乗せて混ぜるとご飯一粒ずつが卵で包まれます。"},
 
-  {name:"納豆と焼き海苔",category:"主菜",protein:"soy",people:4,time:5,budget:150,mealSlot:["breakfast"],ingredients:"納豆 4パック\n焼き海苔 4袋\n長ねぎ 適量",steps:"長ねぎは端から2mm幅の薄い小口切りにしておく。\n納豆はパックの中で、付属のたれを入れる前に20〜30回ほど箸でよく混ぜて白い粘りを出す。\nたれ・からし・刻みねぎを加えてさらに10回軽く混ぜ、焼き海苔を添えて食卓へ出す。",memo:"たれを入れる前に混ぜておくと空気を含んでふんわりとまろやかな口当たりになります。"},
-  {name:"もやしと卵のあんかけ炒め",category:"主菜",protein:"egg",people:4,time:10,budget:150,mealSlot:["breakfast","lunch","dinner"],ingredients:"もやし 1袋\n卵 3個\n醤油 大さじ1.5\n片栗粉 小さじ2",steps:"卵はボウルに割りほぐす。小皿に水大さじ3・醤油・片栗粉をよく混ぜてあんの液を作っておく。\nフライパンに油を熱して中火でもやしを約1分〜1分半、少し透明感が出るまで炒めて塩こしょうを振りお皿に盛る。\n同じフライパンで溶き卵を半熟状に大きく混ぜながら焼きもやしの上に乗せる。\n空いたフライパンに混ぜておいた醤油あん（入れる直前にもう一度混ぜる）を入れ、弱めの中火で混ぜながらとろみがつくまで30秒加熱し卵の上にかける。",memo:"もやしは炒めすぎると水っぽくなるため1分程度で引き上げること、あんは混ぜながら温めるのがダマを防ぐコツです。"},
-  {name:"豆腐ステーキ",category:"主菜",protein:"soy",people:4,time:12,budget:160,mealSlot:["breakfast","lunch","dinner"],ingredients:"木綿豆腐 2丁\n片栗粉 大さじ2\n醤油 大さじ2\nみりん 大さじ2",steps:"豆腐をキッチンペーパー2枚で包み、600Wの電子レンジで2分加熱してそのまま5分置き水切りする。\n横半分・厚さ1.5cmほどに切り、全体に片栗粉を薄くまぶす。小皿に醤油とみりんを混ぜておく。\nフライパンに油大さじ1を熱して中火で豆腐を並べ、最初の3分は触らず焼き、こんがり焼き色がついたら裏返して反対側も3分焼く。\n弱火に落とし、混ぜた醤油とみりんをフチから回し入れてスプーンでかけながら30秒ほど絡める。",memo:"しっかり水切り＋片栗粉をまぶすことで油はねを防ぎ、外はカリッと中はふんわりたれが絡みます。"},
-  {name:"だし巻き卵",category:"主菜",protein:"egg",people:4,time:10,budget:180,mealSlot:["breakfast","bento"],ingredients:"卵 4個\nだしの素 小さじ1\n醤油 小さじ1\n砂糖 小さじ1",steps:"ボウルに卵を割り入れ、水80mlにだしの素・醤油・砂糖を溶かしたものを加えて白身を切るようによく混ぜる。\n卵焼き器に油を薄くひいて中火でしっかり温め、卵液の1/3を流して大きく混ぜ、半熟のうちに奥から手前へ巻く。\n空いた部分に油を少し足し、残りを2回に分けて流し、卵の下にも液を潜り込ませながら巻き上げる。\n巻きすやキッチンペーパーで1分ほど包んで形を整えてから切り分ける。",memo:"1回目は少し強めの火で一気に形を作り、2〜3回目は中火で丁寧に巻くとお店のように仕上がります。"},
-  {name:"目玉焼きとウインナー",category:"主菜",protein:"egg",people:4,time:10,budget:280,mealSlot:["breakfast"],ingredients:"卵 4個\nウインナー 8本\nサラダ油 小さじ1",steps:"ウインナーに斜めの浅い切り込みを2〜3本入れ、油をひいたフライパンで中火で転がしながら2分焼く。\nウインナーを端に寄せ、空いた場所に卵を割り入れる。\n水を大さじ1ほど入れてすぐ蓋をし、弱火で3〜4分蒸し焼きにして好みの半熟具合で取り出す。",memo:"切り込みを入れると破裂せず香ばしくなり、少量の水で蓋をして蒸すと白身がふっくら焼けます。"},
-  {name:"焼き鮭",category:"主菜",protein:"fish",people:4,time:15,budget:500,mealSlot:["breakfast","dinner","bento"],ingredients:"鮭切り身 4切れ",steps:"鮭は焼く10分前に冷蔵庫から出し、キッチンペーパーで表面の余分な水気をしっかり拭き取る。\n魚焼きグリル（またはフライパンにクッキングシートを敷いて中火）で、盛り付ける面を下にして5〜6分焼く。\n焼き目がついたらひっくり返し、弱めの中火でさらに4〜5分中まで火が通るまで焼く。",memo:"水気を拭いてから焼くと生臭さがなくなり、皮までパリッと香ばしく焼けます。"},
-  {name:"鶏むね肉の照り焼き",category:"主菜",protein:"meat",people:4,time:15,budget:380,mealSlot:["lunch","dinner","bento"],ingredients:"鶏むね肉 500g\n片栗粉 大さじ2\n醤油 大さじ2\nみりん 大さじ2\n砂糖 大さじ1",steps:"鶏むね肉は1cm厚さの斜めそぎ切りにし、全体に片栗粉を薄くまぶす。小皿に醤油・みりん・砂糖を混ぜておく。\nフライパンに油大さじ1を熱し、重ならないよう並べて中火で片面2分半ずつ両面に焼き色がつくまで焼く。\nキッチンペーパーで余分な油を拭き取ってから弱火にし、混ぜたたれを回し入れてツヤが出るまで1分ほど絡める。",memo:"そぎ切り＋片栗粉の効果で肉汁が閉じ込められ、安いむね肉でも驚くほどしっとり柔らかく仕上がります。"},
-  {name:"豚の生姜焼き",category:"主菜",protein:"meat",people:4,time:15,budget:560,mealSlot:["lunch","dinner"],ingredients:"豚ロース肉 400g\n玉ねぎ 1個\n醤油 大さじ2.5\nみりん 大さじ2\n生姜 1かけ",steps:"玉ねぎは5mm幅のくし切りにし、豚肉は大きければ半分に切る。小皿に醤油・みりん・すりおろし生姜を混ぜておく。\nフライパンに油を熱して中火で豚肉を1枚ずつ広げながら焼き、色が変わったら玉ねぎを加えて2分ほど炒める。\n弱めの中火にして合わせた調味料を回し入れ、汁気が半分ほどになって全体にツヤよく絡んだら火を止める。",memo:"豚肉にうっすら小麦粉を振ってから焼くとたれがよく絡み、お肉も固くなりません。"},
-  {name:"豚こまとキャベツの味噌炒め",category:"主菜",protein:"meat",people:4,time:15,budget:420,mealSlot:["lunch","dinner"],ingredients:"豚こま肉 220g\nキャベツ 1/4個\nピーマン 2個\n味噌 大さじ2\nみりん 大さじ1",steps:"キャベツは一口大のざく切り、ピーマンは乱切りにする。小皿に味噌・みりん・砂糖小さじ1を混ぜておく。\nフライパンに油を熱して強めの中火で豚肉を炒め、8割火が通ったらキャベツとピーマンを加えて約1分半手早く炒める。\n一度火を弱め、混ぜておいた味噌だれを全体に広げて中火で30秒ほど絡める。",memo:"キャベツを強火で短時間炒めるとシャキシャキ食感が残り、水っぽくなりません。"},
-  {name:"さばの味噌煮",category:"主菜",protein:"fish",people:4,time:20,budget:500,mealSlot:["dinner"],ingredients:"さば切り身 4切れ\n料理酒 大さじ6\n味噌 大さじ2\nみりん 大さじ1\n砂糖 大さじ1",steps:"さばの皮目に十字の切り込みを入れ、熱湯をさっと回しかけてからキッチンペーパーで水気を拭く（臭み取り）。\nフライパンに水100ml・料理酒・みりん・砂糖を入れて中火で沸騰させ、さばの皮目を上にして重ならないよう並べる。\nアルミホイル等で落とし蓋をして中火で7分煮たあと、煮汁を少し取って味噌を溶き入れ、蓋を外して煮汁をかけながら3分煮詰める。",memo:"熱湯をかけて霜降りすると青魚の臭みが抜けます。味噌は最後に溶くと香りが引き立ちます。"},
-  {name:"麻婆豆腐",category:"主菜",protein:"soy",people:4,time:20,budget:360,mealSlot:["lunch","dinner"],ingredients:"木綿豆腐 2丁\n豚ひき肉 180g\n長ねぎ 1本\n味噌 大さじ1.5\n醤油 大さじ1\n片栗粉 大さじ1",steps:"豆腐は2cm角に切り、沸騰した湯で2分下ゆでしてザルに上げておく（崩れ防止）。長ねぎはみじん切りにする。\nフライパンにごま油を熱してひき肉を中火でパラパラになるまで炒め、長ねぎ・味噌・醤油・鶏ガラスープの素小さじ1・水150mlを加えて沸かす。\n豆腐を入れて弱めの中火で3分煮たら、一度火を止めて水溶き片栗粉を回し混ぜ、再び中火で30秒沸かしてとろみをつける。",memo:"とろみをつける時は一度火を止めるとダマにならず、再びしっかり沸かすと冷めても水っぽくなりません。"},
-  {name:"和風おろしハンバーグ",category:"主菜",protein:"meat",people:4,time:30,budget:620,mealSlot:["dinner"],ingredients:"合いびき肉 380g\n玉ねぎ 1個\nパン粉 大さじ4\n卵 1個\n大根 1/4本\nポン酢 適量",steps:"玉ねぎはみじん切りにして油で透き通るまで炒め冷ます。大根はすりおろして軽く水気を切る。\nボウルにひき肉・塩小さじ1/2を入れて粘りが出るまでよく練り、炒め玉ねぎ・牛乳大さじ2に浸したパン粉・卵を加えて混ぜ、4等分にして中央をへこませる。\n油をひいたフライパンで中火で2分焼き、焼き色がついたら裏返して水大さじ3を入れ、蓋をして弱火で6〜7分蒸し焼きにし、大根おろしとポン酢をかける。",memo:"最初にお肉と塩だけをしっかり練り、焼く前に中央をへこませると肉汁が逃げずふっくら焼き上がります。"},
+  {name:"納豆と焼き海苔",category:"主菜",themes:["和食"],protein:"soy",people:4,time:5,budget:150,mealSlot:["breakfast"],ingredients:"納豆 4パック\n焼き海苔 4袋\n長ねぎ 適量",steps:"長ねぎは薄い小口切りにする。\n納豆はたれを入れる前に20〜30回混ぜて粘りを出し、たれとねぎを混ぜて海苔を添える。",memo:"たれを入れる前に混ぜておくと空気を含んでふんわり美味しくなります。"},
+  {name:"もやしと卵のあんかけ炒め",category:"主菜",themes:["中華"],protein:"egg",people:4,time:10,budget:150,mealSlot:["breakfast","lunch","dinner"],ingredients:"もやし 1袋\n卵 3個\n醤油 大さじ1.5\n片栗粉 小さじ2",steps:"卵を溶きほぐし、小皿に水大さじ3・醤油・片栗粉を混ぜてあんの液を作る。\n油を熱したフライパンで中火でもやしを1分半炒めて塩こしょうし皿に盛る。\n溶き卵を半熟状に焼きもやしに乗せ、混ぜたあんを弱めの中火で30秒混ぜてとろみをつけかける。",memo:"もやしを炒めすぎず、あんは入れる直前に再度混ぜるとダマになりません。"},
+  {name:"豆腐ステーキ",category:"主菜",themes:["和食"],protein:"soy",people:4,time:12,budget:160,mealSlot:["breakfast","lunch","dinner"],ingredients:"木綿豆腐 2丁\n片栗粉 大さじ2\n醤油 大さじ2\nみりん 大さじ2",steps:"豆腐をペーパー2枚で包み600Wで2分加熱して5分置き水切りする。\n厚さ1.5cmに切り片栗粉を薄くまぶし、油をひいたフライパンで中火で触らず3分ずつ両面焼く。\n弱火にして混ぜた醤油とみりんを回し入れ30秒ほど絡める。",memo:"水切り＋片栗粉で油はねを防ぎ、外はカリッと中はふんわりたれが絡みます。"},
+  {name:"だし巻き卵",category:"主菜",themes:["和食"],protein:"egg",people:4,time:10,budget:180,mealSlot:["breakfast","bento"],ingredients:"卵 4個\nだしの素 小さじ1\n醤油 小さじ1\n砂糖 小さじ1",steps:"ボウルに卵と水80mlに溶かした調味料を入れてよく混ぜる。\n卵焼き器を中火で温め卵液の1/3を流して半熟のうちに奥から手前へ巻く。\n残りを2回に分けて流し、卵の下にも液を潜り込ませながら巻き上げる。",memo:"1回目は少し強めの火で形を作り、2〜3回目は中火で丁寧に巻くのがコツです。"},
+  {name:"目玉焼きとウインナー",category:"主菜",themes:["洋食"],protein:"egg",people:4,time:10,budget:280,mealSlot:["breakfast"],ingredients:"卵 4個\nウインナー 8本\nサラダ油 小さじ1",steps:"ウインナーに斜めの浅い切り込みを入れ、油をひいたフライパンで中火で転がしながら2分焼く。\n端に寄せ空いた場所に卵を割り入れ、水大さじ1を入れて蓋をし弱火で3〜4分蒸し焼きにする。",memo:"切り込みで破裂を防ぎ、少量の水で蒸すと白身がふっくら焼けます。"},
+  {name:"スクランブルエッグとベーコン",category:"主菜",themes:["洋食"],protein:"egg",people:4,time:10,budget:260,mealSlot:["breakfast"],ingredients:"卵 4個\nベーコン 4枚\nバター 10g\n塩 少々",steps:"ベーコンは2cm幅に切り、卵は塩少しを加えて溶きほぐす。\nフライパンでベーコンを中火でカリッと焼きお皿に盛る。\nバターを溶かし溶き卵を入れ、木べらで外側からゆっくり混ぜ半熟で火を止める。",memo:"半熟のトロッとした状態で火を止めると余熱でちょうど良く仕上がります。"},
+  {name:"焼き鮭",category:"主菜",themes:["和食"],protein:"fish",people:4,time:15,budget:500,mealSlot:["breakfast","dinner","bento"],ingredients:"鮭切り身 4切れ",steps:"鮭は焼く10分前に冷蔵庫から出し、表面の水気をペーパーでしっかり拭く。\nグリルまたはフライパンにシートを敷き中火で5〜6分焼き、裏返して弱めの中火で4〜5分焼く。",memo:"水気を拭いてから焼くと生臭さがなくなり皮までパリッと香ばしく焼けます。"},
+  {name:"白身魚のバタームニエル",category:"主菜",themes:["洋食"],protein:"fish",people:4,time:15,budget:520,mealSlot:["lunch","dinner"],ingredients:"たら切り身 4切れ\n小麦粉 大さじ2\nバター 20g\n塩 少々",steps:"たらに塩こしょうを振って10分置き、水気を拭いて小麦粉を薄くまぶす。\n油大さじ1を熱して中火で盛り付ける面から3分焼き、裏返してバターを加えさらに3分焼く。",memo:"水気を拭いて小麦粉をまぶすと身が崩れずバターの香りが引き立ちます。"},
+  {name:"鶏むね肉の照り焼き",category:"主菜",themes:["和食"],protein:"meat",people:4,time:15,budget:380,mealSlot:["lunch","dinner","bento"],ingredients:"鶏むね肉 500g\n片栗粉 大さじ2\n醤油 大さじ2\nみりん 大さじ2\n砂糖 大さじ1",steps:"鶏むね肉は1cm厚のそぎ切りにして片栗粉を薄くまぶす。調味料を小皿で混ぜる。\n油を熱したフライパンに並べて中火で片面2分半ずつ両面焼く。\n余分な油を拭き弱火にし、たれを回し入れてツヤが出るまで1分ほど絡める。",memo:"そぎ切り＋片栗粉の効果で肉汁が閉じ込められ、むね肉でもしっとり柔らかです。"},
+  {name:"豚の生姜焼き",category:"主菜",themes:["和食"],protein:"meat",people:4,time:15,budget:560,mealSlot:["lunch","dinner"],ingredients:"豚ロース肉 400g\n玉ねぎ 1個\n醤油 大さじ2.5\nみりん 大さじ2\n生姜 1かけ",steps:"玉ねぎは5mm幅のくし切りにし、醤油・みりん・すりおろし生姜を混ぜる。\n油を熱したフライパンで中火で豚肉を広げ焼き、色が変わったら玉ねぎを加え2分炒める。\n弱めの中火にしてたれを回し入れツヤよく絡んだら火を止める。",memo:"豚肉にうっすら小麦粉を振って焼くとたれがよく絡みお肉も固くなりません。"},
+  {name:"豚こまとキャベツの味噌炒め",category:"主菜",themes:["中華"],protein:"meat",people:4,time:15,budget:420,mealSlot:["lunch","dinner"],ingredients:"豚こま肉 220g\nキャベツ 1/4個\nピーマン 2個\n味噌 大さじ2\nみりん 大さじ1",steps:"キャベツはざく切り、ピーマンは乱切りにし、味噌・みりん・砂糖小さじ1を混ぜる。\n油を熱したフライパンで強めの中火で豚肉を炒め、8割火が通ったら野菜を加え1分半炒める。\n弱火にして味噌だれを広げ、中火で30秒ほど絡める。",memo:"キャベツを強火で短時間炒めるとシャキシャキ食感が残り水っぽくなりません。"},
+  {name:"さばの味噌煮",category:"主菜",themes:["和食"],protein:"fish",people:4,time:20,budget:500,mealSlot:["dinner"],ingredients:"さば切り身 4切れ\n料理酒 大さじ6\n味噌 大さじ2\nみりん 大さじ1\n砂糖 大さじ1",steps:"さばの皮目に切れ目を入れ、熱湯をさっと回しかけて水気を拭く（臭み取り）。\nフライパンに水100ml・酒・みりん・砂糖を沸かし、さばを並べて落とし蓋をし中火で7分煮る。\n煮汁を少し取って味噌を溶き入れ、蓋を外して煮汁をかけながら3分煮詰める。",memo:"熱湯をかけて霜降りすると青魚の臭みが抜け、味噌を最後に加えると香りが立ちます。"},
+  {name:"麻婆豆腐",category:"主菜",themes:["中華"],protein:"soy",people:4,time:20,budget:360,mealSlot:["lunch","dinner"],ingredients:"木綿豆腐 2丁\n豚ひき肉 180g\n長ねぎ 1本\n味噌 大さじ1.5\n醤油 大さじ1\n片栗粉 大さじ1",steps:"豆腐は2cm角に切り沸騰湯で2分下ゆでしてザルに上げる。長ねぎはみじん切りにする。\nごま油でひき肉を中火で炒め、長ねぎ・味噌・醤油・鶏ガラスープの素小さじ1・水150mlを加え沸かす。\n豆腐を入れ弱めの中火で3分煮て、火を止めて水溶き片栗粉を混ぜ再び中火で30秒沸かす。",memo:"一度火を止めて水溶き片栗粉を混ぜ、再びしっかり沸かすとダマにならず冷めても水っぽくなりません。"},
+  {name:"和風おろしハンバーグ",category:"主菜",themes:["洋食","和食"],protein:"meat",people:4,time:30,budget:620,mealSlot:["dinner"],ingredients:"合いびき肉 380g\n玉ねぎ 1個\nパン粉 大さじ4\n卵 1個\n大根 1/4本\nポン酢 適量",steps:"玉ねぎをみじん切りにし透き通るまで炒め冷ます。大根はすりおろす。\nひき肉と塩小さじ1/2を粘りが出るまで練り、玉ねぎ・牛乳大さじ2に浸したパン粉・卵を混ぜ4等分し中央をへこませる。\n油をひいたフライパンで中火で2分焼き、裏返して水大さじ3を入れ蓋をして弱火で7分蒸し焼きにし大根おろしとポン酢をかける。",memo:"最初にお肉と塩だけをしっかり練り中央をへこませると肉汁が逃げずふっくら焼けます。"},
 
-  {name:"わかめの中華スープ",category:"汁物",protein:"none",people:4,time:5,budget:80,mealSlot:["breakfast","lunch","dinner"],ingredients:"乾燥わかめ 大さじ1\n長ねぎ 1/3本\n鶏ガラスープの素 小さじ3",steps:"長ねぎは薄い小口切りにしておく。\n鍋に水800mlと鶏ガラスープの素を入れて中火にかけ、全体がブクブク沸騰するまで温める。\n沸騰したら弱火にして乾燥わかめと長ねぎを加え、1分ほど温めて仕上げにごま油数滴を垂らす。",memo:"乾燥わかめは湯に入れると大きく増えるため入れすぎないのがちょうど良いコツです。"},
-  {name:"もやしとねぎの味噌汁",category:"汁物",protein:"none",people:4,time:10,budget:100,mealSlot:["breakfast","lunch","dinner"],ingredients:"もやし 1/2袋\n長ねぎ 1/3本\nだしの素 小さじ2\n味噌 大さじ3",steps:"もやしはさっと水洗いし、長ねぎは薄い小口切りにする。\n鍋に水800ml・だしの素・もやしを入れて中火にかけ、沸騰したら弱めの中火で2分ほど煮る。\n一度火を止めてお玉に味噌を取り鍋の汁で溶き入れ、長ねぎを加えて弱火で温め沸騰直前で火を止める。",memo:"味噌を入れたあとにグラグラ沸騰させると風味が消えるので、フチが小さくふつふつしたら止めましょう。"},
-  {name:"わかめと豆腐の味噌汁",category:"汁物",protein:"soy",people:4,time:10,budget:120,mealSlot:["breakfast","lunch","dinner"],ingredients:"豆腐 1/2丁\n乾燥わかめ 大さじ1\nだしの素 小さじ2\n味噌 大さじ4",steps:"豆腐は1.5cm角のさいの目に切っておく。\n鍋に水800mlとだしの素を入れて中火で沸かし、豆腐と乾燥わかめを加えて弱めの中火で2分温める。\n一度火を止めて味噌をお玉で溶き入れ、再加熱して沸騰する直前で火を止める。",memo:"豆腐を煮すぎると中にス（穴）が入って食感が悪くなるので短時間で温めるのがコツです。"},
-  {name:"玉ねぎと卵の中華スープ",category:"汁物",protein:"egg",people:4,time:10,budget:140,mealSlot:["breakfast","lunch","dinner"],ingredients:"玉ねぎ 1/2個\n卵 2個\n鶏ガラスープの素 小さじ4",steps:"玉ねぎは薄切りにし、卵はボウルでよく溶きほぐす。\n鍋に水800ml・鶏ガラスープの素・玉ねぎを入れて中火にかけ、玉ねぎが透き通るまで3〜4分煮る。\nスープが沸騰した状態で溶き卵を細く回し入れ、5秒待ってふんわり浮いたら大きく一混ぜして火を止める。",memo:"卵を入れた直後に混ぜず、5秒待ってからそっと混ぜると濁らない綺麗なかき玉になります。"},
-  {name:"具だくさん豚汁",category:"汁物",protein:"meat",people:4,time:20,budget:300,mealSlot:["lunch","dinner"],ingredients:"豚こま肉 100g\n大根 1/6本\nにんじん 1/2本\nごぼう 1/2本\n味噌 大さじ4",steps:"大根・にんじんはいちょう切り、ごぼうはささがきにして水にさらし水気を切る。\n鍋にごま油小さじ2を熱して豚肉を中火で炒め、色が変わったら根菜類を加えて油が回るまで2分炒める。\n水800mlとだしの素小さじ2を加えてアクを取りながら10分煮て、野菜が柔らかくなったら弱火にし味噌を溶き入れる。",memo:"具材を先に炒めてから煮ることで、お肉と根菜の旨みとコクが汁にしっかり溶け出します。"},
+  {name:"わかめの中華スープ",category:"汁物",themes:["中華"],protein:"none",people:4,time:5,budget:80,mealSlot:["breakfast","lunch","dinner"],ingredients:"乾燥わかめ 大さじ1\n長ねぎ 1/3本\n鶏ガラスープの素 小さじ3",steps:"長ねぎは薄い小口切りにする。\n鍋に水800mlと鶏ガラスープの素を入れて中火で沸かす。\n弱火にしてわかめとねぎを加え1分温め、仕上げにごま油数滴を垂らす。",memo:"わかめは湯に入れると大きく増えるため入れすぎないのがコツです。"},
+  {name:"わかめと豆腐の味噌汁",category:"汁物",themes:["和食"],protein:"soy",people:4,time:10,budget:120,mealSlot:["breakfast","lunch","dinner"],ingredients:"豆腐 1/2丁\n乾燥わかめ 大さじ1\nだしの素 小さじ2\n味噌 大さじ4",steps:"豆腐を1.5cm角に切る。\n鍋に水800mlとだしの素を沸かし、豆腐とわかめを加えて弱めの中火で2分温める。\n一度火を止めて味噌を溶き入れ、沸騰直前まで温めて火を止める。",memo:"豆腐を煮すぎないことと味噌を入れたあと沸騰させないのが秘訣です。"},
+  {name:"玉ねぎと卵の中華スープ",category:"汁物",themes:["中華"],protein:"egg",people:4,time:10,budget:140,mealSlot:["breakfast","lunch","dinner"],ingredients:"玉ねぎ 1/2個\n卵 2個\n鶏ガラスープの素 小さじ4",steps:"玉ねぎは薄切り、卵はよく溶きほぐす。\n鍋に水800ml・鶏ガラスープの素・玉ねぎを入れて中火で3〜4分煮る。\n沸騰した状態で溶き卵を細く回し入れ、5秒待って一混ぜし火を止める。",memo:"卵を入れた直後に混ぜず5秒待つと濁らない綺麗なかき玉になります。"},
+  {name:"キャベツとベーコンのコンソメスープ",category:"汁物",themes:["洋食"],protein:"none",people:4,time:15,budget:180,mealSlot:["breakfast","lunch","dinner"],ingredients:"キャベツ 3枚\nベーコン 2枚\n固形コンソメ 2個",steps:"キャベツは一口大、ベーコンは1cm幅に切る。\n鍋に油を熱してベーコンとキャベツを中火で1分さっと炒める。\n水800mlとコンソメを加えて沸騰したら弱火で6〜7分煮て塩こしょうで調える。",memo:"具材をさっと炒めてから煮るとベーコンのコクと野菜の甘みが出ます。"},
+  {name:"具だくさん豚汁",category:"汁物",themes:["和食"],protein:"meat",people:4,time:20,budget:300,mealSlot:["lunch","dinner"],ingredients:"豚こま肉 100g\n大根 1/6本\nにんじん 1/2本\nごぼう 1/2本\n味噌 大さじ4",steps:"大根・にんじんはいちょう切り、ごぼうはささがきにし水にさらす。\n鍋にごま油を熱して豚肉と根菜を2分炒め、水800mlとだしの素小さじ2を加え10分煮る。\n野菜が柔らかくなったら弱火にして味噌を溶き入れる。",memo:"具材を先に炒めてから煮ることでお肉と野菜の旨みが汁に溶け出します。"},
 
-  {name:"もやしのナムル",category:"副菜",protein:"none",people:4,time:8,budget:80,mealSlot:["breakfast","lunch","dinner"],ingredients:"もやし 1袋\nごま油 大さじ1\n鶏ガラスープの素 小さじ1",steps:"もやしを耐熱ボウルに入れてふんわりラップをし、600Wの電子レンジで2分半加熱する。\nザルに上げて粗熱を取り、清潔なキッチンペーパー等で包んでぎゅっと水気を絞る。\nボウルに戻し、温かいうちにごま油・鶏ガラスープの素・すりごま少しを加えてよく和える。",memo:"もやしの水気をしっかり絞っておくと時間が経っても味が薄まらずシャキッと美味しく食べられます。"},
-  {name:"ほうれん草のごま和え",category:"副菜",protein:"none",people:4,time:10,budget:180,mealSlot:["breakfast","lunch","dinner","bento"],ingredients:"ほうれん草 1束\nごま 大さじ2\n醤油 大さじ1\n砂糖 小さじ2",steps:"たっぷりの湯を沸かして塩少しを入れ、ほうれん草を茎から30秒→葉も入れてさらに30秒茹でて冷水に取り冷ます。\n根元を揃えてぎゅっと水気を絞り、3〜4cm長さに切ってさらに軽く絞る。\nボウルにすりごま・醤油・砂糖を混ぜておき、食べる直前にほうれん草を入れて和える。",memo:"茹で時間は短め1分にして冷水に取ると色鮮やかに仕上がります。水気は2回絞るのがコツです。"},
-  {name:"きんぴらごぼう",category:"副菜",protein:"none",people:4,time:20,budget:200,mealSlot:["dinner","bento"],ingredients:"ごぼう 1本\nにんじん 1/2本\n醤油 大さじ1.5\nみりん 大さじ1.5\nごま油 大さじ1",steps:"ごぼうとにんじんは4〜5cm長さの細切りにし、ごぼうは5分ほど水にさらしてザルで水気を切る。\nフライパンにごま油を熱し、中火でごぼうとにんじんをしんなりするまで約3分炒める。\n砂糖小さじ1・みりん・醤油を加え、汁気がほぼなくなるまで中火で炒め煮にして、仕上げにいりごまを振る。",memo:"具材を細めに揃えて切ると火の通りが均一になり、シャキシャキ感と味の絡みが良くなります。"},
-  {name:"じゃがいもの塩バター炒め",category:"副菜",protein:"none",people:4,time:15,budget:180,mealSlot:["lunch","dinner","bento"],ingredients:"じゃがいも 3個\nバター 15g\n塩 少々",steps:"じゃがいもは皮をむいて細切りにし、水に5分さらして水気を切ったあと耐熱皿に乗せてラップし600Wで3分加熱する。\nフライパンを中火で温めてバターを溶かし、加熱したじゃがいもを広げてあまり触らずに2分ほど焼く。\nカリッと焼き色がついたら裏返してもう1〜2分焼き、仕上げに塩・こしょうを振る。",memo:"事前にレンジで火を通しておくと短時間でホクホク＆表面カリッと仕上がります。"},
+  {name:"もやしのナムル",category:"副菜",themes:["中華"],protein:"none",people:4,time:8,budget:80,mealSlot:["breakfast","lunch","dinner"],ingredients:"もやし 1袋\nごま油 大さじ1\n鶏ガラスープの素 小さじ1",steps:"もやしを耐熱ボウルに入れラップし600Wで2分半加熱する。\nザルで冷ましペーパーでぎゅっと水気を絞ってから、ごま油・鶏ガラスープの素・ごまを和える。",memo:"水気をしっかり絞ると時間が経っても味が薄まりません。"},
+  {name:"ほうれん草のごま和え",category:"副菜",themes:["和食"],protein:"none",people:4,time:10,budget:180,mealSlot:["breakfast","lunch","dinner","bento"],ingredients:"ほうれん草 1束\nごま 大さじ2\n醤油 大さじ1\n砂糖 小さじ2",steps:"塩少しを入れた湯でほうれん草を計1分茹で、冷水に取ってぎゅっと水気を絞る。\n3〜4cmに切って軽くもう一度絞り、すりごま・醤油・砂糖を混ぜたボウルで和える。",memo:"水気を2回絞るのが色鮮やかで水っぽくしないコツです。"},
+  {name:"キャベツのコールスロー",category:"副菜",themes:["洋食"],protein:"none",people:4,time:10,budget:160,mealSlot:["lunch","dinner"],ingredients:"キャベツ 1/4個\nコーン缶 1/2缶\nマヨネーズ 大さじ3\n酢 大さじ1",steps:"キャベツは千切りにし塩小さじ1/2を揉み込み10分置いてしっかり水気を絞る。\n水気を切ったコーンとキャベツ・マヨネーズ・酢・砂糖小さじ1を混ぜる。",memo:"塩もみ後の水気絞りをしっかりやると翌日もシャキッと美味しいままです。"},
+  {name:"じゃがいもの塩バター炒め",category:"副菜",themes:["洋食","和食"],protein:"none",people:4,time:15,budget:180,mealSlot:["lunch","dinner","bento"],ingredients:"じゃがいも 3個\nバター 15g\n塩 少々",steps:"じゃがいもは細切りにし水に5分さらして水気を切り、600Wで3分加熱する。\nフライパンにバターを溶かし中火で2分ずつ両面を焼き塩こしょうを振る。",memo:"先にレンジで火を通しておくと短時間でホクホク＆表面カリッと仕上がります。"},
 
-  {name:"冷奴",category:"小鉢",protein:"soy",people:4,time:5,budget:100,mealSlot:["lunch","dinner"],ingredients:"豆腐 1丁\nかつお節 1袋\n醤油 適量",steps:"豆腐をパックから出してキッチンペーパーで軽く表面の水気を拭き取る。\n食べやすい大きさ（4等分や8等分）に切って冷やしたお皿に盛り付ける。\nかつお節をふんわり乗せ、お好みで刻みねぎや醤油をかけていただく。",memo:"表面の水気を軽く拭いておくと水っぽくならず醤油の味がぼやけません。"},
-  {name:"きゅうりとわかめの酢の物",category:"小鉢",protein:"none",people:4,time:10,budget:140,mealSlot:["dinner"],ingredients:"きゅうり 2本\n乾燥わかめ 大さじ1\n酢 大さじ3\n砂糖 大さじ2\n醤油 大さじ1",steps:"きゅうりは薄い輪切りにして塩小さじ1/2を揉み込み、10分置いてからしっかり水気を絞る。わかめは水で戻し水気を絞る。\n小皿に酢・砂糖・醤油を入れ、砂糖のザラつきがなくなるまでよく混ぜて三杯酢を作る。\nきゅうりとわかめをボウルに入れて三杯酢で和え、食べる直前まで冷蔵庫で少し冷やす。",memo:"きゅうりの塩もみと水気絞りをしっかり行うとパリッとした食感になり味が決まります。"},
-
-  {name:"ちくわの磯辺焼き",category:"弁当",protein:"fish",people:4,time:10,budget:140,mealSlot:["bento"],ingredients:"ちくわ 4本\n青のり 小さじ2\n片栗粉 大さじ1\nマヨネーズ 大さじ1",steps:"ちくわは食べやすい斜め切り（または縦半分→横半分）にする。\nボウルにマヨネーズ・青のり・片栗粉・水大さじ1を混ぜて衣を作り、ちくわを入れて全体に絡める。\n油を薄くひいたフライパンを中火で熱し、並べて両面を1分半ずつカリッと焼く。",memo:"油の代わりにマヨネーズを衣に混ぜることで冷めても柔らかくコクのあるお弁当おかずになります。"},
-  {name:"ウインナーとコーンのソテー",category:"弁当",protein:"meat",people:4,time:10,budget:200,mealSlot:["bento","breakfast"],ingredients:"ウインナー 6本\nコーン缶 1/2缶\nバター 10g",steps:"ウインナーは斜め薄切りまたは輪切りにし、コーンはザルで水気をしっかり切る。\nフライパンにバターを入れて中火で溶かし、ウインナーを1分ほど炒める。\n焼き色がついたらコーンを加えてさらに1分炒め、塩こしょう少々で味を調える。",memo:"コーンの水気をしっかり切ってから炒めるとバターの風味が薄まらずお弁当の彩りも綺麗です。"}
+  {name:"冷奴",category:"小鉢",themes:["和食"],protein:"soy",people:4,time:5,budget:100,mealSlot:["lunch","dinner"],ingredients:"豆腐 1丁\nかつお節 1袋\n醤油 適量",steps:"豆腐の表面の水気をペーパーで軽く拭き、食べやすい大きさに切る。\n冷やしたお皿に盛り付け、かつお節と醤油をかける。",memo:"水気を軽く拭いておくと醤油が薄まらず美味しくいただけます。"},
+  {name:"きゅうりとわかめの酢の物",category:"小鉢",themes:["和食"],protein:"none",people:4,time:10,budget:140,mealSlot:["dinner"],ingredients:"きゅうり 2本\n乾燥わかめ 大さじ1\n酢 大さじ3\n砂糖 大さじ2\n醤油 大さじ1",steps:"きゅうりは薄切りにし塩を揉み10分置いて水気を絞る。わかめも水で戻し水気を絞る。\n酢・砂糖・醤油を混ぜた三杯酢で具材を和え、冷蔵庫で5分冷やす。",memo:"きゅうりの塩もみと水気絞りをしっかり行うとパリッとした食感になります。"},
+  {name:"ちくわの磯辺焼き",category:"弁当",themes:["和食"],protein:"fish",people:4,time:10,budget:140,mealSlot:["bento"],ingredients:"ちくわ 4本\n青のり 小さじ2\n片栗粉 大さじ1\nマヨネーズ 大さじ1",steps:"ちくわは斜め切りにし、マヨネーズ・青のり・片栗粉・水大さじ1を混ぜた衣に絡める。\n油を薄くひいたフライパンで中火で両面1分半ずつカリッと焼く。",memo:"マヨネーズを衣に混ぜると冷めても柔らかくお弁当にぴったりです。"}
 ];
 
-const MEAL_CATEGORIES=["主食","主菜","副菜","汁物","小鉢"];
 (function sanitizeData(){
-  let changed=false;
-  const presetMap=new Map(PRESET_RECIPES.map(p=>[p.name,p]));
-  recipes.forEach(r=>{
-    const f=fixRecipeCategory(r.name,r.category);if(f!==r.category){r.category=f;changed=true;}
-    const p=presetMap.get(r.name);
-    if(p){
-      if(!r.steps||r.steps.length<p.steps.length){r.steps=p.steps;changed=true;}
-      if(!r.memo&&p.memo){r.memo=p.memo;changed=true;}
-    }
-  });
-  mealPlans.forEach(day=>["breakfast","lunch","dinner"].forEach(t=>{
-    const m=day.menu?.[t];if(!m)return;const st=m["主食"];
-    if(st&&fixRecipeCategory(st.name,"主食")!=="主食"){
-      if(!m["主菜"])m["主菜"]={...st,category:"主菜"};
-      m["主食"]={...PRESET_RECIPES[0],id:"preset-白ごはん",people:day.people||4,budget:Math.round(PRESET_RECIPES[0].budget*(day.people||4)/4)};
-      changed=true;
-    }
-    MEAL_CATEGORIES.forEach(c=>{
-      const d=m[c];if(!d)return;const p=presetMap.get(d.name);
+  try{
+    let changed=false;
+    const presetMap=new Map(PRESET_RECIPES.map(p=>[p.name,p]));
+    recipes=Array.isArray(recipes)?recipes.filter(r=>r&&typeof r==="object"):[];
+    mealPlans=Array.isArray(mealPlans)?mealPlans.filter(d=>d&&typeof d==="object"):[];
+    recipes.forEach(r=>{
+      const f=fixRecipeCategory(r.name,r.category);if(f!==r.category){r.category=f;changed=true;}
+      const p=presetMap.get(r.name);
       if(p){
-        if(!d.steps||d.steps.length<p.steps.length){d.steps=p.steps;changed=true;}
-        if(!d.memo&&p.memo){d.memo=p.memo;changed=true;}
+        if(!r.steps||String(r.steps).length<p.steps.length){r.steps=p.steps;changed=true;}
+        if(!r.memo&&p.memo){r.memo=p.memo;changed=true;}
+        if(!r.themes){r.themes=p.themes;changed=true;}
       }
     });
-  }));
-  if(changed)persistAll();
+    mealPlans.forEach(day=>["breakfast","lunch","dinner"].forEach(t=>{
+      const m=day.menu?.[t];if(!m||typeof m!=="object")return;
+      const st=m["主食"];
+      if(st&&(fixRecipeCategory(st.name,"主食")!=="主食"||(t==="dinner"&&PAN_ONIGIRI_RE.test(st.name)))){
+        if(fixRecipeCategory(st.name,"主食")==="主菜"&&!m["主菜"])m["主菜"]={...st,category:"主菜"};
+        m["主食"]={...PRESET_RECIPES[0],id:"preset-白ごはん",people:day.people||4,budget:Math.round(PRESET_RECIPES[0].budget*(day.people||4)/4)};
+        changed=true;
+      }
+      const sp=m["汁物"];
+      if(sp&&DRINK_RE.test(String(sp.name||""))){
+        const alt=PRESET_RECIPES.find(x=>x.name==="わかめと豆腐の味噌汁");
+        m["汁物"]={...alt,id:"preset-"+alt.name,people:day.people||4,budget:Math.round(alt.budget*(day.people||4)/4)};
+        changed=true;
+      }
+      MEAL_CATEGORIES.forEach(c=>{
+        const d=m[c];if(!d)return;
+        if(c==="主菜"&&STAPLE_RE.test(d.name||"")&&!/肉じゃが|生姜焼き|照り焼き/.test(d.name||"")){
+          const alt=PRESET_RECIPES.find(x=>x.name==="鶏むね肉の照り焼き");
+          m[c]={...alt,id:"preset-"+alt.name,people:day.people||4,budget:Math.round(alt.budget*(day.people||4)/4)};
+          changed=true;
+        }
+        const p=presetMap.get(m[c]?.name);
+        if(p){
+          if(!m[c].steps||String(m[c].steps).length<p.steps.length){m[c].steps=p.steps;changed=true;}
+          if(!m[c].memo&&p.memo){m[c].memo=p.memo;changed=true;}
+        }
+      });
+    }));
+    if(changed)persistAll();
+  }catch(_){}
 })();
 
-const pageNames=["home","meal","calendar","recipe","inventory","shopping","cost","bento","history","settings"];
+const pageNames=["home","meal","calendar","recipe","shopping","inventory","cost","bento","history","settings"];
 function showTab(name){
   pageNames.forEach(p=>{const el=document.getElementById(p+"Page");if(el)el.classList.toggle("hidden",p!==name);});
   document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab===name));
@@ -501,15 +535,18 @@ function showTab(name){
 document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.tab)));
 
 function clearRecipeForm(){
-  ["recipeEditId","recipeName","recipeIngredients","recipeSteps","recipeMemo","recipeSourceUrl","recipePhoto"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("recipeCategory").value="主菜";document.getElementById("recipePeople").value=4;
-  document.getElementById("recipeTime").value=30;document.getElementById("recipeBudget").value=300;document.getElementById("recipeRating").value=5;
+  ["recipeEditId","recipeName","recipeIngredients","recipeSteps","recipeMemo","recipeSourceUrl","recipePhoto"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+  if(document.getElementById("recipeCategory"))document.getElementById("recipeCategory").value="主菜";
+  if(document.getElementById("recipePeople"))document.getElementById("recipePeople").value=4;
+  if(document.getElementById("recipeTime"))document.getElementById("recipeTime").value=30;
+  if(document.getElementById("recipeBudget"))document.getElementById("recipeBudget").value=300;
+  if(document.getElementById("recipeRating"))document.getElementById("recipeRating").value=5;
 }
 async function getRecipePhoto(){
-  const f=document.getElementById("recipePhoto").files[0];if(!f)return null;
+  const f=document.getElementById("recipePhoto")?.files[0];if(!f)return null;
   return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f);});
 }
-document.getElementById("saveRecipe").addEventListener("click",async()=>{
+document.getElementById("saveRecipe")?.addEventListener("click",async()=>{
   const name=document.getElementById("recipeName").value.trim();if(!name)return alert("料理名を入力してください。");
   const editId=document.getElementById("recipeEditId").value,ex=recipes.find(r=>r.id===editId);
   let photo=await getRecipePhoto();if(!photo&&ex)photo=ex.photo||null;
@@ -517,10 +554,10 @@ document.getElementById("saveRecipe").addEventListener("click",async()=>{
   recipes=ex?recipes.map(r=>r.id===editId?recipe:r):[recipe,...recipes];
   persistAll();clearRecipeForm();renderAll();alert(ex?"レシピを更新しました。":"レシピを登録しました。");
 });
-document.getElementById("cancelRecipeEdit").addEventListener("click",clearRecipeForm);
-document.getElementById("loadPresetRecipes").addEventListener("click",()=>{
+document.getElementById("cancelRecipeEdit")?.addEventListener("click",clearRecipeForm);
+document.getElementById("loadPresetRecipes")?.addEventListener("click",()=>{
   let added=0;
-  PRESET_RECIPES.forEach(p=>{if(!recipes.some(r=>r.name===p.name&&r.category===p.category)){recipes.push({id:uid(),name:p.name,category:p.category,people:p.people,ingredients:p.ingredients,steps:p.steps,time:p.time,budget:p.budget,rating:4,memo:p.memo||"",sourceUrl:"",photo:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),cookedCount:0,lastCooked:null});added++;}});
+  PRESET_RECIPES.forEach(p=>{if(!recipes.some(r=>r.name===p.name&&r.category===p.category)){recipes.push({id:uid(),name:p.name,category:p.category,themes:p.themes,people:p.people,ingredients:p.ingredients,steps:p.steps,time:p.time,budget:p.budget,rating:4,memo:p.memo||"",sourceUrl:"",photo:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),cookedCount:0,lastCooked:null});added++;}});
   persistAll();renderAll();alert(added?`定番レシピを${added}品追加しました！`:"定番レシピはすでに登録されています。");
 });
 function editRecipe(id){
@@ -531,22 +568,23 @@ function editRecipe(id){
 function deleteRecipe(id){if(confirm("このレシピを削除しますか？")){recipes=recipes.filter(r=>r.id!==id);variations=variations.filter(v=>v.recipeId!==id);persistAll();renderAll();}}
 function markCooked(id){const r=recipes.find(x=>x.id===id);if(!r)return;r.cookedCount=(r.cookedCount||0)+1;r.lastCooked=todayString();cookingHistory.unshift({id:uid(),recipeId:id,name:r.name,date:todayString()});persistAll();renderAll();alert("調理履歴に記録しました！");}
 function renderRecipes(kw=""){
-  const list=document.getElementById("recipeList"),w=kw.trim().toLowerCase(),filtered=recipes.filter(r=>[r.name,r.category,r.ingredients,r.memo].join(" ").toLowerCase().includes(w));
+  const list=document.getElementById("recipeList");if(!list)return;
+  const w=kw.trim().toLowerCase(),filtered=recipes.filter(r=>[r.name,r.category,r.ingredients,r.memo].join(" ").toLowerCase().includes(w));
   if(!filtered.length){list.innerHTML="<p class='muted'>該当するレシピはありません。「📚 定番レシピを追加」から基本料理を取り込めます。</p>";return;}
   list.innerHTML=filtered.map(r=>`<div class="recipe-scrap-card"><div class="row"><strong>${escapeHTML(r.name)}</strong><span class="tag">${escapeHTML(r.category||"その他")}</span></div><div class="small">評価：${"★".repeat(r.rating||0)}${"☆".repeat(5-(r.rating||0))}</div><div class="small">約${Number(r.time||0)}分 ／ ${Number(r.people||1)}人分 ／ 目安${formatYen(r.budget||0)} ／ 作成${Number(r.cookedCount||0)}回</div>${r.photo?`<img class="photo" src="${r.photo}" alt="完成写真">`:""}<h3>材料</h3><p>${escapeHTML(r.ingredients||"").replace(/\n/g,"<br>")}</p><h3>作り方</h3><p>${escapeHTML(r.steps||"").replace(/\n/g,"<br>")}</p>${r.sourceUrl?`<p class="small">出典：<a href="${escapeHTML(r.sourceUrl)}" target="_blank" rel="noopener">レシピ元を開く</a></p>`:""}${r.memo?`<p class="notice">💡 ${escapeHTML(r.memo)}</p>`:""}<div class="actions"><button onclick="editRecipe('${r.id}')">編集</button><button onclick="markCooked('${r.id}')">作った！</button><button onclick="deleteRecipe('${r.id}')">削除</button></div></div>`).join("");
 }
-document.getElementById("searchRecipe").addEventListener("click",()=>renderRecipes(document.getElementById("recipeSearch").value));
-document.getElementById("recipeSearch").addEventListener("input",e=>renderRecipes(e.target.value));
+document.getElementById("searchRecipe")?.addEventListener("click",()=>renderRecipes(document.getElementById("recipeSearch").value));
+document.getElementById("recipeSearch")?.addEventListener("input",e=>renderRecipes(e.target.value));
 function searchWebRecipe(site){
   const w=document.getElementById("recipeSearch").value.trim();if(!w)return alert("検索したい料理名や食材を入力してください。");
   const q=encodeURIComponent(w);window.open({Google:`https://www.google.com/search?q=${q}+レシピ`,Cookpad:`https://cookpad.com/search/${q}`,"DELISH KITCHEN":`https://delishkitchen.tv/search?q=${q}`}[site],"_blank");
 }
 function renderVariations(){
-  const sel=document.getElementById("variationRecipe");
+  const sel=document.getElementById("variationRecipe");if(!sel)return;
   sel.innerHTML=recipes.length?recipes.map(r=>`<option value="${r.id}">${escapeHTML(r.name)}</option>`).join(""):`<option value="">レシピを先に登録してください</option>`;
   document.getElementById("variationList").innerHTML=variations.map(v=>{const r=recipes.find(x=>x.id===v.recipeId);return`<div class="result"><strong>${escapeHTML(r?.name||"削除済みレシピ")}</strong> <span class="tag">${escapeHTML(v.name)}</span><p>${escapeHTML(v.ingredients||"").replace(/\n/g,"<br>")}</p><p>${escapeHTML(v.steps||"").replace(/\n/g,"<br>")}</p><p class="small">${escapeHTML(v.memo||"")}</p><button onclick="deleteVariation('${v.id}')">削除</button></div>`;}).join("");
 }
-document.getElementById("saveVariation").addEventListener("click",()=>{
+document.getElementById("saveVariation")?.addEventListener("click",()=>{
   const rid=document.getElementById("variationRecipe").value,nm=document.getElementById("variationName").value.trim();
   if(!rid||!nm)return alert("元のレシピとアレンジ名を入力してください。");
   variations.unshift({id:uid(),recipeId:rid,name:nm,ingredients:document.getElementById("variationIngredients").value,steps:document.getElementById("variationSteps").value,memo:document.getElementById("variationMemo").value,createdAt:todayString()});
@@ -554,8 +592,8 @@ document.getElementById("saveVariation").addEventListener("click",()=>{
 });
 function deleteVariation(id){if(confirm("このアレンジを削除しますか？")){variations=variations.filter(v=>v.id!==id);persistAll();renderVariations();}}
 
-document.getElementById("stockSource").addEventListener("change",e=>{const p=document.getElementById("stockPrice");if(e.target.value==="もらいもの"){p.value=0;p.disabled=true;}else{p.disabled=false;}});
-document.getElementById("addStock").addEventListener("click",()=>{
+document.getElementById("stockSource")?.addEventListener("change",e=>{const p=document.getElementById("stockPrice");if(!p)return;if(e.target.value==="もらいもの"){p.value=0;p.disabled=true;}else{p.disabled=false;}});
+document.getElementById("addStock")?.addEventListener("click",()=>{
   const name=document.getElementById("stockName").value.trim();if(!name)return alert("食材名を入力してください。");
   const source=document.getElementById("stockSource").value,category=document.getElementById("stockCategory").value,stockLevel=document.getElementById("stockLevel").value;
   const price=source==="もらいもの"?0:(Number(document.getElementById("stockPrice").value)||0),amount=Number(document.getElementById("stockAmount").value)||0,unit=document.getElementById("stockUnit").value.trim(),expiry=document.getElementById("stockExpiry").value;
@@ -603,26 +641,31 @@ const recipeMatchesAvoid=(r,avoid)=>parseKeywords(avoid).some(w=>((r.name||"")+"
 const countWantedMatches=(r,wanted)=>parseKeywords(wanted).filter(w=>((r.name||"")+" "+(r.ingredients||"")).toLowerCase().includes(w)).length;
 const estimateCostForPeople=(r,people)=>Math.round((Number(r.budget||200))*people/Math.max(1,Number(r.people||4)));
 function getAllRecipePool(){
-  const user=recipes.map(r=>({...r,category:fixRecipeCategory(r.name,r.category),isUserRecipe:true}));
+  const user=recipes.map(r=>({...r,category:fixRecipeCategory(r.name,r.category),themes:inferTheme(r),isUserRecipe:true}));
   const preset=PRESET_RECIPES.filter(p=>!user.some(u=>u.name===p.name&&u.category===p.category)).map(p=>({...p,id:"preset-"+p.name,rating:4,isUserRecipe:false}));
   return[...user,...preset];
 }
-function minCostInCategory(cat,people,avoid){
-  const pool=getAllRecipePool().filter(r=>r.category===cat&&!recipeMatchesAvoid(r,avoid));
+function minCostInCategory(cat,people,avoid,slot){
+  let pool=getAllRecipePool().filter(r=>r.category===cat&&!recipeMatchesAvoid(r,avoid));
+  if(slot==="dinner"&&cat==="主食")pool=pool.filter(r=>!PAN_ONIGIRI_RE.test(r.name));
   return pool.length?Math.min(...pool.map(r=>estimateCostForPeople(r,people))):0;
 }
 function pickBudgetSafeRecipe(cat,opt,maxCostAllowed,usedNames,recentNames,lastProtein,required=true){
-  const allCat=getAllRecipePool().filter(r=>r.category===cat);if(!allCat.length)return null;
+  let allCat=getAllRecipePool().filter(r=>r.category===cat&&!DRINK_RE.test(r.name));
+  if(opt.slot==="dinner"&&cat==="主食")allCat=allCat.filter(r=>!PAN_ONIGIRI_RE.test(r.name));
+  if(!allCat.length)return null;
   let cands=allCat.filter(r=>!recipeMatchesAvoid(r,opt.avoid)&&estimateCostForPeople(r,opt.people)<=maxCostAllowed&&Number(r.time||0)<=opt.maxTime&&(!r.mealSlot||r.mealSlot.includes(opt.slot)));
   if(!cands.length)cands=allCat.filter(r=>!recipeMatchesAvoid(r,opt.avoid)&&estimateCostForPeople(r,opt.people)<=maxCostAllowed&&(!r.mealSlot||r.mealSlot.includes(opt.slot)));
   if(!cands.length)cands=allCat.filter(r=>!recipeMatchesAvoid(r,opt.avoid)&&estimateCostForPeople(r,opt.people)<=maxCostAllowed);
   if(!cands.length&&!required)return null;
   if(!cands.length){const ch=[...allCat].sort((a,b)=>estimateCostForPeople(a,opt.people)-estimateCostForPeople(b,opt.people))[0];return{...ch,people:opt.people,budget:estimateCostForPeople(ch,opt.people)};}
   const scored=cands.map(r=>{
-    let s=0;if(r.isUserRecipe)s+=25;
+    let s=0;if(r.isUserRecipe)s+=22;
+    const th=inferTheme(r);
+    if(opt.theme&&th.includes(opt.theme))s+=42;else if(opt.theme)s-=32;
     s+=recipeUsesInventory(r).length*15+countWantedMatches(r,opt.wanted)*20+Number(r.rating||3)*2;
     if(cat==="主菜"&&lastProtein&&r.protein&&r.protein===lastProtein)s-=22;
-    if(r.name!=="白ごはん"&&r.name!=="塩むすび"){if(usedNames.has(r.name))s-=45;if(recentNames.includes(r.name))s-=30;}
+    if(r.name!=="白ごはん"){if(usedNames.has(r.name))s-=45;if(recentNames.includes(r.name))s-=30;}
     return{r,s:s+Math.random()*8};
   }).sort((a,b)=>b.s-a.s);
   const picked=scored[Math.floor(Math.random()*Math.min(3,scored.length))].r;
@@ -636,43 +679,49 @@ function generateLocalPlan(){
   const days=Math.min(49,Math.max(1,Number(document.getElementById("mealDays").value)||7));
   const startDate=document.getElementById("mealStartDate").value||todayString(),budgets=getSlotBudgets(people);
   const avoid=document.getElementById("mealAvoid").value.trim(),wanted=document.getElementById("mealWanted").value.trim(),maxTime=Number(document.getElementById("mealTime").value)||30;
+  const selTheme=document.getElementById("mealTheme")?.value||"auto";
   const usedNames=new Set(),recentNames=[],dateBase=new Date(startDate+"T00:00:00"),result=[];
-  let lastMainProtein="";const minMain=minCostInCategory("主菜",people,avoid),minSoup=minCostInCategory("汁物",people,avoid);
+  let lastMainProtein="";
+
   for(let i=0;i<days;i++){
     const d=new Date(dateBase);d.setDate(d.getDate()+i);const menu={};
+    const dayTheme=selTheme==="auto"?["和食","洋食","中華"][i%3]:selTheme;
     ["breakfast","lunch","dinner"].forEach(slot=>{
       const sb=budgets[slot],limit=slot==="breakfast"?Math.min(maxTime,15):maxTime;
+      const mealTheme=(slot==="dinner"||selTheme!=="auto")?dayTheme:(slot==="breakfast"?(dayTheme==="中華"?"和食":dayTheme):dayTheme);
+      const minMain=minCostInCategory("主菜",people,avoid,slot),minSoup=minCostInCategory("汁物",people,avoid,slot);
       const meal={"主食":null,"主菜":null,"副菜":null,"汁物":null,"小鉢":null};
-      meal["主食"]=pickBudgetSafeRecipe("主食",{slot,people,avoid,wanted,maxTime:limit},Math.max(0,sb-minMain-minSoup),usedNames,recentNames,"",true);
+      meal["主食"]=pickBudgetSafeRecipe("主食",{slot,people,avoid,wanted,maxTime:limit,theme:mealTheme},Math.max(0,sb-minMain-minSoup),usedNames,recentNames,"",true);
       const rem1=Math.max(0,sb-(meal["主食"]?.budget||0));
-      meal["主菜"]=pickBudgetSafeRecipe("主菜",{slot,people,avoid,wanted,maxTime:limit},Math.max(0,rem1-minSoup),usedNames,recentNames,lastMainProtein,true);
+      meal["主菜"]=pickBudgetSafeRecipe("主菜",{slot,people,avoid,wanted,maxTime:limit,theme:mealTheme},Math.max(0,rem1-minSoup),usedNames,recentNames,lastMainProtein,true);
       const rem2=Math.max(0,rem1-(meal["主菜"]?.budget||0));
-      meal["汁物"]=pickBudgetSafeRecipe("汁物",{slot,people,avoid,wanted,maxTime:limit},rem2,usedNames,recentNames,"",true);
+      meal["汁物"]=pickBudgetSafeRecipe("汁物",{slot,people,avoid,wanted,maxTime:limit,theme:mealTheme},rem2,usedNames,recentNames,"",true);
       ["主食","主菜","汁物"].forEach(c=>{const p=meal[c];if(p){usedNames.add(p.name);recentNames.push(p.name);if(recentNames.length>15)recentNames.shift();if(c==="主菜"&&p.protein)lastMainProtein=p.protein;}});
       let rem=sb-((meal["主食"]?.budget||0)+(meal["主菜"]?.budget||0)+(meal["汁物"]?.budget||0));
-      if(rem>0){const s=pickBudgetSafeRecipe("副菜",{slot,people,avoid,wanted,maxTime:limit},rem,usedNames,recentNames,"",false);if(s){meal["副菜"]=s;usedNames.add(s.name);rem-=s.budget;}}
-      if(slot!=="breakfast"&&rem>0){const k=pickBudgetSafeRecipe("小鉢",{slot,people,avoid,wanted,maxTime:limit},rem,usedNames,recentNames,"",false);if(k){meal["小鉢"]=k;usedNames.add(k.name);}}
+      if(rem>0){const s=pickBudgetSafeRecipe("副菜",{slot,people,avoid,wanted,maxTime:limit,theme:mealTheme},rem,usedNames,recentNames,"",false);if(s){meal["副菜"]=s;usedNames.add(s.name);rem-=s.budget;}}
+      if(slot!=="breakfast"&&rem>0){const k=pickBudgetSafeRecipe("小鉢",{slot,people,avoid,wanted,maxTime:limit,theme:mealTheme},rem,usedNames,recentNames,"",false);if(k){meal["小鉢"]=k;usedNames.add(k.name);}}
       menu[slot]=meal;
     });
-    result.push({id:uid(),date:dateKey(d),people,menu,budgets});
+    result.push({id:uid(),date:dateKey(d),people,theme:dayTheme,menu,budgets});
   }
-  currentMealResult=result;renderMealResult();alert(`${days}日分（${people}人分）の献立を予算内で作成しました！`);
+  currentMealResult=result;renderMealResult();alert(`${days}日分（${people}人分）の献立を作成しました！`);
 }
-document.getElementById("makeLocalPlan").addEventListener("click",generateLocalPlan);
+document.getElementById("makeLocalPlan")?.addEventListener("click",generateLocalPlan);
 
 function swapMealDish(dayIdx,slot,cat){
   const day=currentMealResult[dayIdx];if(!day)return;
   const budgets=day.budgets||getSlotBudgets(day.people),slotBudget=budgets[slot];
   const otherCost=MEAL_CATEGORIES.filter(c=>c!==cat).reduce((s,c)=>s+(day.menu[slot]?.[c]?.budget||0),0);
   const maxAllowed=Math.max(0,slotBudget-otherCost),cur=day.menu[slot]?.[cat],avoid=document.getElementById("mealAvoid").value.trim(),wanted=document.getElementById("mealWanted").value.trim();
-  const pool=getAllRecipePool().filter(r=>r.category===cat&&r.name!==cur?.name&&!recipeMatchesAvoid(r,avoid)&&estimateCostForPeople(r,day.people)<=maxAllowed);
+  let pool=getAllRecipePool().filter(r=>r.category===cat&&r.name!==cur?.name&&!DRINK_RE.test(r.name)&&!recipeMatchesAvoid(r,avoid)&&estimateCostForPeople(r,day.people)<=maxAllowed);
+  if(slot==="dinner"&&cat==="主食")pool=pool.filter(r=>!PAN_ONIGIRI_RE.test(r.name));
   if(!pool.length)return alert(`残り予算（${formatYen(maxAllowed)}）以内で変更できる別の「${cat}」がありません。`);
   pool.sort((a,b)=>(countWantedMatches(b,wanted)-countWantedMatches(a,wanted))+(recipeUsesInventory(b).length-recipeUsesInventory(a).length)+(Math.random()-0.5)*10);
   const picked=pool[Math.floor(Math.random()*Math.min(4,pool.length))];
   day.menu[slot][cat]={...picked,people:day.people,budget:estimateCostForPeople(picked,day.people)};renderMealResult();
 }
 
-document.getElementById("makePlan").addEventListener("click",async()=>{
+document.getElementById("makePlan")?.addEventListener("click",async()=>{
   const endpoint=localStorage.getItem(STORAGE.aiEndpoint)||"",code=localStorage.getItem(STORAGE.aiCode)||"";
   if(!endpoint||!code){if(confirm("AI連携が未設定です。レシピから予算内で今すぐ作成しますか？"))generateLocalPlan();return;}
   const btn=document.getElementById("makePlan"),old=btn.textContent;
@@ -685,17 +734,18 @@ document.getElementById("makePlan").addEventListener("click",async()=>{
     const people=Math.min(40,Math.max(1,Number(document.getElementById("mealPeople").value)||4)),startDate=document.getElementById("mealStartDate").value||todayString();
     const budgets={breakfast:Number(document.getElementById("breakfastBudget").value)||0,lunch:Number(document.getElementById("lunchBudget").value)||0,dinner:Number(document.getElementById("dinnerBudget").value)||0},slotBudgets=getSlotBudgets(people);
     const avoid=document.getElementById("mealAvoid").value.split(/[、,，]/).map(x=>x.trim()).filter(Boolean),wanted=document.getElementById("mealWanted").value.trim(),maxTime=Number(document.getElementById("mealTime").value)||30;
+    const theme=document.getElementById("mealTheme")?.value||"auto";
     const pantry=inventory.filter(x=>Number(x.amount)>0).map(x=>({name:x.name,amount:x.amount,unit:x.unit})),expiry={};inventory.filter(x=>x.expiry).forEach(x=>expiry[x.name]=x.expiry);
     const previous=mealPlans.slice(-14).flatMap(d=>Object.values(d.menu||{}).flatMap(m=>Object.values(m||{}).filter(Boolean).map(r=>r.name))).slice(-35);
     const existing=recipes.slice(0,25).map(r=>({name:r.name,category:r.category}));
 
     const callChunk=async c=>{
-      const r=await fetch(endpoint.replace(/\/$/,"")+"/plan",{method:"POST",headers:{"Content-Type":"application/json","X-App-Code":code},body:JSON.stringify({days:c.days,people,budgets,avoid:avoid.concat(maxTime?[`調理時間${maxTime}分以内`]:[]),wanted,existing,previous:previous.slice(-30),pantry,expiry})});
+      const r=await fetch(endpoint.replace(/\/$/,"")+"/plan",{method:"POST",headers:{"Content-Type":"application/json","X-App-Code":code},body:JSON.stringify({days:c.days,people,budgets,theme,avoid:avoid.concat(maxTime?[`調理時間${maxTime}分以内`]:[]),wanted,existing,previous:previous.slice(-30),pantry,expiry})});
       const d=await r.json();if(!r.ok)throw new Error(d.error||`献立作成失敗 (${r.status})`);if(!Array.isArray(d.days)||d.days.length<c.days)throw new Error("必要日数が返りませんでした。");
       doneChunks++;upd();return{off:c.off,days:d.days.slice(0,c.days),model:d.meta?.modelUsed||""};
     };
     const responses=[await callChunk(chunks[0])];
-    for(let i=1;i<chunks.length;i+=3){const batch=await Promise.all(chunks.slice(i,i+3).map(callChunk));responses.push(...batch);}
+    for(let i=1;i<chunks.length;i+=4){const batch=await Promise.all(chunks.slice(i,i+4).map(callChunk));responses.push(...batch);}
 
     const courseMap={staple:"主食",main:"主菜",side:"副菜",soup:"汁物",kobachi:"小鉢"},dateBase=new Date(startDate+"T00:00:00"),allGenerated=[];
     responses.sort((a,b)=>a.off-b.off).forEach(chunk=>chunk.days.forEach((row,idx)=>{
@@ -703,22 +753,26 @@ document.getElementById("makePlan").addEventListener("click",async()=>{
       ["breakfast","lunch","dinner"].forEach(t=>{
         menu[t]={};
         (row.meals?.[t]||[]).forEach(dish=>{
+          if(DRINK_RE.test(dish.name||""))return;
           const rawCat=courseMap[dish.course]||(MEAL_CATEGORIES.includes(dish.category)?dish.category:"副菜");
           const cat=fixRecipeCategory(dish.name,rawCat);
+          if(cat==="その他")return;
+          if(t==="dinner"&&cat==="主食"&&PAN_ONIGIRI_RE.test(dish.name||""))return;
           const ingredients=(dish.ingredients||[]).map(x=>`${x.name} ${x.amount||""}`.trim()).join("\n");
           const recipe={id:uid(),name:dish.name||"料理",category:cat,people,ingredients,steps:Array.isArray(dish.steps)?dish.steps.join("\n"):String(dish.steps||""),time:Number(dish.minutes||0),budget:Math.round((Number(dish.cost_for_4)||0)*people/4),rating:0,memo:dish.tip||"",photo:null,sourceUrl:dish.source_url||"",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),cookedCount:0,lastCooked:null,generatedByAI:true};
           if(!menu[t][cat])menu[t][cat]=recipe;
           const dup=recipes.find(r=>r.name===recipe.name&&r.category===recipe.category);if(!dup)recipes.unshift(recipe);else recipe.id=dup.id;
         });
         if(!menu[t]["主食"])menu[t]["主食"]={...PRESET_RECIPES[0],id:"preset-白ごはん",people,budget:estimateCostForPeople(PRESET_RECIPES[0],people)};
+        if(!menu[t]["汁物"]){const sp=PRESET_RECIPES.find(x=>x.name==="わかめと豆腐の味噌汁");menu[t]["汁物"]={...sp,id:"preset-"+sp.name,people,budget:estimateCostForPeople(sp,people)};}
         MEAL_CATEGORIES.forEach(c=>{if(!menu[t][c])menu[t][c]=null;});
       });
-      allGenerated.push({id:uid(),date:dateKey(date),people,menu,budgets:slotBudgets});
+      allGenerated.push({id:uid(),date:dateKey(date),people,theme:row.theme||(theme==="auto"?"日替わり":theme),menu,budgets:slotBudgets});
     }));
     currentMealResult=allGenerated;persistAll();renderMealResult();renderAll();
     alert(`AIで${totalDays}日分（${people}人分）を作成しました！${responses[0]?.model?`（使用AI: ${responses[0].model}）`:""}`);
   }catch(err){
-    if(confirm((err.message||"AI作成に失敗しました。")+"\n\n代わりに「登録レシピ＋定番レシピ」から予算内で今すぐ作成しますか？"))generateLocalPlan();
+    if(confirm((err.message||"AI作成に失敗しました。")+"\n\n代わりに「登録レシピ＋定番レシピ」からテーマ・予算内で今すぐ作成しますか？"))generateLocalPlan();
   }finally{clearInterval(timer);btn.disabled=false;btn.textContent=old;}
 });
 
@@ -731,13 +785,14 @@ function renderDishItemHTML(cat,r,swapInfo=null){
   return`<details class="dish-detail"><summary><div class="row"><span class="tag">${escapeHTML(cat)}</span><strong>${escapeHTML(r.name)}</strong><span class="small">${Number(r.time||0)}分 / 約${formatYen(r.budget||0)}</span><span class="tag" style="background:#fff6df;border-color:#e5ca87;color:#8a6214">📖 作り方・コツ ▼</span></div>${swapBtn}</summary><div class="dish-body">${r.ingredients?`<div><strong>材料（${Number(r.people||4)}人分）：</strong><br>${escapeHTML(r.ingredients).replace(/\n/g,"<br>")}</div>`:""}${stepsHTML}${tipHTML}</div></details>`;
 }
 function renderMealResult(){
-  const target=document.getElementById("mealResult");
+  const target=document.getElementById("mealResult");if(!target)return;
   if(!currentMealResult.length){target.innerHTML="<p class='muted'>献立がまだありません。</p>";return;}
   const names={breakfast:"🌅 朝食",lunch:"☀️ 昼食",dinner:"🌙 夕食"};
   target.innerHTML=currentMealResult.map((day,dayIdx)=>{
     const budgets=day.budgets||getSlotBudgets(day.people),dayBudget=budgets.breakfast+budgets.lunch+budgets.dinner;
     let dayCost=0;["breakfast","lunch","dinner"].forEach(t=>MEAL_CATEGORIES.forEach(c=>{dayCost+=(day.menu[t]?.[c]?.budget||0);}));
-    let html=`<div class="result"><div class="row" style="justify-content:space-between"><h3 style="margin:0">${formatDateJP(day.date)}</h3><span class="tag">${day.people}人分・計${formatYen(dayCost)} / 予算${formatYen(dayBudget)}</span></div>`;
+    const thBadge=day.theme?`<span class="tag" style="background:#fff0e5;border-color:#e8baa0;color:#b44d2a">${escapeHTML(day.theme)}</span>`:"";
+    let html=`<div class="result"><div class="row" style="justify-content:space-between"><div class="row"><h3 style="margin:0">${formatDateJP(day.date)}</h3>${thBadge}</div><span class="tag">${day.people}人分・計${formatYen(dayCost)} / 予算${formatYen(dayBudget)}</span></div>`;
     ["breakfast","lunch","dinner"].forEach(slot=>{
       const slotCost=MEAL_CATEGORIES.reduce((s,c)=>s+(day.menu[slot]?.[c]?.budget||0),0);
       html+=`<h3>${names[slot]} <span class="small">（計${formatYen(slotCost)} / 予算${formatYen(budgets[slot])}）</span></h3>`;let any=false;
@@ -747,7 +802,7 @@ function renderMealResult(){
     return html+"</div>";
   }).join("");
 }
-document.getElementById("saveMealPlan").addEventListener("click",()=>{
+document.getElementById("saveMealPlan")?.addEventListener("click",()=>{
   if(!currentMealResult.length)return alert("先に献立を作成してください。");
   currentMealResult.forEach(day=>{const i=mealPlans.findIndex(p=>p.date===day.date);if(i>=0)mealPlans[i]=day;else mealPlans.push(day);});
   persistAll();renderAll();alert("献立をカレンダーに保存しました！");
@@ -870,7 +925,7 @@ const PACK_CONVERSION={
   "パスタ":{perPack:400,unit:"袋"},
   "そうめん":{perPack:300,unit:"袋"}
 };
-const IGNORE_FOODS=new Set(["水","お湯","熱湯","冷水","氷"]);
+const IGNORE_FOODS=new Set(["水","お湯","熱湯","冷水","氷","牛乳"]);
 let openBuyId=null;
 
 function canonFoodName(raw){
@@ -1048,7 +1103,7 @@ function recordShoppingPurchase(id,gift){
   purchases.push(rec);addPurchaseToInventory(rec);shopping=shopping.filter(x=>x.id!==id);openBuyId=null;persistAll();renderAll();
   alert(gift?"もらいものを0円で記録し在庫に追加しました。":"購入金額を記録し在庫に追加しました。");
 }
-document.getElementById("addShoppingItem").addEventListener("click",()=>{
+document.getElementById("addShoppingItem")?.addEventListener("click",()=>{
   const name=document.getElementById("shoppingNewName").value.trim();if(!name)return alert("食材名を入力してください。");
   shopping.push({id:uid(),name,amount:Number(document.getElementById("shoppingNewAmount").value)||1,unit:document.getElementById("shoppingNewUnit").value.trim(),checked:false,purchased:false,price:0,manual:true});
   persistAll();["shoppingNewName","shoppingNewAmount","shoppingNewUnit"].forEach(id=>document.getElementById(id).value="");renderShopping();renderHome();
@@ -1056,8 +1111,8 @@ document.getElementById("addShoppingItem").addEventListener("click",()=>{
 function addPurchaseForm(){
   const box=document.getElementById("purchaseEntry");if(!box||document.getElementById("purchaseEntryForm"))return;
   box.innerHTML=`<div id="purchaseEntryForm"><label>食材名</label><input id="purchaseName" placeholder="例：にんじん"><div class="purchase-grid"><div><label>数量</label><input id="purchaseQuantity" type="number" min="0.1" step="0.1" value="1"></div><div><label>単位</label><input id="purchaseUnit" placeholder="本・袋・個"></div><div><label>支払金額（円）</label><input id="purchasePrice" type="number" min="0" value="0"></div></div><label><input id="purchaseGift" type="checkbox" style="width:auto"> もらいもの（0円で記録）</label><label>購入日</label><input id="purchaseDate" type="date" value="${todayString()}"><button class="primary full" id="savePurchase">購入内容を保存して在庫に追加</button><div id="purchaseStatus" class="small" style="margin-top:6px"></div></div>`;
-  document.getElementById("purchaseGift").addEventListener("change",e=>{const p=document.getElementById("purchasePrice");if(e.target.checked)p.value=0;p.disabled=e.target.checked;});
-  document.getElementById("savePurchase").addEventListener("click",()=>{
+  document.getElementById("purchaseGift")?.addEventListener("change",e=>{const p=document.getElementById("purchasePrice");if(e.target.checked)p.value=0;p.disabled=e.target.checked;});
+  document.getElementById("savePurchase")?.addEventListener("click",()=>{
     const name=document.getElementById("purchaseName").value.trim(),quantity=Number(document.getElementById("purchaseQuantity").value),unit=document.getElementById("purchaseUnit").value.trim()||"個";
     const gift=document.getElementById("purchaseGift").checked,price=gift?0:Number(document.getElementById("purchasePrice").value),date=document.getElementById("purchaseDate").value,st=document.getElementById("purchaseStatus");
     if(!name||!(quantity>0)||!(price>=0)||!date){st.textContent="入力内容を確認してください。";return;}
@@ -1075,7 +1130,7 @@ function addPurchaseToInventory(p){
   else{inventory.unshift({id:uid(),name:cleanName,amount,unit:saveUnit,expiry:"",category:"その他",source:p.gift?"もらいもの":"購入",price:Number(p.price)||0,createdAt:p.date||todayString()});}
 }
 
-/* カレンダー・ホーム・履歴・費用・お弁当 */
+/* カレンダー（日付タップでその日の献立へ自動スクロール）・ホーム・履歴・費用・お弁当 */
 function renderCalendar(){
   const y=calendarMonth.getFullYear(),m=calendarMonth.getMonth(),first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate(),today=todayString(),sel=dateKey(selectedCalendarDate);
   [{g:document.getElementById("calendarGrid"),t:document.getElementById("calendarTitle")},{g:document.getElementById("homeCalendarGrid"),t:document.getElementById("homeCalendarTitle")}].forEach(({g,t})=>{
@@ -1092,12 +1147,25 @@ function renderCalendar(){
   });
 }
 function changeCalendarMonth(a){calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+a,1);renderCalendar();}
-function selectCalendarDate(date){selectedCalendarDate=new Date(date+"T00:00:00");calendarMonth=new Date(selectedCalendarDate.getFullYear(),selectedCalendarDate.getMonth(),1);renderCalendar();renderSelectedDayMenu();}
+function createMealForDate(date){
+  const el=document.getElementById("mealStartDate");if(el)el.value=date;
+  showTab("meal");
+}
+function selectCalendarDate(date){
+  selectedCalendarDate=new Date(date+"T00:00:00");
+  calendarMonth=new Date(selectedCalendarDate.getFullYear(),selectedCalendarDate.getMonth(),1);
+  renderCalendar();
+  renderSelectedDayMenu();
+  const isHome=!document.getElementById("homePage")?.classList.contains("hidden");
+  const target=document.getElementById(isHome?"homeSelectedCard":"calendarSelectedCard");
+  if(target)setTimeout(()=>target.scrollIntoView({behavior:"smooth",block:"start"}),40);
+}
 function renderSelectedDayMenu(){
   const date=dateKey(selectedCalendarDate),plan=mealPlans.find(x=>x.date===date),labels={breakfast:"🌅 朝食",lunch:"☀️ 昼食",dinner:"🌙 夕食"};
   ["selectedDayMenu","homeSelectedDayMenu"].map(id=>document.getElementById(id)).filter(Boolean).forEach(t=>{
-    if(!plan){t.innerHTML=`<p class="muted">${formatDateJP(date)}の献立はまだ登録されていません。</p><button class="full" onclick="showTab('meal')">この日の献立を作る</button>`;return;}
-    let html=`<p class="small">${formatDateJP(date)} ・ ${Number(plan.people||1)}人分</p>`;
+    if(!plan){t.innerHTML=`<p class="muted">${formatDateJP(date)}の献立はまだ登録されていません。</p><button class="primary full" onclick="createMealForDate('${date}')">この日（${formatDateJP(date)}）の献立を作る</button>`;return;}
+    const thBadge=plan.theme?`<span class="tag" style="background:#fff0e5;border-color:#e8baa0;color:#b44d2a">${escapeHTML(plan.theme)}</span>`:"";
+    let html=`<div class="row"><p class="small" style="margin:0">${formatDateJP(date)} ・ ${Number(plan.people||1)}人分</p>${thBadge}</div>`;
     Object.entries(labels).forEach(([k,lbl])=>{html+=`<h3>${lbl}</h3>`;let any=false;MEAL_CATEGORIES.forEach(c=>{if(plan.menu?.[k]?.[c]){html+=renderDishItemHTML(c,plan.menu[k][c]);any=true;}});if(!any)html+=`<p class="muted">未登録</p>`;});
     t.innerHTML=html;
   });
@@ -1110,9 +1178,13 @@ function renderHome(){
 }
 function renderMealHistory(){
   const t=document.getElementById("mealHistory");if(!t)return;
-  t.innerHTML=mealPlans.length?[...mealPlans].sort((a,b)=>b.date.localeCompare(a.date)).map(d=>`<div class="result"><strong>${formatDateJP(d.date)}</strong><p class="small">${d.people||1}人分</p><div class="actions"><button onclick="showSavedDay('${d.date}')">献立を見る</button><button onclick="deleteMealPlan('${d.date}')">削除</button></div></div>`).join(""):"<p class='muted'>保存した献立はありません。</p>";
+  t.innerHTML=mealPlans.length?[...mealPlans].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).map(d=>`<div class="result"><strong>${formatDateJP(d.date)}</strong><p class="small">${d.people||1}人分 ${d.theme?"・ "+escapeHTML(d.theme):""}</p><div class="actions"><button onclick="showSavedDay('${d.date}')">献立を見る</button><button onclick="deleteMealPlan('${d.date}')">削除</button></div></div>`).join(""):"<p class='muted'>保存した献立はありません。</p>";
 }
-function showSavedDay(date){selectedCalendarDate=new Date(date+"T00:00:00");calendarMonth=new Date(selectedCalendarDate.getFullYear(),selectedCalendarDate.getMonth(),1);showTab("calendar");}
+function showSavedDay(date){
+  selectedCalendarDate=new Date(date+"T00:00:00");calendarMonth=new Date(selectedCalendarDate.getFullYear(),selectedCalendarDate.getMonth(),1);
+  showTab("calendar");
+  setTimeout(()=>{document.getElementById("calendarSelectedCard")?.scrollIntoView({behavior:"smooth",block:"start"});},80);
+}
 function deleteMealPlan(date){if(confirm("この日の献立を削除しますか？")){mealPlans=mealPlans.filter(d=>d.date!==date);persistAll();renderAll();}}
 function renderCosts(){
   const recs=Array.isArray(purchases)?purchases:[],today=new Date(),sw=new Date(today);
@@ -1131,7 +1203,7 @@ function renderLeftoverChoices(){
   const y=new Date();y.setDate(y.getDate()-1);const dinner=mealPlans.find(p=>p.date===dateKey(y))?.menu?.dinner||{},dishes=Object.values(dinner).filter(Boolean);
   box.innerHTML=dishes.length?dishes.map(r=>`<label><input type="checkbox" class="leftover-choice" value="${escapeHTML(r.id)}" style="width:auto"> ${escapeHTML(r.name)}</label>`).join(""):"<p class='muted'>前日の夕食の保存献立がありません。</p>";
 }
-document.getElementById("makeBento").addEventListener("click",()=>{
+document.getElementById("makeBento")?.addEventListener("click",()=>{
   const people=Math.max(1,Math.min(15,Number(document.getElementById("bentoPeople").value)||4)),per=Math.max(0,Number(document.getElementById("bentoBudget").value)||0),tot=per*people,maxTime=Math.min(30,Number(document.getElementById("bentoTime").value)||30);
   const wanted=document.getElementById("bentoWanted").value.trim(),avoid=document.getElementById("bentoAvoid").value.trim(),sel=[...document.querySelectorAll(".leftover-choice:checked")].map(x=>x.value);
   const y=new Date();y.setDate(y.getDate()-1);const dinner=mealPlans.find(p=>p.date===dateKey(y))?.menu?.dinner||{};const used=new Set(),picks=[];let usedCost=0;
@@ -1141,7 +1213,7 @@ document.getElementById("makeBento").addEventListener("click",()=>{
   currentBentoResult={id:uid(),title:`${people}人分のお弁当`,date:todayString(),people,budget:per,time:maxTime,items:picks};
   document.getElementById("bentoResult").innerHTML=`<div class="result"><h3>${people}人分のお弁当</h3><p class="small">合計約${formatYen(usedCost)} / 予算${formatYen(tot)}（${maxTime}分以内）</p>${picks.map(r=>renderDishItemHTML(r.bentoType,r)).join("")}${picks.length?"":"<p class='muted'>予算内に収まるレシピがありません。</p>"}</div>`;
 });
-document.getElementById("saveBento").addEventListener("click",()=>{if(!currentBentoResult?.items?.length)return alert("先にお弁当を作成してください。");bentoHistory.push(currentBentoResult);persistAll();renderBentoHistory();alert("お弁当を保存しました。");});
+document.getElementById("saveBento")?.addEventListener("click",()=>{if(!currentBentoResult?.items?.length)return alert("先にお弁当を作成してください。");bentoHistory.push(currentBentoResult);persistAll();renderBentoHistory();alert("お弁当を保存しました。");});
 function renderBentoHistory(){document.getElementById("bentoHistory").innerHTML=bentoHistory.length?bentoHistory.slice().reverse().map(i=>`<div class="result"><strong>${escapeHTML(i.title||"お弁当")}</strong><p class="small">${formatDateJP(i.date)} ・ ${Number(i.people||1)}人分</p>${(i.items||[]).map(r=>`<div>・${escapeHTML(r.name||"")}</div>`).join("")}<button style="margin-top:8px" onclick="deleteBento('${i.id}')">削除</button></div>`).join(""):"<p class='muted'>お弁当の保存履歴はまだありません。</p>";}
 function deleteBento(id){if(confirm("削除しますか？")){bentoHistory=bentoHistory.filter(x=>x.id!==id);persistAll();renderBentoHistory();}}
 function renderCookingHistory(){document.getElementById("cookingHistory").innerHTML=cookingHistory.length?cookingHistory.slice().reverse().map(i=>`<div class="result"><strong>${escapeHTML(i.name||"料理")}</strong><p class="small">${formatDateJP(i.date)}</p></div>`).join(""):"<p class='muted'>調理履歴はまだありません。</p>";}
@@ -1195,28 +1267,27 @@ function renderTasteGuide(){
 }
 function selectTasteTag(name){selectedTasteName=(selectedTasteName===name)?null:name;renderTasteGuide();}
 function toggleTasteFavorite(name){tasteFavs=tasteFavs.includes(name)?tasteFavs.filter(x=>x!==name):[...tasteFavs,name];saveData("uchiTasteFavorites",tasteFavs);renderTasteGuide();}
-document.getElementById("tasteSearch").addEventListener("input",renderTasteGuide);
-document.getElementById("tastePeople").addEventListener("change",renderTasteGuide);
-document.getElementById("tasteFavorites").addEventListener("change",renderTasteGuide);
+document.getElementById("tasteSearch")?.addEventListener("input",renderTasteGuide);
+document.getElementById("tastePeople")?.addEventListener("change",renderTasteGuide);
+document.getElementById("tasteFavorites")?.addEventListener("change",renderTasteGuide);
 document.querySelectorAll("[data-taste-filter]").forEach(b=>b.addEventListener("click",()=>{tasteFilter=b.dataset.tasteFilter;document.querySelectorAll("[data-taste-filter]").forEach(x=>x.classList.toggle("active",x===b));renderTasteGuide();}));
 
-/* 設定 */
 function loadAISettings(){
   const ep=localStorage.getItem(STORAGE.aiEndpoint)||"",cd=localStorage.getItem(STORAGE.aiCode)||"";
   document.getElementById("aiEndpoint").value=ep;document.getElementById("aiAccessCode").value=cd;
   document.getElementById("aiEndpointStatus").textContent=ep?"AI接続先を保存済みです。":"AI接続は未設定です（未設定でもレシピ献立作成は使えます）。";
 }
-document.getElementById("saveAiEndpoint").addEventListener("click",()=>{
+document.getElementById("saveAiEndpoint")?.addEventListener("click",()=>{
   const ep=document.getElementById("aiEndpoint").value.trim().replace(/\/$/,""),cd=document.getElementById("aiAccessCode").value.trim();
   if(ep&&!/^https:\/\//i.test(ep))return alert("AI連携URLは https:// から入力してください。");
   localStorage.setItem(STORAGE.aiEndpoint,ep);localStorage.setItem(STORAGE.aiCode,cd);
   document.getElementById("aiEndpointStatus").textContent=ep?"接続設定を保存しました。":"AI接続は未設定です。";alert("接続設定を保存しました。");
 });
-document.getElementById("exportData").addEventListener("click",()=>{
+document.getElementById("exportData")?.addEventListener("click",()=>{
   const blob=new Blob([JSON.stringify({recipes,inventory,variations,mealPlans,shopping,purchases,bentoHistory,cookingHistory,tasteFavs,exportedAt:new Date().toISOString()},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`uchinogohan-backup-${todayString()}.json`;a.click();URL.revokeObjectURL(a.href);
 });
-document.getElementById("importData").addEventListener("change",async e=>{
+document.getElementById("importData")?.addEventListener("change",async e=>{
   const f=e.target.files?.[0];if(!f)return;
   try{
     const d=JSON.parse(await f.text());
@@ -1230,17 +1301,16 @@ document.getElementById("importData").addEventListener("change",async e=>{
 });
 
 function renderAll(){
-  renderRecipes(document.getElementById("recipeSearch")?.value||"");
-  renderVariations();renderInventory();renderMealHistory();renderBentoHistory();renderCookingHistory();
-  renderLeftoverChoices();renderCalendar();renderSelectedDayMenu();renderShopping();renderCosts();renderHome();
+  [()=>renderRecipes(document.getElementById("recipeSearch")?.value||""),renderVariations,renderInventory,renderMealHistory,renderBentoHistory,renderCookingHistory,renderLeftoverChoices,renderCalendar,renderSelectedDayMenu,renderShopping,renderCosts,renderHome]
+    .forEach(fn=>{try{fn();}catch(_){}});
 }
-document.getElementById("prevMonth").addEventListener("click",()=>changeCalendarMonth(-1));
-document.getElementById("nextMonth").addEventListener("click",()=>changeCalendarMonth(1));
-document.getElementById("homePrevMonth").addEventListener("click",()=>changeCalendarMonth(-1));
-document.getElementById("homeNextMonth").addEventListener("click",()=>changeCalendarMonth(1));
-document.getElementById("costPeriod").addEventListener("change",renderCosts);
+document.getElementById("prevMonth")?.addEventListener("click",()=>changeCalendarMonth(-1));
+document.getElementById("nextMonth")?.addEventListener("click",()=>changeCalendarMonth(1));
+document.getElementById("homePrevMonth")?.addEventListener("click",()=>changeCalendarMonth(-1));
+document.getElementById("homeNextMonth")?.addEventListener("click",()=>changeCalendarMonth(1));
+document.getElementById("costPeriod")?.addEventListener("change",renderCosts);
 
-document.getElementById("mealStartDate").value=todayString();
+if(document.getElementById("mealStartDate"))document.getElementById("mealStartDate").value=todayString();
 addPurchaseForm();loadAISettings();renderTasteGuide();renderAll();
 </script>
 </body>

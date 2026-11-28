@@ -1,6 +1,6 @@
 /**
  * うちのごはん - Cloudflare Worker
- * 主食/主菜コース自動補正・超軽量JSON高速生成・予算1円超過禁止版
+ * 初心者向け詳しい作り方＆コツ生成・コース自動補正・予算1円超過禁止版
  */
 const ALLOWED_ORIGINS = ["https://kk611025.github.io"];
 
@@ -25,17 +25,52 @@ const MAIN_RE = /(ハンバーグ|唐揚げ|から揚げ|からあげ|照り焼�
 
 const SAVING_FALLBACK = {
   staple: [
-    { course: "staple", name: "白ごはん（節約）", minutes: 5, cost_for_4: 140, ingredients: [{ name: "米 2.5合", amount: "" }], steps: ["米を研いで炊く"], tip: "", source_url: "" },
-    { course: "staple", name: "塩むすび", minutes: 8, cost_for_4: 140, ingredients: [{ name: "ご飯 4膳", amount: "" }, { name: "塩 少々", amount: "" }], steps: ["塩を付けて握る"], tip: "", source_url: "" }
+    {
+      course: "staple", name: "白ごはん（節約）", minutes: 5, cost_for_4: 140,
+      ingredients: [{ name: "お米 2.5合", amount: "" }],
+      steps: ["ボウルにお米を入れ、最初の水はすぐ捨てて2〜3回やさしく研ぐ。", "炊飯釜の目盛りに合わせて水を入れ、30分ほど浸水させてから炊飯する。", "炊き上がったらしゃもじで底から切るようにほぐす。"],
+      tip: "お米を30分水に浸してから炊くと、芯が残らずふっくら仕上がります。", source_url: ""
+    },
+    {
+      course: "staple", name: "塩むすび", minutes: 8, cost_for_4: 140,
+      ingredients: [{ name: "お米 2合", amount: "" }, { name: "塩 少々", amount: "" }],
+      steps: ["手を水で濡らし、塩を少しだけ手のひら全体に薄く伸ばす。", "温かいご飯を茶碗に軽くよそって手のひらにのせる。", "力を入れすぎず、3〜4回くるっと回しながら三角形に整える。"],
+      tip: "強く握りすぎると固くなるので、空気を含ませるようにやさしく握るのがコツです。", source_url: ""
+    }
   ],
   main: [
-    { course: "main", name: "もやしと卵のあんかけ炒め", minutes: 10, cost_for_4: 150, ingredients: [{ name: "もやし 1袋", amount: "" }, { name: "卵 3個", amount: "" }, { name: "醤油 大さじ1.5", amount: "" }], steps: ["もやしを炒め卵でとじる", "醤油あんで調える"], tip: "", source_url: "" },
-    { course: "main", name: "豆腐ステーキ", minutes: 12, cost_for_4: 160, ingredients: [{ name: "木綿豆腐 2丁", amount: "" }, { name: "醤油 大さじ2", amount: "" }, { name: "みりん 大さじ2", amount: "" }], steps: ["水切り豆腐を焼く", "醤油みりんを絡める"], tip: "", source_url: "" },
-    { course: "main", name: "納豆とねぎの卵焼き", minutes: 10, cost_for_4: 180, ingredients: [{ name: "納豆 2パック", amount: "" }, { name: "卵 4個", amount: "" }], steps: ["混ぜて両面焼く"], tip: "", source_url: "" }
+    {
+      course: "main", name: "もやしと卵のあんかけ炒め", minutes: 10, cost_for_4: 150,
+      ingredients: [{ name: "もやし 1袋", amount: "" }, { name: "卵 3個", amount: "" }, { name: "醤油 大さじ1.5", amount: "" }, { name: "片栗粉 小さじ2", amount: "" }],
+      steps: ["卵はボウルに割りほぐし、小皿に水大さじ3・醤油・片栗粉を混ぜておく。", "フライパンに油を熱して中火でもやしを1分ほどさっと炒め、一度お皿に取り出す。", "同じフライパンで卵を半熟状に大きく混ぜながら焼き、もやしの上に乗せる。", "混ぜておいた醤油あんをフライパンに入れて中火で混ぜ、とろみがついたら卵の上にかける。"],
+      tip: "もやしは炒めすぎると水っぽくなるので、シャキッと感が残る1分程度で引き上げるのがポイントです。", source_url: ""
+    },
+    {
+      course: "main", name: "豆腐ステーキ", minutes: 12, cost_for_4: 160,
+      ingredients: [{ name: "木綿豆腐 2丁", amount: "" }, { name: "片栗粉 大さじ2", amount: "" }, { name: "醤油 大さじ2", amount: "" }, { name: "みりん 大さじ2", amount: "" }],
+      steps: ["豆腐をキッチンペーパーで包み、600Wの電子レンジで2分加熱して水切りする。", "食べやすい厚さに切り、表面に片栗粉を薄くまぶす。", "油をひいたフライパンで中火にかけ、触らずに3分ずつ両面にこんがり焼き色をつける。", "弱火にして混ぜた醤油とみりんを回し入れ、全体に照りよく絡める。"],
+      tip: "しっかり水切りをしてから焼くと油はねせず、崩れにくくカリッと仕上がります。", source_url: ""
+    },
+    {
+      course: "main", name: "納豆とねぎの卵焼き", minutes: 10, cost_for_4: 180,
+      ingredients: [{ name: "納豆 2パック", amount: "" }, { name: "卵 4個", amount: "" }, { name: "長ねぎ 1/3本", amount: "" }],
+      steps: ["長ねぎを小口切りにし、納豆・付属のたれ・卵と一緒にボウルでよく混ぜる。", "フライパンに油を熱して中火で半量を流し入れ、大きく混ぜてから端に寄せる。", "残りの卵液を流して巻き込み、弱めの中火で両面を1〜2分ずつ焼く。"],
+      tip: "たれを先に入れて混ぜると塩気で焼きやすくなり、中はふっくら仕上がります。", source_url: ""
+    }
   ],
   soup: [
-    { course: "soup", name: "わかめとねぎのスープ", minutes: 5, cost_for_4: 80, ingredients: [{ name: "乾燥わかめ 大さじ1", amount: "" }, { name: "鶏ガラ 小さじ3", amount: "" }], steps: ["湯に溶かして具を入れる"], tip: "", source_url: "" },
-    { course: "soup", name: "もやしとねぎの味噌汁", minutes: 10, cost_for_4: 100, ingredients: [{ name: "もやし 1/2袋", amount: "" }, { name: "味噌 大さじ3", amount: "" }], steps: ["もやしを煮て味噌を溶く"], tip: "", source_url: "" }
+    {
+      course: "soup", name: "わかめとねぎのスープ", minutes: 5, cost_for_4: 80,
+      ingredients: [{ name: "乾燥わかめ 大さじ1", amount: "" }, { name: "長ねぎ 1/3本", amount: "" }, { name: "鶏ガラスープの素 小さじ3", amount: "" }],
+      steps: ["長ねぎは薄い小口切りにしておく。", "鍋に水800mlと鶏ガラスープの素を入れて中火で沸かす。", "沸騰したら弱火にしてわかめとねぎを加え、1分ほど温めて火を止める。"],
+      tip: "わかめは湯の中で大きく戻るので入れすぎに注意し、仕上げにごま油を数滴垂らすと香り立ちます。", source_url: ""
+    },
+    {
+      course: "soup", name: "もやしとねぎの味噌汁", minutes: 10, cost_for_4: 100,
+      ingredients: [{ name: "もやし 1/2袋", amount: "" }, { name: "長ねぎ 1/3本", amount: "" }, { name: "だしの素 小さじ2", amount: "" }, { name: "味噌 大さじ3", amount: "" }],
+      steps: ["長ねぎを小口切りにし、もやしはさっと水洗いする。", "鍋に水800ml・だしの素・もやしを入れて中火にかけ、沸騰後2分ほど煮る。", "一度火を止めてお玉で味噌を溶き入れ、ねぎを加えて弱火で温め、沸騰直前で火を止める。"],
+      tip: "味噌を入れたあとに沸騰させると香りが飛んでしまうため、煮立てずに仕上げるのが美味しさの秘訣です。", source_url: ""
+    }
   ]
 };
 
@@ -79,7 +114,6 @@ function expandDish(raw) {
   if (!raw || typeof raw !== "object") return null;
   const name = String(raw.n ?? raw.name ?? "料理").trim();
   let course = COURSE_ALIAS[String(raw.c ?? raw.course ?? "").trim().toLowerCase()] || COURSE_ALIAS[raw.course] || "";
-  // 料理名から不自然なコース配置を自動補正（ハンバーグ等が主食に入るのを防ぐ）
   if (SOUP_RE.test(name)) course = "soup";
   else if (STAPLE_RE.test(name) && !/肉じゃが|生姜焼き|照り焼き/.test(name)) course = "staple";
   else if (MAIN_RE.test(name) && course === "staple") course = "main";
@@ -89,7 +123,14 @@ function expandDish(raw) {
   const ingredients = rawIng.map(x => typeof x === "string" ? { name: x, amount: "" } : { name: String(x?.name || ""), amount: String(x?.amount || "") }).filter(x => x.name);
   const rawSteps = raw.s ?? raw.steps;
   const steps = Array.isArray(rawSteps) ? rawSteps.map(String) : (rawSteps ? [String(rawSteps)] : []);
-  return { course, name, minutes: Number(raw.t ?? raw.minutes ?? 15) || 15, cost_for_4: Number(raw.p ?? raw.cost_for_4 ?? 200) || 0, ingredients, steps, tip: String(raw.tip || ""), source_url: String(raw.source_url || "") };
+  return {
+    course, name,
+    minutes: Number(raw.t ?? raw.minutes ?? 15) || 15,
+    cost_for_4: Number(raw.p ?? raw.cost_for_4 ?? 200) || 0,
+    ingredients, steps,
+    tip: String(raw.k ?? raw.tip ?? ""),
+    source_url: String(raw.source_url || "")
+  };
 }
 
 function checkMeal(inputDishes, people, perPersonBudget, dayNum = 1) {
@@ -157,7 +198,7 @@ async function runSingleCandidate(env, task, prompt, maxTokens) {
       const keys = { groq: env.GROQ_API_KEY, mistral: env.MISTRAL_API_KEY, openrouter: env.OPENROUTER_API_KEY };
       const headers = { "Content-Type": "application/json", "Authorization": "Bearer " + keys[provider] };
       if (provider === "openrouter") { headers["HTTP-Referer"] = ALLOWED_ORIGINS[0]; headers["X-Title"] = "Uchinogohan"; }
-      const body = { model, messages: [{ role: "user", content: prompt }], temperature: 0.4, max_tokens: Math.min(maxTokens, 6500) };
+      const body = { model, messages: [{ role: "user", content: prompt }], temperature: 0.4, max_tokens: Math.min(maxTokens, 7500) };
       if (provider !== "openrouter") body.response_format = { type: "json_object" };
       const res = await fetch(urls[provider], { method: "POST", headers, body: JSON.stringify(body), signal: controller.signal });
       const data = safeParse(await res.text());
@@ -229,17 +270,18 @@ function buildCompactPrompt(body, context) {
   return `家庭料理AIとして${people}人分の${days}日間の献立を作成。
 【4人分合計の予算上限(1円も超過禁止)】朝:${max4B}円以下/昼:${max4L}円以下/夕:${max4D}円以下(各料理のpの合計を必ずこの額以下にすること)
 【各食必須・分類厳守】
-・c:"s"(主食)＝必ずご飯・おにぎり・パン・麺類のみ！ハンバーグや肉魚のおかずを絶対にc:"s"に入れないこと。
+・c:"s"(主食)＝必ずご飯・おにぎり・パン・麺類のみ！ハンバーグやおかずを絶対に入れないこと。
 ・c:"m"(主菜)＝肉・魚・卵・豆腐のおかず1品
 ・c:"p"(汁物)＝味噌汁・スープ等1品
 ・予算余裕時のみc:"d"(副菜),c:"k"(小鉢)追加。朝は15分以内。
+【作り方の丁寧さ】料理初心者でもそのまま作れるよう、s(手順)は下ごしらえ・火加減(強火/中火/弱火)・目安時間や見た目の変化を入れた詳しい3工程にし、k(コツ)に失敗しないポイントやコツを1文必ず入れてください。
 【在庫優先】${lightPan || "なし"}【期限注意】${JSON.stringify(expiry)}
 【登録レシピ】${lightEx || "なし"}【重複禁止】${previous.slice(0, 35).join("、") || "なし"}
 【避ける】${avoid.join("、") || "なし"}【使いたい】${body.wanted || "なし"}
 
-超短縮JSONのみ出力(Markdown不要):
+以下のJSONのみ出力(Markdown不要):
 {"days":[{"day":1,"b":[料理],"l":[料理],"d":[料理]}]}
-料理:{"c":"s|m|d|p|k","n":"料理名","t":15,"p":160,"i":["材料1 4人分量"],"s":["手順1","手順2"]}`;
+料理:{"c":"s|m|d|p|k","n":"料理名","t":15,"p":160,"i":["材料名 4人分量"],"s":["下ごしらえ...","火加減と加熱...","味付けと仕上げ..."],"k":"失敗しないコツ"}`;
 }
 
 export default {
@@ -285,7 +327,7 @@ export default {
       const context = { days, people, budgets, avoid: safeArray(body.avoid, 40), existing: safeArray(body.existing, 30), previous: safeArray(body.previous, 50), pantry: safeArray(body.pantry, 35), expiry: body.expiry && typeof body.expiry === "object" ? body.expiry : {} };
 
       const prompt = buildCompactPrompt(body, context);
-      const res = await callAI(env, prompt, 7500);
+      const res = await callAI(env, prompt, 8000);
       const week = normalizeDays(res.parsed, days);
 
       for (const row of week) {

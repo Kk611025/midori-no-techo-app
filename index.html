@@ -61,7 +61,10 @@ label{display:block;font-size:13px;color:var(--muted);margin:10px 0 5px}
 details.dish-detail{width:100%;margin:5px 0;padding:7px 9px;border-radius:9px;background:#fcf9f1;border:1px dashed #d8cbb6}
 details.dish-detail summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;list-style:none}
 details.dish-detail summary::-webkit-details-marker{display:none}
-details.dish-detail .dish-body{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:13px;line-height:1.6}
+details.dish-detail .dish-body{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:13px;line-height:1.65}
+.dish-steps{margin:4px 0 0;padding-left:18px}
+.dish-steps li{margin-bottom:4px}
+.dish-tip{margin-top:8px;padding:7px 9px;background:#fff8e6;border:1px dashed #e2c57e;border-radius:8px;font-size:12px}
 .calendar-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0}
 .calendar-title{flex:1;text-align:center;font-size:19px;font-weight:bold}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line);border-radius:10px;overflow:hidden}
@@ -191,7 +194,7 @@ details.dish-detail .dish-body{margin-top:8px;padding-top:8px;border-top:1px das
     <label>使いたくない食材</label><input id="mealAvoid" placeholder="例：辛いもの、セロリ">
     <label>調理時間の目安</label>
     <select id="mealTime"><option value="15">15分以内</option><option value="30" selected>30分以内</option><option value="45">45分以内</option><option value="60">60分以内</option><option value="90">時間は気にしない</option></select>
-    <div class="notice">🔒 予算厳守＆主食/主菜の分類を自動補正します。AIは7日単位の並列生成で最大7週間・10人分も高速に作成できます。</div>
+    <div class="notice">🔒 予算厳守＆初心者向けの詳しい作り方＋コツが表示されます。</div>
     <button class="primary full" id="makeLocalPlan">⚡ レシピから今すぐ作成（0.1秒・完全無料）</button>
     <button class="full" id="makePlan">✨ AIを使って献立を作成する（高速並列版）</button>
   </section>
@@ -305,7 +308,7 @@ details.dish-detail .dish-body{margin-top:8px;padding-top:8px;border-top:1px das
   <h2 class="page-title">🛒 買い物リスト</h2>
   <section class="card">
     <h2>買うもの</h2>
-    <p class="small">同じ食材を1行にまとめ、お米（5kg・10kg）や醤油（ボトル1本）などスーパーで買いやすい大まかな単位で表示します。</p>
+    <p class="small">売り場別に分類し、調味料・お米・ウインナー等を大まかな買い出し単位でまとめます。</p>
     <div id="shoppingList"></div>
     <label>食材を手動で追加</label><input id="shoppingNewName" placeholder="食材名">
     <div class="grid"><input id="shoppingNewAmount" type="number" placeholder="数量"><input id="shoppingNewUnit" placeholder="単位"></div>
@@ -407,7 +410,6 @@ const formatYen=v=>Math.round(Number(v||0)).toLocaleString("ja-JP")+"円";
 const dateKey=date=>{const d=new Date(date);return[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")};
 const persistAll=()=>{saveData(STORAGE.recipes,recipes);saveData(STORAGE.inventory,inventory);saveData(STORAGE.variations,variations);saveData(STORAGE.mealPlans,mealPlans);saveData(STORAGE.shopping,shopping);saveData(STORAGE.purchases,purchases);saveData(STORAGE.bentoHistory,bentoHistory);saveData(STORAGE.cookingHistory,cookingHistory);};
 
-/* 主食・主菜の誤分類ガード */
 const STAPLE_RE=/(ご飯|ごはん|白米|雑穀|玄米|むすび|おにぎり|パン|トースト|うどん|そば|蕎麦|パスタ|スパゲティ|麺|ラーメン|チャーハン|炒飯|ピラフ|雑炊|おかゆ|丼|カレーライス|オムライス|焼きそば|そうめん)/;
 const SOUP_RE=/(汁|スープ|みそ汁|味噌汁|豚汁|けんちん|ポタージュ|チャウダー|吸い物|すまし)/;
 const MAIN_RE=/(ハンバーグ|唐揚げ|から揚げ|からあげ|照り焼き|生姜焼き|焼き鮭|塩焼き|煮付け|味噌煮|ホイル焼き|ムニエル|ステーキ|ソテー|カツ|フライ|天ぷら|肉じゃが|麻婆|炒め|回鍋肉|青椒肉絲|酢豚|餃子|焼売|オムレツ|卵焼き|だし巻き|目玉焼き|ハムエッグ|納豆|焼肉|ロールキャベツ|シチュー|筑前煮|ぶり大根)/;
@@ -421,59 +423,43 @@ function fixRecipeCategory(name,cat){
 }
 
 const PRESET_RECIPES=[
-  {name:"白ごはん",category:"主食",protein:"none",people:4,time:5,budget:160,mealSlot:["breakfast","lunch","dinner"],ingredients:"お米 2.5合",steps:"1. 米を研ぐ\n2. 炊飯器で炊く"},
-  {name:"塩むすび",category:"主食",protein:"none",people:4,time:8,budget:140,mealSlot:["breakfast","lunch"],ingredients:"お米 2合\n塩 少々",steps:"1. 炊いたご飯に塩を付けて握る"},
-  {name:"わかめご飯",category:"主食",protein:"none",people:4,time:10,budget:190,mealSlot:["breakfast","lunch","dinner"],ingredients:"お米 2.5合\n乾燥わかめ 大さじ2\n塩 小さじ1",steps:"1. 炊いたご飯にわかめと塩を混ぜる"},
-  {name:"バタートースト",category:"主食",protein:"none",people:4,time:5,budget:160,mealSlot:["breakfast"],ingredients:"食パン 4枚\nバター 15g",steps:"1. 焼いてバターを塗る"},
-  {name:"おにぎり（鮭・梅）",category:"主食",protein:"fish",people:4,time:10,budget:280,mealSlot:["breakfast","lunch"],ingredients:"お米 2合\n鮭切り身 1切れ\n梅干し 2個\n焼き海苔 4枚",steps:"1. 具を入れて握り海苔を巻く"},
-  {name:"素うどん",category:"主食",protein:"none",people:4,time:10,budget:200,mealSlot:["lunch"],ingredients:"うどん 4玉\n長ねぎ 1/2本\nめんつゆ 適量",steps:"1. うどんを茹で温かいつゆをかける"},
-  {name:"焼うどん",category:"主食",protein:"meat",people:4,time:15,budget:340,mealSlot:["lunch"],ingredients:"うどん 4玉\n豚こま肉 120g\nキャベツ 3枚\n醤油 大さじ2",steps:"1. 肉野菜を炒めうどんと醤油を絡める"},
-  {name:"ソース焼きそば",category:"主食",protein:"meat",people:4,time:15,budget:340,mealSlot:["lunch"],ingredients:"焼きそば麺 4玉\n豚バラ肉 120g\nもやし 1袋\n焼きそばソース 適量",steps:"1. 肉野菜を炒め麺とソースを絡める"},
-  {name:"ナポリタン",category:"主食",protein:"meat",people:4,time:20,budget:400,mealSlot:["lunch"],ingredients:"スパゲティ 360g\nウインナー 6本\n玉ねぎ 1個\nピーマン 2個\nケチャップ 大さじ6",steps:"1. 茹でた麺と具材をケチャップで炒める"},
-  {name:"卵チャーハン",category:"主食",protein:"egg",people:4,time:15,budget:260,mealSlot:["lunch","dinner"],ingredients:"お米 2合\n卵 4個\n長ねぎ 1/2本\n醤油 大さじ1.5",steps:"1. 卵とご飯を強火で炒め醤油で調える"},
-  {name:"そうめん",category:"主食",protein:"none",people:4,time:10,budget:220,mealSlot:["lunch"],ingredients:"そうめん 400g\nめんつゆ 適量\n長ねぎ 1/2本",steps:"1. 茹でて冷水でしめつゆでいただく"},
+  {name:"白ごはん",category:"主食",protein:"none",people:4,time:5,budget:160,mealSlot:["breakfast","lunch","dinner"],ingredients:"お米 2.5合",steps:"ボウルにお米を入れ、最初の水はすぐ捨てて2〜3回やさしく研ぐ。\n炊飯器の内釜の目盛りに合わせて水を入れ、30分ほど浸水させてから炊飯する。\n炊き上がったら10分蒸らし、しゃもじで底からふんわり混ぜる。",memo:"30分水に浸してから炊くと芯が残らずふっくら美味しく炊けます。"},
+  {name:"塩むすび",category:"主食",protein:"none",people:4,time:8,budget:140,mealSlot:["breakfast","lunch"],ingredients:"お米 2合\n塩 少々",steps:"炊きたてのご飯を用意し、手を水でさっと濡らす。\n塩を少しだけ手のひらに薄く伸ばし、温かいご飯をのせる。\n力を入れすぎず、3〜4回くるっと回しながら三角形に整える。",memo:"ぎゅっと握りすぎると固くなるため、空気を含ませるようにやさしく握るのがコツです。"},
+  {name:"わかめご飯",category:"主食",protein:"none",people:4,time:10,budget:190,mealSlot:["breakfast","lunch","dinner"],ingredients:"お米 2.5合\n乾燥わかめ 大さじ2\n塩 小さじ1",steps:"乾燥わかめを水で5分ほど戻し、水気をしっかり絞ってから細かく刻む。\n炊き上がった温かいご飯に塩を振りかけ、刻んだわかめを加える。\nしゃもじでご飯粒を潰さないように切るように混ぜ合わせる。",memo:"わかめの水気をしっかり切っておくとご飯がベチャッとしません。"},
+  {name:"バタートースト",category:"主食",protein:"none",people:4,time:5,budget:160,mealSlot:["breakfast"],ingredients:"食パン 4枚\nバター 15g",steps:"トースターを1分ほど予熱しておく。\n食パンの表面に格子状の浅い切り込みを少しだけ入れ、きつね色になるまで3分ほど焼く。\n焼きたての熱いうちにバターを全体に塗る。",memo:"焼き目をつけてからバターを塗ると香りが飛ばずサクッと仕上がります。"},
+  {name:"焼うどん",category:"主食",protein:"meat",people:4,time:15,budget:340,mealSlot:["lunch"],ingredients:"うどん 4玉\n豚こま肉 120g\nキャベツ 3枚\n醤油 大さじ2\nサラダ油 大さじ1",steps:"キャベツは一口大のざく切りにし、豚肉は食べやすい大きさに切る。うどんは袋ごとレンジで1分半温めてほぐれやすくする。\nフライパンに油を熱して中火で豚肉を炒め、色が変わったらキャベツを加えて1分炒める。\nうどんを加えて全体を混ぜ、鍋肌から醤油を回し入れて香ばしく炒め合わせる。",memo:"うどんを事前にレンジで少し温めるとフライパンの中で切れたりくっついたりしません。"},
+  {name:"ナポリタン",category:"主食",protein:"meat",people:4,time:20,budget:400,mealSlot:["lunch"],ingredients:"スパゲティ 360g\nウインナー 6本\n玉ねぎ 1個\nピーマン 2個\nケチャップ 大さじ6",steps:"玉ねぎは薄切り、ピーマンは輪切り、ウインナーは斜め切りにする。大きめの鍋でスパゲティを表示時間通り茹でる。\nフライパンに油を熱して中火でウインナーと玉ねぎを炒め、しんなりしたらピーマンを加える。\n具材を端に寄せて空いた場所でケチャップを30秒ほど軽く炒め、茹でた麺と茹で汁大さじ2を加えて全体に絡める。",memo:"麺を入れる前にケチャップを軽く炒めて酸味を飛ばすとお店のような甘みとコクが出ます。"},
+  {name:"卵チャーハン",category:"主食",protein:"egg",people:4,time:15,budget:260,mealSlot:["lunch","dinner"],ingredients:"お米 2合\n卵 4個\n長ねぎ 1/2本\n醤油 大さじ1.5\nごま油 大さじ1",steps:"長ねぎは小口切りにし、卵はボウルに割りほぐしておく。\nフライパンにごま油を熱して強めの中火にし、溶き卵を流し入れてすぐ温かいご飯を乗せ、木べらで切るように炒める。\nご飯がパラッとしたら長ねぎと塩こしょうを加え、最後に鍋肌から醤油を垂らしてさっと混ぜる。",memo:"卵が固まりきる前にご飯を乗せて混ぜるとご飯一粒ずつが卵でコーティングされパラッとします。"},
 
-  {name:"納豆と焼き海苔",category:"主菜",protein:"soy",people:4,time:5,budget:150,mealSlot:["breakfast"],ingredients:"納豆 4パック\n焼き海苔 4袋\n長ねぎ 適量",steps:"1. 納豆にねぎを混ぜ海苔を添える"},
-  {name:"もやしと卵のあんかけ炒め",category:"主菜",protein:"egg",people:4,time:10,budget:150,mealSlot:["breakfast","lunch","dinner"],ingredients:"もやし 1袋\n卵 3個\n醤油 大さじ1.5\n片栗粉 小さじ2",steps:"1. もやしを炒めて溶き卵でとじる\n2. 醤油あんを絡める"},
-  {name:"豆腐ステーキ",category:"主菜",protein:"soy",people:4,time:12,budget:160,mealSlot:["breakfast","lunch","dinner"],ingredients:"木綿豆腐 2丁\n醤油 大さじ2\nみりん 大さじ2",steps:"1. 水切り豆腐を両面焼き調味料を絡める"},
-  {name:"だし巻き卵",category:"主菜",protein:"egg",people:4,time:10,budget:180,mealSlot:["breakfast","bento"],ingredients:"卵 4個\nだしの素 小さじ1\n醤油 小さじ1\n砂糖 小さじ1",steps:"1. 混ぜて卵焼き器で巻く"},
-  {name:"目玉焼きとウインナー",category:"主菜",protein:"egg",people:4,time:10,budget:280,mealSlot:["breakfast"],ingredients:"卵 4個\nウインナー 8本\nサラダ油 小さじ1",steps:"1. ウインナーを焼き卵を割り入れて蓋をする"},
-  {name:"焼き鮭",category:"主菜",protein:"fish",people:4,time:15,budget:500,mealSlot:["breakfast","dinner","bento"],ingredients:"鮭切り身 4切れ",steps:"1. 両面をこんがり焼く"},
-  {name:"さばの塩焼き",category:"主菜",protein:"fish",people:4,time:15,budget:440,mealSlot:["breakfast","dinner"],ingredients:"さば 4切れ\n大根おろし 適量",steps:"1. こんがり焼き大根おろしを添える"},
-  {name:"鶏むね肉の照り焼き",category:"主菜",protein:"meat",people:4,time:15,budget:380,mealSlot:["lunch","dinner","bento"],ingredients:"鶏むね肉 500g\n醤油 大さじ2\nみりん 大さじ2\n砂糖 大さじ1",steps:"1. そぎ切りを焼き調味料を絡める"},
-  {name:"鶏の照り焼き",category:"主菜",protein:"meat",people:4,time:20,budget:520,mealSlot:["lunch","dinner","bento"],ingredients:"鶏もも肉 500g\n醤油 大さじ2\nみりん 大さじ2\n料理酒 大さじ2\n砂糖 大さじ1",steps:"1. 皮目から焼く\n2. 調味料を煮絡める"},
-  {name:"豚の生姜焼き",category:"主菜",protein:"meat",people:4,time:15,budget:560,mealSlot:["lunch","dinner"],ingredients:"豚ロース肉 400g\n玉ねぎ 1個\n醤油 大さじ2.5\nみりん 大さじ2\n生姜 1かけ",steps:"1. 肉と玉ねぎを炒め合わせだれを絡める"},
-  {name:"豚こまとキャベツの味噌炒め",category:"主菜",protein:"meat",people:4,time:15,budget:420,mealSlot:["lunch","dinner"],ingredients:"豚こま肉 220g\nキャベツ 1/4個\nピーマン 2個\n味噌 大さじ2\nみりん 大さじ1",steps:"1. 肉野菜を炒め合わせ味噌を絡める"},
-  {name:"肉じゃが",category:"主菜",protein:"meat",people:4,time:30,budget:560,mealSlot:["dinner"],ingredients:"豚こま肉 200g\nじゃがいも 4個\n玉ねぎ 1個\nにんじん 1本\n醤油 大さじ2.5\n砂糖 大さじ2",steps:"1. 炒めてだしと調味料で煮る"},
-  {name:"鶏むね肉のから揚げ",category:"主菜",protein:"meat",people:4,time:25,budget:420,mealSlot:["lunch","dinner","bento"],ingredients:"鶏むね肉 500g\n醤油 大さじ2\n料理酒 大さじ1\n片栗粉 大さじ5",steps:"1. 下味に漬け片栗粉をまぶして揚げる"},
-  {name:"鶏むね肉のマヨポン炒め",category:"主菜",protein:"meat",people:4,time:15,budget:380,mealSlot:["lunch","dinner","bento"],ingredients:"鶏むね肉 500g\nマヨネーズ 大さじ2\nポン酢 大さじ3\n片栗粉 大さじ2",steps:"1. マヨネーズで焼きポン酢を絡める"},
-  {name:"さばの味噌煮",category:"主菜",protein:"fish",people:4,time:20,budget:500,mealSlot:["dinner"],ingredients:"さば 4切れ\n料理酒 大さじ6\n味噌 大さじ2\nみりん 大さじ1\n砂糖 大さじ1",steps:"1. 煮汁を沸かしさばを入れ落とし蓋で10分煮る"},
-  {name:"鮭のホイル焼き",category:"主菜",protein:"fish",people:4,time:20,budget:540,mealSlot:["dinner"],ingredients:"鮭切り身 4切れ\n玉ねぎ 1/2個\nしめじ 1パック\nバター 20g\n醤油 適量",steps:"1. ホイルに包み12分蒸し焼き"},
-  {name:"麻婆豆腐",category:"主菜",protein:"soy",people:4,time:20,budget:360,mealSlot:["lunch","dinner"],ingredients:"木綿豆腐 2丁\n豚ひき肉 180g\n長ねぎ 1本\n味噌 大さじ1.5\n醤油 大さじ1\n片栗粉 大さじ1",steps:"1. ひき肉を炒め豆腐と煮てとろみをつける"},
-  {name:"和風おろしハンバーグ",category:"主菜",protein:"meat",people:4,time:30,budget:620,mealSlot:["dinner"],ingredients:"合いびき肉 380g\n玉ねぎ 1個\nパン粉 大さじ4\n卵 1個\n大根 1/4本\nポン酢 適量",steps:"1. タネを焼き大根おろしとポン酢をかける"},
-  {name:"豆腐ハンバーグ",category:"主菜",protein:"soy",people:4,time:25,budget:360,mealSlot:["lunch","dinner","bento"],ingredients:"合いびき肉 180g\n木綿豆腐 1/2丁\n玉ねぎ 1/2個\n醤油 大さじ2\nみりん 大さじ2",steps:"1. 豆腐とひき肉を混ぜて焼き照りだれを絡める"},
+  {name:"納豆と焼き海苔",category:"主菜",protein:"soy",people:4,time:5,budget:150,mealSlot:["breakfast"],ingredients:"納豆 4パック\n焼き海苔 4袋\n長ねぎ 適量",steps:"長ねぎは薄い小口切りにしておく。\n納豆をパックの中で付属のたれを入れる前に20〜30回ほどよく混ぜて粘りを出す。\nたれ・からし・刻みねぎを加えてさらに軽く混ぜ、焼き海苔を添えて食卓へ出す。",memo:"たれを入れる前にしっかり混ぜておくと空気を含んでふんわり美味しくなります。"},
+  {name:"もやしと卵のあんかけ炒め",category:"主菜",protein:"egg",people:4,time:10,budget:150,mealSlot:["breakfast","lunch","dinner"],ingredients:"もやし 1袋\n卵 3個\n醤油 大さじ1.5\n片栗粉 小さじ2",steps:"卵は溶きほぐし、小皿に水大さじ3・醤油・片栗粉をよく混ぜてあんの液を作る。\nフライパンに油を熱して中火でもやしを1分ほど炒め、塩こしょうを軽く振ってお皿に取り出す。\n同じフライパンで溶き卵を半熟状にふんわり焼いてもやしに乗せ、混ぜたあんをフライパンで沸かしてとろみがついたら上からかける。",memo:"もやしを炒めすぎないことと、あんの液は底に片栗粉が沈むので入れる直前に再混ぜするのがコツです。"},
+  {name:"豆腐ステーキ",category:"主菜",protein:"soy",people:4,time:12,budget:160,mealSlot:["breakfast","lunch","dinner"],ingredients:"木綿豆腐 2丁\n片栗粉 大さじ2\n醤油 大さじ2\nみりん 大さじ2",steps:"豆腐をキッチンペーパーで包み、600Wの電子レンジで2分加熱して水切りし、横半分・厚さ1.5cmほどに切る。\n表面に片栗粉を薄くまぶし、油をひいたフライパンで中火にかける。\n触らずに3分ずつ焼いて両面にカリッと焼き色をつけ、弱火にして醤油とみりんを絡める。",memo:"焼いている途中で何度も裏返すと崩れやすいので、焼き色がつくまで触らないのがポイントです。"},
+  {name:"だし巻き卵",category:"主菜",protein:"egg",people:4,time:10,budget:180,mealSlot:["breakfast","bento"],ingredients:"卵 4個\nだしの素 小さじ1\n醤油 小さじ1\n砂糖 小さじ1",steps:"ボウルに卵を割り入れ、水80mlにだしの素・醤油・砂糖を溶かしたものを加えて白身を切るようによく混ぜる。\n卵焼き器に油を薄くひいて中火でしっかり温め、卵液の1/3を流して大きく混ぜ、半熟のうちに奥から手前へ巻く。\n空いた部分に油を少し足し、残りを2回に分けて流し、卵の下にも液を潜り込ませながら巻き上げる。",memo:"最初は少し強めの火で一気に形を作り、2〜3回目は中火で丁寧に巻くとお店のように仕上がります。"},
+  {name:"目玉焼きとウインナー",category:"主菜",protein:"egg",people:4,time:10,budget:280,mealSlot:["breakfast"],ingredients:"卵 4個\nウインナー 8本\nサラダ油 小さじ1",steps:"ウインナーに斜めの浅い切り込みを2〜3本入れ、油をひいたフライパンで中火で転がしながら2分焼く。\nウインナーを端に寄せ、空いた場所に卵を割り入れる。\n水を大さじ1ほど入れてすぐ蓋をし、弱火で3〜4分蒸し焼きにして好みの半熟具合で取り出す。",memo:"切り込みを入れるとウインナーが破裂せず、少量の水で蓋をして蒸すと白身がふっくら焼けます。"},
+  {name:"焼き鮭",category:"主菜",protein:"fish",people:4,time:15,budget:500,mealSlot:["breakfast","dinner","bento"],ingredients:"鮭切り身 4切れ",steps:"鮭は焼く10分前に冷蔵庫から出し、キッチンペーパーで表面の余分な水気をしっかり拭き取る。\n魚焼きグリル（またはフライパンにクッキングシートを敷いて中火）で、盛り付ける面を下にして5〜6分焼く。\n焼き目がついたらひっくり返し、弱めの中火でさらに4〜5分中まで火が通るまで焼く。",memo:"水気を拭いてから焼くと生臭さがなくなり、皮までパリッと香ばしく焼けます。"},
+  {name:"鶏むね肉の照り焼き",category:"主菜",protein:"meat",people:4,time:15,budget:380,mealSlot:["lunch","dinner","bento"],ingredients:"鶏むね肉 500g\n片栗粉 大さじ2\n醤油 大さじ2\nみりん 大さじ2\n砂糖 大さじ1",steps:"鶏むね肉は1cm厚さの斜めそぎ切りにし、全体に片栗粉を薄くまぶす。醤油・みりん・砂糖を小皿で混ぜておく。\nフライパンに油大さじ1を熱し、重ならないよう並べて中火で片面2分半ずつ両面を焼く。\n余分な油を拭き取ってから弱火にし、混ぜたたれを回し入れてツヤが出るまで1分ほど絡める。",memo:"そぎ切り＋片栗粉の効果で、安いむね肉でも驚くほどしっとり柔らかく仕上がります。"},
+  {name:"豚の生姜焼き",category:"主菜",protein:"meat",people:4,time:15,budget:560,mealSlot:["lunch","dinner"],ingredients:"豚ロース肉 400g\n玉ねぎ 1個\n醤油 大さじ2.5\nみりん 大さじ2\n生姜 1かけ",steps:"玉ねぎは5mm幅のくし切りにし、豚肉は大きければ半分に切る。醤油・みりん・すりおろし生姜を混ぜておく。\nフライパンに油を熱して中火で豚肉を広げながら焼き、色が変わったら玉ねぎを加えて2分ほど炒める。\n弱めの中火にして合わせた調味料を回し入れ、汁気が半分ほどになって全体にツヤよく絡んだら火を止める。",memo:"豚肉にうっすら小麦粉を振ってから焼くとたれがよく絡み、お肉も固くなりません。"},
+  {name:"豚こまとキャベツの味噌炒め",category:"主菜",protein:"meat",people:4,time:15,budget:420,mealSlot:["lunch","dinner"],ingredients:"豚こま肉 220g\nキャベツ 1/4個\nピーマン 2個\n味噌 大さじ2\nみりん 大さじ1",steps:"キャベツは一口大のざく切り、ピーマンは乱切りにする。小皿に味噌・みりん・砂糖小さじ1を混ぜておく。\nフライパンに油を熱して強めの中火で豚肉を炒め、8割火が通ったらキャベツとピーマンを加えて1分半ほど手早く炒める。\n一度火を弱め、混ぜておいた味噌だれを全体に広げて中火で30秒ほど絡める。",memo:"キャベツを強火で短時間炒めるとシャキシャキ食感が残り、水っぽくなりません。"},
+  {name:"さばの味噌煮",category:"主菜",protein:"fish",people:4,time:20,budget:500,mealSlot:["dinner"],ingredients:"さば切り身 4切れ\n料理酒 大さじ6\n味噌 大さじ2\nみりん 大さじ1\n砂糖 大さじ1",steps:"さばの皮目に十字の切り込みを入れ、熱湯をさっと回しかけてからキッチンペーパーで水気を拭き取る（臭み取り）。\nフライパンに水100ml・料理酒・みりん・砂糖を入れて中火で沸騰させ、さばの皮目を上にして並べる。\nアルミホイル等で落とし蓋をして中火で7分煮たあと、煮汁を少し取って味噌を溶き入れ、蓋を外して煮汁をかけながら3分煮詰める。",memo:"最初に熱湯をかけて霜降りすると青魚の臭みが抜けます。味噌は最後に溶くと香りが引き立ちます。"},
+  {name:"麻婆豆腐",category:"主菜",protein:"soy",people:4,time:20,budget:360,mealSlot:["lunch","dinner"],ingredients:"木綿豆腐 2丁\n豚ひき肉 180g\n長ねぎ 1本\n味噌 大さじ1.5\n醤油 大さじ1\n片栗粉 大さじ1",steps:"豆腐は2cm角に切り、沸騰した湯で2分下ゆでしてザルに上げておく（水っぽさ・崩れ防止）。長ねぎはみじん切りにする。\nフライパンにごま油を熱してひき肉を中火でパラパラになるまで炒め、長ねぎ・味噌・醤油・鶏ガラスープの素小さじ1と水150mlを加えて沸かす。\n豆腐を入れて弱めの中火で3分煮たら、一度火を止めて水溶き片栗粉を回し混ぜ、再び中火で30秒沸かしてとろみをつける。",memo:"とろみをつける時は一度火を止めるとダマにならず、再びしっかり沸かすと冷めても水っぽくなりません。"},
+  {name:"和風おろしハンバーグ",category:"主菜",protein:"meat",people:4,time:30,budget:620,mealSlot:["dinner"],ingredients:"合いびき肉 380g\n玉ねぎ 1個\nパン粉 大さじ4\n卵 1個\n大根 1/4本\nポン酢 適量",steps:"玉ねぎはみじん切りにして油で透き通るまで炒め冷ます。大根はすりおろして軽く水気を切っておく。\nボウルにひき肉・塩小さじ1/2を入れて粘りが出るまでよく練り、炒め玉ねぎ・牛乳大さじ2に浸したパン粉・卵を加えて混ぜ、4等分にして中央をへこませる。\n油をひいたフライパンで中火で2分焼き、焼き色がついたら裏返して水大さじ3を入れ、蓋をして弱火で6〜7分蒸し焼きにし、大根おろしとポン酢をかける。",memo:"最初にお肉と塩だけをしっかり練り、焼く前に中央をへこませると肉汁が逃げずふっくら焼き上がります。"},
 
-  {name:"わかめの中華スープ",category:"汁物",protein:"none",people:4,time:5,budget:80,mealSlot:["breakfast","lunch","dinner"],ingredients:"乾燥わかめ 大さじ1\n長ねぎ 1/3本\n鶏ガラスープの素 小さじ3",steps:"1. 湯にスープの素と具材を入れる"},
-  {name:"もやしとねぎの味噌汁",category:"汁物",protein:"none",people:4,time:10,budget:100,mealSlot:["breakfast","lunch","dinner"],ingredients:"もやし 1/2袋\n長ねぎ 1/3本\nだしの素 小さじ2\n味噌 大さじ3",steps:"1. もやしを煮て味噌を溶く"},
-  {name:"わかめと豆腐の味噌汁",category:"汁物",protein:"soy",people:4,time:10,budget:120,mealSlot:["breakfast","lunch","dinner"],ingredients:"豆腐 1/2丁\n乾燥わかめ 大さじ1\nだしの素 小さじ2\n味噌 大さじ4",steps:"1. 具材を温め味噌を溶く"},
-  {name:"大根と油揚げの味噌汁",category:"汁物",protein:"soy",people:4,time:15,budget:130,mealSlot:["breakfast","dinner"],ingredients:"大根 1/6本\n油揚げ 1枚\nだしの素 小さじ2\n味噌 大さじ4",steps:"1. 具材を煮て味噌を溶く"},
-  {name:"玉ねぎと卵の中華スープ",category:"汁物",protein:"egg",people:4,time:10,budget:140,mealSlot:["breakfast","lunch","dinner"],ingredients:"玉ねぎ 1/2個\n卵 2個\n鶏ガラスープの素 小さじ4",steps:"1. 玉ねぎを煮て溶き卵を回し入れる"},
-  {name:"キャベツとベーコンのコンソメスープ",category:"汁物",protein:"none",people:4,time:15,budget:180,mealSlot:["breakfast","lunch","dinner"],ingredients:"キャベツ 3枚\nベーコン 2枚\n固形コンソメ 2個",steps:"1. 具材をコンソメで煮る"},
-  {name:"具だくさん豚汁",category:"汁物",protein:"meat",people:4,time:20,budget:300,mealSlot:["lunch","dinner"],ingredients:"豚こま肉 100g\n大根 1/6本\nにんじん 1/2本\nごぼう 1/2本\n味噌 大さじ4",steps:"1. 具材を炒めて煮て味噌を溶く"},
+  {name:"わかめの中華スープ",category:"汁物",protein:"none",people:4,time:5,budget:80,mealSlot:["breakfast","lunch","dinner"],ingredients:"乾燥わかめ 大さじ1\n長ねぎ 1/3本\n鶏ガラスープの素 小さじ3",steps:"長ねぎは薄い小口切りにしておく。\n鍋に水800mlと鶏ガラスープの素を入れて中火で沸かす。\n沸騰したら弱火にして乾燥わかめと長ねぎを加え、1分ほど温めて仕上げにごま油数滴を垂らす。",memo:"乾燥わかめは湯に入れると大きく増えるため、入れすぎないのがちょうど良いコツです。"},
+  {name:"もやしとねぎの味噌汁",category:"汁物",protein:"none",people:4,time:10,budget:100,mealSlot:["breakfast","lunch","dinner"],ingredients:"もやし 1/2袋\n長ねぎ 1/3本\nだしの素 小さじ2\n味噌 大さじ3",steps:"もやしはさっと洗い、長ねぎは小口切りにする。\n鍋に水800ml・だしの素・もやしを入れて中火にかけ、沸騰後2分ほど煮る。\n一度火を止めてお玉に味噌を取って溶き入れ、長ねぎを加えて弱火で温め、沸騰直前に火を止める。",memo:"味噌を入れたあとにグラグラ沸騰させると風味が消えるので、フチが小さくふつふつしたら止めましょう。"},
+  {name:"わかめと豆腐の味噌汁",category:"汁物",protein:"soy",people:4,time:10,budget:120,mealSlot:["breakfast","lunch","dinner"],ingredients:"豆腐 1/2丁\n乾燥わかめ 大さじ1\nだしの素 小さじ2\n味噌 大さじ4",steps:"豆腐は1.5cm角のさいの目に切っておく。\n鍋に水800mlとだしの素を入れて中火で沸かし、豆腐と乾燥わかめを加えて弱めの中火で2分温める。\n一度火を止めて味噌をお玉で溶き入れ、再加熱して沸騰する直前で火を止める。",memo:"豆腐を煮すぎると中にス（穴）が入って食感が悪くなるので、短時間で温めるのがコツです。"},
+  {name:"玉ねぎと卵の中華スープ",category:"汁物",protein:"egg",people:4,time:10,budget:140,mealSlot:["breakfast","lunch","dinner"],ingredients:"玉ねぎ 1/2個\n卵 2個\n鶏ガラスープの素 小さじ4",steps:"玉ねぎは薄切りにし、卵はボウルでよく溶きほぐす。\n鍋に水800ml・鶏ガラスープの素・玉ねぎを入れて中火にかけ、玉ねぎが透き通って柔らかくなるまで3〜4分煮る。\nスープがしっかり沸騰した状態で溶き卵を細く回し入れ、5秒待って卵がふんわり浮いたら大きく一混ぜして火を止める。",memo:"卵を入れた直後に混ぜず、5秒待ってからそっと混ぜると濁らない綺麗なかき玉になります。"},
+  {name:"具だくさん豚汁",category:"汁物",protein:"meat",people:4,time:20,budget:300,mealSlot:["lunch","dinner"],ingredients:"豚こま肉 100g\n大根 1/6本\nにんじん 1/2本\nごぼう 1/2本\n味噌 大さじ4",steps:"大根・にんじんはいちょう切り、ごぼうはささがきにして水にさらし水気を切る。\n鍋にごま油小さじ2を熱して豚肉を中火で炒め、色が変わったら根菜類を加えて油が回るまで2分炒める。\n水800mlとだしの素小さじ2を加えてアクを取りながら10分煮て、野菜が柔らかくなったら火を弱め味噌を溶き入れる。",memo:"具材を先に炒めてから煮ることで、お肉と根菜の旨みとコクが汁にしっかり溶け出します。"},
 
-  {name:"もやしのナムル",category:"副菜",protein:"none",people:4,time:8,budget:80,mealSlot:["breakfast","lunch","dinner"],ingredients:"もやし 1袋\nごま油 大さじ1\n鶏ガラスープの素 小さじ1",steps:"1. 加熱し水気を絞り和える"},
-  {name:"ほうれん草のごま和え",category:"副菜",protein:"none",people:4,time:10,budget:180,mealSlot:["breakfast","lunch","dinner","bento"],ingredients:"ほうれん草 1束\nすりごま 大さじ2\n醤油 大さじ1\n砂糖 小さじ2",steps:"1. 茹でて絞り調味料と和える"},
-  {name:"きんぴらごぼう",category:"副菜",protein:"none",people:4,time:20,budget:200,mealSlot:["dinner","bento"],ingredients:"ごぼう 1本\nにんじん 1/2本\n醤油 大さじ1.5\nみりん 大さじ1.5\nごま油 大さじ1",steps:"1. ごま油で炒め調味料を絡める"},
-  {name:"ひじきの五目煮",category:"副菜",protein:"soy",people:4,time:20,budget:220,mealSlot:["dinner","bento"],ingredients:"乾燥ひじき 20g\nにんじん 1/2本\n油揚げ 1枚\n醤油 大さじ1.5\n砂糖 大さじ1",steps:"1. 具材を炒めて煮る"},
-  {name:"キャベツのコールスロー",category:"副菜",protein:"none",people:4,time:10,budget:160,mealSlot:["lunch","dinner"],ingredients:"キャベツ 1/4個\nコーン缶 1/2缶\nマヨネーズ 大さじ3\n酢 大さじ1",steps:"1. 塩もみキャベツと混ぜる"},
-  {name:"じゃがいもの塩バター炒め",category:"副菜",protein:"none",people:4,time:15,budget:180,mealSlot:["lunch","dinner","bento"],ingredients:"じゃがいも 3個\nバター 15g\n塩 少々",steps:"1. レンジ加熱後バターで焼く"},
+  {name:"もやしのナムル",category:"副菜",protein:"none",people:4,time:8,budget:80,mealSlot:["breakfast","lunch","dinner"],ingredients:"もやし 1袋\nごま油 大さじ1\n鶏ガラスープの素 小さじ1",steps:"もやしを耐熱ボウルに入れてふんわりラップをし、600Wの電子レンジで2分半加熱する。\nザルに上げて粗熱を取り、清潔なキッチンペーパー等で包んでぎゅっと水気を絞る。\nボウルに戻し、温かいうちにごま油・鶏ガラスープの素・すりごま少しを加えてよく和える。",memo:"もやしの水気をしっかり絞っておくと、時間が経っても味が薄まらずシャキッと美味しく食べられます。"},
+  {name:"ほうれん草のごま和え",category:"副菜",protein:"none",people:4,time:10,budget:180,mealSlot:["breakfast","lunch","dinner","bento"],ingredients:"ほうれん草 1束\nごま 大さじ2\n醤油 大さじ1\n砂糖 小さじ2",steps:"たっぷりの湯を沸かして塩少しを入れ、ほうれん草を茎から30秒→葉も入れてさらに30秒茹でて冷水に取り冷ます。\n根元を揃えてぎゅっと水気を絞り、3〜4cm長さに切ってさらに軽く絞る。\nボウルにすりごま・醤油・砂糖を混ぜておき、食べる直前にほうれん草を入れて和える。",memo:"茹で時間は短め1分にして冷水に取ると色鮮やかに仕上がります。水気は2回絞るのがコツです。"},
+  {name:"きんぴらごぼう",category:"副菜",protein:"none",people:4,time:20,budget:200,mealSlot:["dinner","bento"],ingredients:"ごぼう 1本\nにんじん 1/2本\n醤油 大さじ1.5\nみりん 大さじ1.5\nごま油 大さじ1",steps:"ごぼうとにんじんは4〜5cm長さの細切りにし、ごぼうは5分ほど水にさらしてザルで水気を切る。\nフライパンにごま油を熱し、中火でごぼうとにんじんをしんなりするまで3分ほど炒める。\n砂糖小さじ1・みりん・醤油を加え、汁気がほぼなくなるまで中火で炒め煮にして、仕上げにいりごまを振る。",memo:"具材を細めに揃えて切ると火の通りが均一になり、シャキシャキ感と味の絡みが良くなります。"},
+  {name:"じゃがいもの塩バター炒め",category:"副菜",protein:"none",people:4,time:15,budget:180,mealSlot:["lunch","dinner","bento"],ingredients:"じゃがいも 3個\nバター 15g\n塩 少々",steps:"じゃがいもは皮をむいて細切りにし、水に5分さらして水気を切ったあと、耐熱皿に乗せてラップし600Wで3分加熱する。\nフライパンを中火で温めてバターを溶かし、加熱したじゃがいもを広げてあまり触らずに2分ほど焼く。\nカリッと焼き色がついたら裏返してもう1〜2分焼き、仕上げに塩・こしょうを振る。",memo:"事前にレンジで火を通しておくと短時間でホクホク＆表面カリッと仕上がります。"},
 
-  {name:"冷奴",category:"小鉢",protein:"soy",people:4,time:5,budget:100,mealSlot:["lunch","dinner"],ingredients:"絹豆腐 1丁\nかつお節 1袋\n醤油 適量",steps:"1. 切ってかつお節と醤油をかける"},
-  {name:"きゅうりとわかめの酢の物",category:"小鉢",protein:"none",people:4,time:10,budget:140,mealSlot:["dinner"],ingredients:"きゅうり 2本\n乾燥わかめ 大さじ1\n酢 大さじ3\n砂糖 大さじ2\n醤油 大さじ1",steps:"1. 塩もみきゅうりと三杯酢で和える"},
-  {name:"ブロッコリーのおかか和え",category:"小鉢",protein:"none",people:4,time:10,budget:180,mealSlot:["breakfast","dinner","bento"],ingredients:"ブロッコリー 1株\nかつお節 1袋\n醤油 小さじ2",steps:"1. 茹でてかつお節と醤油で和える"},
-  {name:"ちくわの磯辺焼き",category:"弁当",protein:"fish",people:4,time:10,budget:140,mealSlot:["bento"],ingredients:"ちくわ 4本\n青のり 小さじ2\n片栗粉 大さじ1\nマヨネーズ 大さじ1",steps:"1. 絡めてフライパンで焼く"},
-  {name:"ウインナーとコーンのソテー",category:"弁当",protein:"meat",people:4,time:10,budget:200,mealSlot:["bento","breakfast"],ingredients:"ウインナー 6本\nコーン缶 1/2缶\nバター 10g",steps:"1. バターで炒めて塩こしょう"},
-  {name:"ピーマンの塩昆布炒め",category:"弁当",protein:"none",people:4,time:10,budget:140,mealSlot:["bento","dinner"],ingredients:"ピーマン 4個\n塩昆布 大さじ1.5\nごま油 小さじ2",steps:"1. 炒めて塩昆布を絡める"}
+  {name:"冷奴",category:"小鉢",protein:"soy",people:4,time:5,budget:100,mealSlot:["lunch","dinner"],ingredients:"豆腐 1丁\nかつお節 1袋\n醤油 適量",steps:"豆腐をパックから出してキッチンペーパーで軽く表面の水気を拭き取る。\n食べやすい大きさ（4等分や8等分）に切って冷やしたお皿に盛り付ける。\nかつお節をふんわり乗せ、お好みで刻みねぎや醤油をかけていただく。",memo:"表面の水気を軽く拭いておくと水っぽくならず醤油の味がぼやけません。"},
+  {name:"きゅうりとわかめの酢の物",category:"小鉢",protein:"none",people:4,time:10,budget:140,mealSlot:["dinner"],ingredients:"きゅうり 2本\n乾燥わかめ 大さじ1\n酢 大さじ3\n砂糖 大さじ2\n醤油 大さじ1",steps:"きゅうりは薄い輪切りにして塩小さじ1/2を揉み込み、10分置いてからしっかり水気を絞る。わかめは水で戻し水気を絞る。\n小皿に酢・砂糖・醤油を入れ、砂糖のザラつきがなくなるまでよく混ぜて三杯酢を作る。\nきゅうりとわかめをボウルに入れて三杯酢で和え、食べる直前まで冷蔵庫で少し冷やす。",memo:"きゅうりの塩もみと水気絞りをしっかり行うとパリッとした食感になり味が決まります。"},
+
+  {name:"ちくわの磯辺焼き",category:"弁当",protein:"fish",people:4,time:10,budget:140,mealSlot:["bento"],ingredients:"ちくわ 4本\n青のり 小さじ2\n片栗粉 大さじ1\nマヨネーズ 大さじ1",steps:"ちくわは食べやすい斜め切り（または縦半分→横半分）にする。\nボウルにマヨネーズ・青のり・片栗粉・水大さじ1を混ぜて衣を作り、ちくわを入れて全体に絡める。\n油を薄くひいたフライパンを中火で熱し、並べて両面を1分半ずつカリッと焼く。",memo:"油の代わりにマヨネーズを衣に混ぜることで、冷めても柔らかくコクのあるお弁当おかずになります。"},
+  {name:"ウインナーとコーンのソテー",category:"弁当",protein:"meat",people:4,time:10,budget:200,mealSlot:["bento","breakfast"],ingredients:"ウインナー 6本\nコーン缶 1/2缶\nバター 10g",steps:"ウインナーは斜め薄切りまたは輪切りにし、コーンはザルで水気をしっかり切る。\nフライパンにバターを入れて中火で溶かし、ウインナーを1分ほど炒める。\n焼き色がついたらコーンを加えてさらに1分炒め、塩こしょう少々で味を調える。",memo:"コーンの水気をしっかり切ってから炒めるとバターの風味が薄まらずお弁当の彩りも綺麗です。"}
 ];
 
 (function sanitizeData(){
@@ -498,7 +484,6 @@ function showTab(name){
 }
 document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.tab)));
 
-/* レシピ */
 function clearRecipeForm(){
   ["recipeEditId","recipeName","recipeIngredients","recipeSteps","recipeMemo","recipeSourceUrl","recipePhoto"].forEach(id=>document.getElementById(id).value="");
   document.getElementById("recipeCategory").value="主菜";document.getElementById("recipePeople").value=4;
@@ -519,7 +504,7 @@ document.getElementById("saveRecipe").addEventListener("click",async()=>{
 document.getElementById("cancelRecipeEdit").addEventListener("click",clearRecipeForm);
 document.getElementById("loadPresetRecipes").addEventListener("click",()=>{
   let added=0;
-  PRESET_RECIPES.forEach(p=>{if(!recipes.some(r=>r.name===p.name&&r.category===p.category)){recipes.push({id:uid(),name:p.name,category:p.category,people:p.people,ingredients:p.ingredients,steps:p.steps,time:p.time,budget:p.budget,rating:4,memo:"",sourceUrl:"",photo:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),cookedCount:0,lastCooked:null});added++;}});
+  PRESET_RECIPES.forEach(p=>{if(!recipes.some(r=>r.name===p.name&&r.category===p.category)){recipes.push({id:uid(),name:p.name,category:p.category,people:p.people,ingredients:p.ingredients,steps:p.steps,time:p.time,budget:p.budget,rating:4,memo:p.memo||"",sourceUrl:"",photo:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),cookedCount:0,lastCooked:null});added++;}});
   persistAll();renderAll();alert(added?`定番レシピを${added}品追加しました！`:"定番レシピはすでに登録されています。");
 });
 function editRecipe(id){
@@ -532,7 +517,7 @@ function markCooked(id){const r=recipes.find(x=>x.id===id);if(!r)return;r.cooked
 function renderRecipes(kw=""){
   const list=document.getElementById("recipeList"),w=kw.trim().toLowerCase(),filtered=recipes.filter(r=>[r.name,r.category,r.ingredients,r.memo].join(" ").toLowerCase().includes(w));
   if(!filtered.length){list.innerHTML="<p class='muted'>該当するレシピはありません。「📚 定番レシピを追加」から基本料理を取り込めます。</p>";return;}
-  list.innerHTML=filtered.map(r=>`<div class="recipe-scrap-card"><div class="row"><strong>${escapeHTML(r.name)}</strong><span class="tag">${escapeHTML(r.category||"その他")}</span></div><div class="small">評価：${"★".repeat(r.rating||0)}${"☆".repeat(5-(r.rating||0))}</div><div class="small">約${Number(r.time||0)}分 ／ ${Number(r.people||1)}人分 ／ 目安${formatYen(r.budget||0)} ／ 作成${Number(r.cookedCount||0)}回</div>${r.photo?`<img class="photo" src="${r.photo}" alt="完成写真">`:""}<h3>材料</h3><p>${escapeHTML(r.ingredients||"").replace(/\n/g,"<br>")}</p><h3>作り方</h3><p>${escapeHTML(r.steps||"").replace(/\n/g,"<br>")}</p>${r.sourceUrl?`<p class="small">出典：<a href="${escapeHTML(r.sourceUrl)}" target="_blank" rel="noopener">レシピ元を開く</a></p>`:""}${r.memo?`<p class="notice">${escapeHTML(r.memo)}</p>`:""}<div class="actions"><button onclick="editRecipe('${r.id}')">編集</button><button onclick="markCooked('${r.id}')">作った！</button><button onclick="deleteRecipe('${r.id}')">削除</button></div></div>`).join("");
+  list.innerHTML=filtered.map(r=>`<div class="recipe-scrap-card"><div class="row"><strong>${escapeHTML(r.name)}</strong><span class="tag">${escapeHTML(r.category||"その他")}</span></div><div class="small">評価：${"★".repeat(r.rating||0)}${"☆".repeat(5-(r.rating||0))}</div><div class="small">約${Number(r.time||0)}分 ／ ${Number(r.people||1)}人分 ／ 目安${formatYen(r.budget||0)} ／ 作成${Number(r.cookedCount||0)}回</div>${r.photo?`<img class="photo" src="${r.photo}" alt="完成写真">`:""}<h3>材料</h3><p>${escapeHTML(r.ingredients||"").replace(/\n/g,"<br>")}</p><h3>作り方</h3><p>${escapeHTML(r.steps||"").replace(/\n/g,"<br>")}</p>${r.sourceUrl?`<p class="small">出典：<a href="${escapeHTML(r.sourceUrl)}" target="_blank" rel="noopener">レシピ元を開く</a></p>`:""}${r.memo?`<p class="notice">💡 ${escapeHTML(r.memo)}</p>`:""}<div class="actions"><button onclick="editRecipe('${r.id}')">編集</button><button onclick="markCooked('${r.id}')">作った！</button><button onclick="deleteRecipe('${r.id}')">削除</button></div></div>`).join("");
 }
 document.getElementById("searchRecipe").addEventListener("click",()=>renderRecipes(document.getElementById("recipeSearch").value));
 document.getElementById("recipeSearch").addEventListener("input",e=>renderRecipes(e.target.value));
@@ -553,7 +538,6 @@ document.getElementById("saveVariation").addEventListener("click",()=>{
 });
 function deleteVariation(id){if(confirm("このアレンジを削除しますか？")){variations=variations.filter(v=>v.id!==id);persistAll();renderVariations();}}
 
-/* 在庫＆ホーム賞味期限アラート */
 document.getElementById("stockSource").addEventListener("change",e=>{const p=document.getElementById("stockPrice");if(e.target.value==="もらいもの"){p.value=0;p.disabled=true;}else{p.disabled=false;}});
 document.getElementById("addStock").addEventListener("click",()=>{
   const name=document.getElementById("stockName").value.trim();if(!name)return alert("食材名を入力してください。");
@@ -596,7 +580,6 @@ function renderInventory(){
   }
 }
 
-/* 予算厳守＆コース補正付き献立エンジン */
 const MEAL_CATEGORIES=["主食","主菜","副菜","汁物","小鉢"];
 const getInventoryNames=()=>inventory.filter(i=>Number(i.amount)>0).map(i=>i.name);
 const recipeUsesInventory=r=>getInventoryNames().filter(n=>((r.name||"")+" "+(r.ingredients||"")).includes(n));
@@ -727,7 +710,10 @@ document.getElementById("makePlan").addEventListener("click",async()=>{
 function renderDishItemHTML(cat,r,swapInfo=null){
   if(!r)return"";
   const swapBtn=swapInfo?`<button type="button" class="mini-btn" onclick="event.preventDefault();event.stopPropagation();swapMealDish(${swapInfo.dayIdx},'${swapInfo.slot}','${cat}')">🔄 変更</button>`:"";
-  return`<details class="dish-detail"><summary><div class="row"><span class="tag">${escapeHTML(cat)}</span><strong>${escapeHTML(r.name)}</strong><span class="small">${Number(r.time||0)}分 / 約${formatYen(r.budget||0)}</span></div>${swapBtn}</summary><div class="dish-body">${r.ingredients?`<div><strong>材料（${Number(r.people||4)}人分）：</strong><br>${escapeHTML(r.ingredients).replace(/\n/g,"<br>")}</div>`:""}${r.steps?`<div style="margin-top:6px"><strong>作り方：</strong><br>${escapeHTML(r.steps).replace(/\n/g,"<br>")}</div>`:""}</div></details>`;
+  const stepLines=String(r.steps||"").split(/\n/).map(s=>s.replace(/^\d+[\.\、\)]\s*/,"").trim()).filter(Boolean);
+  const stepsHTML=stepLines.length?`<div style="margin-top:6px"><strong>詳しい作り方：</strong><ol class="dish-steps">${stepLines.map(s=>`<li>${escapeHTML(s)}</li>`).join("")}</ol></div>`:"";
+  const tipHTML=r.memo?`<div class="dish-tip">💡 <strong>ポイント・コツ：</strong>${escapeHTML(r.memo)}</div>`:"";
+  return`<details class="dish-detail"><summary><div class="row"><span class="tag">${escapeHTML(cat)}</span><strong>${escapeHTML(r.name)}</strong><span class="small">${Number(r.time||0)}分 / 約${formatYen(r.budget||0)}</span></div>${swapBtn}</summary><div class="dish-body">${r.ingredients?`<div><strong>材料（${Number(r.people||4)}人分）：</strong><br>${escapeHTML(r.ingredients).replace(/\n/g,"<br>")}</div>`:""}${stepsHTML}${tipHTML}</div></details>`;
 }
 function renderMealResult(){
   const target=document.getElementById("mealResult");
@@ -752,57 +738,84 @@ document.getElementById("saveMealPlan").addEventListener("click",()=>{
   persistAll();renderAll();alert("献立をカレンダーに保存しました！");
 });
 
-/* 買い物リストの超スリム化（売り場別・1行チェック・大まかな買い出し単位） */
+/* 買い物リストの超スリム化（調味料完全分類・大まか買い出し単位・1行チェックリスト） */
 const extractIngredients=t=>String(t||"").split(/\n/).map(l=>l.trim()).filter(Boolean);
 const normalizeFoodName=v=>String(v||"").trim().replace(/\s+/g,"").toLowerCase();
 
-const FOOD_ALIASES=[
-  [/^(お?米|白米|白ごはん|ごはん|ご飯|炊いたご飯|雑穀米|玄米)$/,"お米"],
-  [/^(醤油|しょうゆ|しょう油|濃口醤油|薄口醤油|うすくち醤油|こいくち醤油)$/,"醤油"],
-  [/^(みりん|本みりん|みりん風調味料)$/,"みりん"],
-  [/^(酒|料理酒|清酒)$/,"料理酒"],
-  [/^(砂糖|上白糖|きび砂糖|三温糖|グラニュー糖)$/,"砂糖"],
-  [/^(塩|食塩)$/,"塩"],
-  [/^(塩こしょう|塩コショウ|塩胡椒)$/,"塩こしょう"],
-  [/^(酢|米酢|穀物酢)$/,"酢"],
-  [/^(味噌|みそ|赤味噌|白味噌|合わせ味噌)$/,"味噌"],
-  [/^(サラダ油|植物油|油|キャノーラ油)$/,"サラダ油"],
-  [/^(ごま油|胡麻油|ゴマ油)$/,"ごま油"],
-  [/^(だし|だし汁|和風だし|だしの素|和風だしの素|顆粒だし|ほんだし)$/,"だしの素"],
-  [/^(鶏ガラ|鶏がら|鶏ガラスープ|鶏ガラスープの素|中華スープの素)$/,"鶏ガラスープの素"],
-  [/^(コンソメ|固形コンソメ|コンソメスープの素|顆粒コンソメ)$/,"コンソメ"],
-  [/^(長ねぎ|長ネギ|ねぎ|ネギ|青ねぎ|万能ねぎ|小ねぎ)$/,"長ねぎ"],
-  [/^(玉ねぎ|たまねぎ|タマネギ)$/,"玉ねぎ"],
-  [/^(にんじん|人参|ニンジン)$/,"にんじん"],
-  [/^(じゃがいも|ジャガイモ|馬鈴薯)$/,"じゃがいも"],
-  [/^(豆腐|木綿豆腐|絹豆腐|絹ごし豆腐)$/,"豆腐"],
-  [/^(焼きのり|焼き海苔|焼海苔|海苔|のり)$/,"焼き海苔"],
-  [/^(鶏もも|鶏もも肉|鶏モモ肉)$/,"鶏もも肉"],
-  [/^(鶏むね|鶏むね肉|鶏ムネ肉)$/,"鶏むね肉"],
-  [/^(豚こま|豚こま肉|豚こま切れ肉|豚小間|豚小間肉)$/,"豚こま肉"],
-  [/^(豚バラ|豚バラ肉|豚ばら肉)$/,"豚バラ肉"],
-  [/^(豚ロース|豚ロース肉|豚ロース薄切り)$/,"豚ロース肉"],
-  [/^(合いびき肉|合挽き肉|合い挽き肉|牛豚合挽き肉)$/,"合いびき肉"],
-  [/^(鮭|塩鮭|生鮭|鮭切り身|しゃけ|シャケ)$/,"鮭切り身"],
-  [/^(さば|塩さば|さば切り身|サバ)$/,"さば切り身"],
-  [/^(うどん|ゆでうどん|冷凍うどん)$/,"うどん"],
-  [/^(焼きそば|焼きそば麺|中華麺)$/,"焼きそば麺"],
-  [/^(スパゲティ|スパゲッティ|パスタ)$/,"パスタ"],
-  [/^(コーン|コーン缶|スイートコーン)$/,"コーン缶"],
-  [/^(すりごま|いりごま|白ごま|ごま)$/,"ごま"],
-  [/^(生姜|しょうが|おろし生姜|おろししょうが)$/,"生姜"],
-  [/^(にんにく|ニンニク|おろしにんにく)$/,"にんにく"],
-  [/^(ハム|ロースハム)$/,"ハム"]
+const FOOD_RULES=[
+  [/(醤油|しょうゆ|しょう油|だし醤油)/,"醤油"],
+  [/みりん/,"みりん"],
+  [/(料理酒|清酒|調理酒|^酒$)/,"料理酒"],
+  [/(砂糖|上白糖|三温糖|きび砂糖|グラニュー糖|黒糖)/,"砂糖"],
+  [/(塩こしょう|塩コショウ|塩胡椒)/,"塩・こしょう"],
+  [/(黒こしょう|こしょう|胡椒|ブラックペッパー)/,"塩・こしょう"],
+  [/^(塩|食塩|あら塩|岩塩)$/,"塩"],
+  [/(味噌|みそ)/,"味噌"],
+  [/(米酢|穀物酢|黒酢|りんご酢|かんたん酢|^酢$)/,"酢"],
+  [/(ごま油|胡麻油|ゴマ油)/,"ごま油"],
+  [/(オリーブ油|オリーブオイル)/,"オリーブオイル"],
+  [/(サラダ油|キャノーラ油|植物油|調理油|^油$)/,"サラダ油"],
+  [/(だしの素|顆粒だし|和風だし|だし汁|ほんだし|白だし|かつおだし|昆布だし)/,"だしの素"],
+  [/(鶏ガラスープ|鶏ガラ|鶏がら|中華スープの素|シャンタン|ウェイパー)/,"鶏ガラスープの素"],
+  [/(コンソメ|ブイヨン)/,"コンソメ"],
+  [/(ポン酢|ぽん酢)/,"ポン酢"],
+  [/(めんつゆ|麺つゆ)/,"めんつゆ"],
+  [/ケチャップ/,"ケチャップ"],
+  [/マヨネーズ/,"マヨネーズ"],
+  [/オイスター/,"オイスターソース"],
+  [/(焼きそばソース|お好み焼きソース|中濃ソース|ウスターソース|とんかつソース|^ソース$)/,"ソース"],
+  [/(焼肉のたれ|焼き肉のたれ|すき焼きのたれ)/,"焼肉のたれ"],
+  [/片栗粉/,"片栗粉"],
+  [/(小麦粉|薄力粉|強力粉)/,"小麦粉"],
+  [/パン粉/,"パン粉"],
+  [/(すりごま|いりごま|白ごま|黒ごま|胡麻|^ごま$)/,"ごま"],
+  [/(生姜|しょうが)/,"生姜"],
+  [/(にんにく|ニンニク)/,"にんにく"],
+  [/(焼き海苔|焼きのり|焼海苔|^海苔$|^のり$)/,"焼き海苔"],
+  [/(乾燥わかめ|^わかめ$)/,"乾燥わかめ"],
+  [/(乾燥ひじき|^ひじき$)/,"乾燥ひじき"],
+  [/(かつお節|花かつお|削り節)/,"かつお節"],
+  [/塩昆布/,"塩昆布"],
+  [/青のり/,"青のり"],
+  [/バター/,"バター"],
+  [/(お?米|白米|白ごはん|ごはん|ご飯|炊いたご飯|雑穀米|玄米)$/,"お米"],
+  [/(ウインナー|ソーセージ)/,"ウインナー"],
+  [/ベーコン/,"ベーコン"],
+  [/ハム/,"ハム"],
+  [/ちくわ/,"ちくわ"],
+  [/(油揚げ|あぶらあげ)/,"油揚げ"],
+  [/食パン/,"食パン"],
+  [/(長ねぎ|長ネギ|小ねぎ|青ねぎ|万能ねぎ|^ねぎ$|^ネギ$)/,"長ねぎ"],
+  [/(玉ねぎ|たまねぎ|タマネギ)/,"玉ねぎ"],
+  [/(にんじん|人参|ニンジン)/,"にんじん"],
+  [/(じゃがいも|ジャガイモ|馬鈴薯)/,"じゃがいも"],
+  [/キャベツ/,"キャベツ"],
+  [/白菜/,"白菜"],
+  [/もやし/,"もやし"],
+  [/豆腐/,"豆腐"],
+  [/鶏もも/,"鶏もも肉"],
+  [/鶏むね/,"鶏むね肉"],
+  [/(豚こま|豚小間)/,"豚こま肉"],
+  [/(豚バラ|豚ばら)/,"豚バラ肉"],
+  [/豚ロース/,"豚ロース肉"],
+  [/(合いびき|合挽き|合びき)/,"合いびき肉"],
+  [/(鮭|しゃけ|シャケ)/,"鮭切り身"],
+  [/(さば|サバ)/,"さば切り身"],
+  [/うどん/,"うどん"],
+  [/(焼きそば麺|中華麺)/,"焼きそば麺"],
+  [/(スパゲティ|スパゲッティ|パスタ)/,"パスタ"],
+  [/そうめん/,"そうめん"],
+  [/コーン/,"コーン缶"]
 ];
 
-const BOTTLE_SEASONINGS=new Set(["醤油","みりん","料理酒","酢","サラダ油","ごま油","ポン酢","めんつゆ","焼きそばソース"]);
-const PACK_SEASONINGS=new Set(["砂糖","塩","塩こしょう","味噌","だしの素","鶏ガラスープの素","コンソメ","ケチャップ","マヨネーズ","片栗粉","小麦粉","パン粉","ごま","青のり","塩昆布","かつお節","乾燥わかめ","乾燥ひじき","バター","焼き海苔"]);
+const SEASONING_RE=/(醤油|みりん|料理酒|砂糖|塩|こしょう|味噌|酢|油|オイル|だし|スープ|コンソメ|ソース|たれ|ケチャップ|マヨネーズ|ポン酢|めんつゆ|片栗粉|小麦粉|パン粉|ごま|生姜|にんにく|わさび|からし|マスタード|七味|一味|唐辛子|豆板醤|コチュジャン|甜麺醤|カレー|ルウ|はちみつ|バター|チーズ|海苔|わかめ|ひじき|昆布|かつお節|青のり|缶|スパイス)/;
+const BOTTLE_RE=/(醤油|みりん|料理酒|酢|油|オイル|ポン酢|めんつゆ|ソース|たれ)/;
 const MEAT_ITEMS=new Set(["鶏もも肉","鶏むね肉","豚こま肉","豚バラ肉","豚ロース肉","合いびき肉","豚ひき肉"]);
 const PACK_CONVERSION={
-  "ウインナー":{perPack:6,unit:"袋"},
-  "ちくわ":{perPack:4,unit:"袋"},
-  "ハム":{perPack:4,unit:"パック"},
-  "ベーコン":{perPack:4,unit:"パック"},
+  "ウインナー":{perPack:8,unit:"袋"},
+  "ちくわ":{perPack:5,unit:"袋"},
+  "ハム":{perPack:5,unit:"パック"},
+  "ベーコン":{perPack:5,unit:"パック"},
   "油揚げ":{perPack:3,unit:"袋"},
   "食パン":{perPack:6,unit:"斤"},
   "パスタ":{perPack:400,unit:"袋"},
@@ -812,54 +825,52 @@ const IGNORE_FOODS=new Set(["水","お湯","熱湯","冷水","氷"]);
 let openBuyId=null;
 
 function canonFoodName(raw){
-  let s=String(raw||"").trim().replace(/（.*?）|\(.*?\)/g,"").trim();
-  for(const[re,to]of FOOD_ALIASES){if(re.test(s))return to;}
+  let s=String(raw||"").trim()
+    .replace(/（.*?）|\(.*?\)/g,"")
+    .replace(/\s*(大さじ|小さじ|カップ|ml|cc|適量|少々|ひとつまみ|お好み).*$/i,"")
+    .trim();
+  for(const[re,to]of FOOD_RULES){if(re.test(s))return to;}
   return s;
 }
 
 function parseIngredientLine(line){
-  const t=String(line||"").trim();if(!t)return null;
-  const m=t.match(/^(.+?)\s+([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+)?)\s*(.*)$/);
-  if(m){
-    const rawNum=m[2],amt=rawNum.includes("/")?Number(rawNum.split("/")[0])/Number(rawNum.split("/")[1]):Number(rawNum);
-    return{name:canonFoodName(m[1]),amount:Number.isFinite(amt)?amt:1,unit:(m[3]||"").trim()};
+  let t=String(line||"").trim().replace(/[：:]/g," ").replace(/（.*?）|\(.*?\)/g,"").replace(/[〜～][0-9.]+/g,"").trim();
+  if(!t)return null;
+  const uh=t.match(/^(.*?)\s*(大さじ|小さじ|カップ|適量|少々|ひとつまみ|お好みで?)\s*([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+)?)?\s*(.*)$/);
+  if(uh&&uh[1].trim()){
+    const name=canonFoodName(uh[1].trim());
+    if(/^(適量|少々|ひとつまみ|お好みで?)$/.test(uh[2]))return{name,amount:0,unit:uh[2]};
+    const amt=uh[3]?(uh[3].includes("/")?Number(uh[3].split("/")[0])/Number(uh[3].split("/")[1]):Number(uh[3])):1;
+    return{name,amount:Number.isFinite(amt)?amt:1,unit:uh[2]};
   }
-  const parts=t.split(/\s+/);
-  if(parts.length>=2&&/^(少々|適量|お好みで?)$/.test(parts[parts.length-1])){
-    return{name:canonFoodName(parts.slice(0,-1).join("")),amount:0,unit:parts[parts.length-1]};
+  const nm=t.match(/^(.+?)\s*([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+)?)\s*(kg|g|グラム|ml|cc|L|合|膳|杯|個|本|枚|切れ|丁|玉|袋|パック|株|束|缶|かけ|cm|斤)?(.*)$/);
+  if(nm&&nm[1].trim()){
+    const amt=nm[2].includes("/")?Number(nm[2].split("/")[0])/Number(nm[2].split("/")[1]):Number(nm[2]);
+    return{name:canonFoodName(nm[1]),amount:Number.isFinite(amt)?amt:1,unit:(nm[3]||"").trim()};
   }
   return{name:canonFoodName(t),amount:1,unit:""};
 }
 
-function toRiceGrams(amount,unit){
-  const u=String(unit||"").trim();
-  if(u.includes("kg"))return amount*1000;
-  if(u==="g"||u==="グラム")return amount;
-  if(u.includes("合"))return amount*150;
-  if(u.includes("膳")||u.includes("杯"))return amount*65;
-  if(u.includes("袋"))return amount*5000;
-  return amount*150;
+function toRiceGrams(a,u){
+  u=String(u||"").trim();
+  if(u.includes("kg"))return a*1000;if(u==="g"||u==="グラム")return a;
+  if(u.includes("合"))return a*150;if(u.includes("膳")||u.includes("杯"))return a*65;
+  if(u.includes("袋"))return a*5000;return a*150;
 }
-
-function toMeatGrams(amount,unit){
-  const u=String(unit||"").trim();
-  if(u.includes("kg"))return amount*1000;
-  if(u==="g"||u==="グラム")return amount;
-  if(u.includes("枚"))return amount*250;
-  if(u.includes("パック"))return amount*300;
-  return amount*200;
+function toMeatGrams(a,u){
+  u=String(u||"").trim();
+  if(u.includes("kg"))return a*1000;if(u==="g"||u==="グラム")return a;
+  if(u.includes("枚"))return a*250;if(u.includes("パック"))return a*300;return a*200;
 }
-
 function hasUsableStock(name){
   return inventory.some(s=>canonFoodName(s.name)===name&&Number(s.amount)>0&&s.stockLevel!=="残り少し");
 }
-
 function getShoppingGroup(name){
   const n=canonFoodName(name);
   if(MEAT_ITEMS.has(n)||/(肉|鮭|さば|魚|たら|ぶり|あじ|ハム|ベーコン|ウインナー|ちくわ)/.test(n))return"🥩 肉・魚";
   if(/^(お米|食パン|うどん|焼きそば麺|パスタ|そうめん)$/.test(n)||/お米/.test(name))return"🍚 お米・パン・麺";
   if(/^(卵|豆腐|納豆|油揚げ)$/.test(n))return"🥚 卵・豆腐・大豆";
-  if(BOTTLE_SEASONINGS.has(n)||PACK_SEASONINGS.has(n)||/(缶|わかめ|ひじき|昆布|節)$/.test(n))return"🧂 調味料・乾物";
+  if(SEASONING_RE.test(n))return"🧂 調味料・乾物";
   return"🥬 野菜・その他";
 }
 
@@ -877,11 +888,14 @@ function buildShoppingFromPlans(){
 
   const next=[];
   rawMap.forEach((entries,name)=>{
-    if(BOTTLE_SEASONINGS.has(name)||PACK_SEASONINGS.has(name)){
+    // 1. 調味料・油・スパイス・乾物は大まかに1本/1袋（家に十分あれば出さない）
+    if(SEASONING_RE.test(name)){
       if(hasUsableStock(name))return;
-      next.push({id:uid(),name,amount:1,unit:BOTTLE_SEASONINGS.has(name)?"本":"袋",checked:false,purchased:false,price:0});
+      const unit=BOTTLE_RE.test(name)?"本":/缶/.test(name)?"缶":"袋・個";
+      next.push({id:uid(),name,amount:1,unit,checked:false,purchased:false,price:0});
       return;
     }
+    // 2. お米は5kg/10kgの袋単位へ統合
     if(name==="お米"){
       const needG=entries.reduce((s,e)=>s+toRiceGrams(e.amount,e.unit),0);
       const stockG=inventory.filter(s=>canonFoodName(s.name)==="お米"&&Number(s.amount)>0).reduce((s,e)=>s+toRiceGrams(Number(e.amount),e.unit||"kg"),0);
@@ -892,6 +906,7 @@ function buildShoppingFromPlans(){
       }
       return;
     }
+    // 3. 卵はパック単位
     if(name==="卵"){
       const need=entries.reduce((s,e)=>s+(e.unit.includes("パック")?e.amount*10:e.amount),0);
       const stock=inventory.filter(s=>canonFoodName(s.name)==="卵"&&Number(s.amount)>0).reduce((s,e)=>s+(String(e.unit||"").includes("パック")?Number(e.amount)*10:Number(e.amount)),0);
@@ -899,6 +914,7 @@ function buildShoppingFromPlans(){
       if(rem>0)next.push({id:uid(),name:"卵",amount:Math.ceil(rem/10),unit:"パック",checked:false,purchased:false,price:0});
       return;
     }
+    // 4. 肉類は100g単位の大まかなg数
     if(MEAT_ITEMS.has(name)){
       const needG=entries.reduce((s,e)=>s+toMeatGrams(e.amount,e.unit),0);
       const stockG=inventory.filter(s=>canonFoodName(s.name)===name&&Number(s.amount)>0).reduce((s,e)=>s+toMeatGrams(Number(e.amount),e.unit||"g"),0);
@@ -906,6 +922,7 @@ function buildShoppingFromPlans(){
       if(remG>0)next.push({id:uid(),name,amount:Math.ceil(remG/100)*100,unit:"g",checked:false,purchased:false,price:0});
       return;
     }
+    // 5. ウインナー・ちくわ・ハム・ベーコン・油揚げ・パン・麺は袋/パック単位
     if(PACK_CONVERSION[name]){
       const cfg=PACK_CONVERSION[name];
       const need=entries.reduce((s,e)=>s+(e.unit===cfg.unit?e.amount*cfg.perPack:e.amount),0);
@@ -914,12 +931,16 @@ function buildShoppingFromPlans(){
       if(rem>0)next.push({id:uid(),name,amount:Math.max(1,Math.ceil(rem/cfg.perPack)),unit:cfg.unit,checked:false,purchased:false,price:0});
       return;
     }
-
+    // 6. 野菜・魚・豆腐は1品目1行で切り上げ整数
     let total=0;const unitScore={};
     entries.forEach(e=>{
       let val=e.amount;
-      if(e.unit==="cm")val=e.amount*0.04;else if(e.unit==="かけ")val=e.amount*0.5;
-      total+=val;if(e.unit&&e.unit!=="cm"&&e.unit!=="かけ")unitScore[e.unit]=(unitScore[e.unit]||0)+1;
+      if(e.unit==="cm")val=e.amount*0.04;
+      else if(e.unit==="かけ")val=e.amount*0.5;
+      else if(e.unit==="枚"&&/^(キャベツ|白菜|レタス)$/.test(name))val=e.amount*0.1;
+      total+=val;
+      const cleanU=(e.unit==="枚"&&/^(キャベツ|白菜|レタス)$/.test(name))?"玉":e.unit;
+      if(cleanU&&cleanU!=="cm"&&cleanU!=="かけ")unitScore[cleanU]=(unitScore[cleanU]||0)+1;
     });
     const mainUnit=Object.keys(unitScore).sort((a,b)=>unitScore[b]-unitScore[a])[0]||entries[0].unit||"個";
     const stock=inventory.filter(s=>canonFoodName(s.name)===name&&Number(s.amount)>0).reduce((s,x)=>s+Number(x.amount),0);
@@ -929,19 +950,14 @@ function buildShoppingFromPlans(){
 
   shopping.filter(x=>x.manual).forEach(x=>next.push(x));
   shopping=next;openBuyId=null;persistAll();renderShopping();renderHome();
-  alert("売り場ごとにまとめたスリムな買い物リストを作成しました！");
+  alert("調味料やウインナー等を大まかな買い出し単位でまとめました！");
 }
 
-function toggleBuyBox(id){
-  openBuyId=(openBuyId===id)?null:id;
-  renderShopping();
-}
+function toggleBuyBox(id){openBuyId=(openBuyId===id)?null:id;renderShopping();}
 function clearCheckedShopping(){
-  const cnt=shopping.filter(x=>x.checked).length;
-  if(!cnt)return alert("チェック済みの項目がありません。");
+  const cnt=shopping.filter(x=>x.checked).length;if(!cnt)return alert("チェック済みの項目がありません。");
   if(!confirm(`チェック済みの${cnt}品をリストから消しますか？`))return;
-  shopping=shopping.filter(x=>!x.checked);
-  persistAll();renderShopping();renderHome();
+  shopping=shopping.filter(x=>!x.checked);persistAll();renderShopping();renderHome();
 }
 
 function renderShopping(){
@@ -950,14 +966,12 @@ function renderShopping(){
     <button class="primary full" style="margin-top:0;margin-bottom:8px" id="makeShoppingFromPlans">🔄 献立からリストを更新（スリム統合）</button>
     ${shopping.length?`<div class="row" style="justify-content:space-between;margin-bottom:6px"><span class="small">残り <strong>${shopping.filter(x=>!x.checked).length}</strong>品 ／ チェック済 ${shopping.filter(x=>x.checked).length}品</span><button type="button" class="mini-btn" onclick="clearCheckedShopping()">🧹 チェック済みを消す</button></div>`:""}
   `;
-
   if(!shopping.length){
     box.innerHTML=topControls+`<p class="muted">買い物リストはまだありません。上のボタンを押すか、下から追加してください。</p>`;
   }else{
     const order=["🥩 肉・魚","🥬 野菜・その他","🥚 卵・豆腐・大豆","🍚 お米・パン・麺","🧂 調味料・乾物"];
     const groups={};order.forEach(g=>groups[g]=[]);
     shopping.forEach(item=>{(groups[getShoppingGroup(item.name)]||groups["🥬 野菜・その他"]).push(item);});
-
     const body=order.filter(g=>groups[g].length).map(g=>`
       <div class="shop-group-title">${g}</div>
       ${groups[g].map(item=>{
@@ -965,37 +979,22 @@ function renderShopping(){
         return`
         <div class="shop-item${item.checked?" done":""}">
           <div class="shop-row">
-            <label class="shop-left">
-              <input type="checkbox" ${item.checked?"checked":""} onchange="toggleShoppingItem('${item.id}',this.checked)">
-              <span class="shop-name">${escapeHTML(item.name)}</span>
-            </label>
-            <div class="shop-right">
-              <span class="shop-amt">${amtText}</span>
-              <button type="button" class="mini-btn" onclick="toggleBuyBox('${item.id}')">💰</button>
-              <button type="button" class="mini-btn" onclick="deleteShoppingItem('${item.id}')">×</button>
-            </div>
+            <label class="shop-left"><input type="checkbox" ${item.checked?"checked":""} onchange="toggleShoppingItem('${item.id}',this.checked)"><span class="shop-name">${escapeHTML(item.name)}</span></label>
+            <div class="shop-right"><span class="shop-amt">${amtText}</span><button type="button" class="mini-btn" onclick="toggleBuyBox('${item.id}')">💰</button><button type="button" class="mini-btn" onclick="deleteShoppingItem('${item.id}')">×</button></div>
           </div>
           ${openBuyId===item.id?`
           <div class="shop-buy-box">
-            <div class="grid">
-              <div><label style="margin-top:2px">数量</label><input type="number" min="0.1" step="0.1" id="buyQty-${item.id}" value="${Number(item.amount||1)}"></div>
-              <div><label style="margin-top:2px">金額（円）</label><input type="number" min="0" id="buyPrice-${item.id}" value="${Number(item.price||0)}"></div>
-            </div>
+            <div class="grid"><div><label style="margin-top:2px">数量</label><input type="number" min="0.1" step="0.1" id="buyQty-${item.id}" value="${Number(item.amount||1)}"></div><div><label style="margin-top:2px">金額（円）</label><input type="number" min="0" id="buyPrice-${item.id}" value="${Number(item.price||0)}"></div></div>
             <label style="margin-top:6px">単位</label><input id="buyUnit-${item.id}" value="${escapeHTML(item.unit||"")}">
-            <div class="actions" style="margin-top:8px">
-              <button class="primary mini-btn" onclick="recordShoppingPurchase('${item.id}',false)">購入を記録＆在庫へ</button>
-              <button class="mini-btn" onclick="recordShoppingPurchase('${item.id}',true)">もらいもの(0円)</button>
-            </div>
+            <div class="actions" style="margin-top:8px"><button class="primary mini-btn" onclick="recordShoppingPurchase('${item.id}',false)">購入を記録＆在庫へ</button><button class="mini-btn" onclick="recordShoppingPurchase('${item.id}',true)">もらいもの(0円)</button></div>
           </div>`:""}
         </div>`;
       }).join("")}
     `).join("");
-
     box.innerHTML=topControls+body;
   }
   document.getElementById("makeShoppingFromPlans")?.addEventListener("click",buildShoppingFromPlans);
 }
-
 function toggleShoppingItem(id,checked){const i=shopping.find(x=>x.id===id);if(i){i.checked=checked;persistAll();renderShopping();renderHome();}}
 function deleteShoppingItem(id){shopping=shopping.filter(x=>x.id!==id);if(openBuyId===id)openBuyId=null;persistAll();renderShopping();renderHome();}
 function recordShoppingPurchase(id,gift){
@@ -1025,13 +1024,14 @@ function addPurchaseForm(){
 }
 function addPurchaseToInventory(p){
   const name=canonFoodName(p.name||"");if(!name)return;
-  const cleanName=/^お米/.test(name)?"お米":name;
+  const cleanName=/^お米/.test(p.name)?"お米":name;
   const unit=p.unit||"個",amount=/^お米（5kg）/.test(p.name)?Number(p.quantity)*5:/^お米（10kg）/.test(p.name)?Number(p.quantity)*10:Number(p.quantity||0);
   const saveUnit=/^お米（(5|10)kg）/.test(p.name)?"kg":unit;
   const ex=inventory.find(i=>canonFoodName(i.name)===cleanName&&(i.unit||"個")===saveUnit);
   if(ex){ex.amount=(Number(ex.amount)||0)+amount;ex.price=(Number(ex.price)||0)+(Number(p.price)||0);ex.stockLevel="";}
   else{inventory.unshift({id:uid(),name:cleanName,amount,unit:saveUnit,expiry:"",category:"その他",source:p.gift?"もらいもの":"購入",price:Number(p.price)||0,createdAt:p.date||todayString()});}
 }
+
 /* カレンダー・ホーム・履歴・費用・お弁当 */
 function renderCalendar(){
   const y=calendarMonth.getFullYear(),m=calendarMonth.getMonth(),first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate(),today=todayString(),sel=dateKey(selectedCalendarDate);
@@ -1115,86 +1115,49 @@ const TASTE_GUIDE=[
   {name:"筑前煮",group:"煮物",ratio:"だし：醤油：みりん：酒：砂糖＝10：1：1：1：0.5",amount:"だし400ml・醤油大さじ2・みりん大さじ2・酒大さじ2・砂糖大さじ1",base:4,prep:"ごぼう・れんこんは乱切りにして水にさらし、にんじん・こんにゃくは一口大、鶏肉は大きめに切る。",steps:["鍋にごま油大さじ1を熱し、鶏肉を表面が白くなるまで炒め、続けて根菜類とこんにゃくを加えて油が回るまで炒める。","だし・酒・砂糖・みりんを入れて沸騰したらアクを取り、落とし蓋をして弱めの中火で10分煮る。","醤油を回し入れ、再び落とし蓋をしてさらに10分ほど根菜が柔らかくなるまで煮る。","最後に蓋を外して強火にし、鍋を揺すりながら煮汁を具材に照りよく絡める。"],tip:"煮物は一度冷ますと味が芯までしっかり染み込みます。"},
   {name:"肉じゃが",group:"煮物",ratio:"だし：醤油：みりん：酒：砂糖＝10：1：1：1：1",amount:"だし300ml・醤油大さじ2・みりん大さじ2・酒大さじ2・砂糖大さじ2",base:4,prep:"じゃがいもは大きめの一口大に切り水にさらす。玉ねぎはくし切り、にんじんは乱切りに。",steps:["鍋に油を熱して牛肉（または豚肉）を炒め、色が変わったら野菜を加えて2分ほど炒める。","だしと酒・砂糖・みりんを加え、沸騰したらアクを取る。","落とし蓋をして弱めの中火で10分煮たあと、醤油を加えてさらに10分煮る。","じゃがいもに竹串がスッと刺さったら火を止め、10分ほど蒸らして味を含ませる。"],tip:"煮汁は具材の半分くらいが目安。混ぜすぎると芋が煮崩れます。"},
   {name:"かぼちゃの煮物",group:"煮物",ratio:"だし：醤油：みりん：砂糖＝10：1：1：1",amount:"だし200ml・醤油大さじ1・みりん大さじ1・砂糖大さじ1",base:4,prep:"種とワタを取り、食べやすい一口大に切って皮の角を少し面取りする。",steps:["鍋にかぼちゃを「皮を下」にして重ならないように並べる。","だし・調味料をすべて加え、中火にかけて沸騰させる。","沸騰したら弱火にして落とし蓋をし、12〜15分ほど煮汁が少なくなるまで煮る。","竹串がスッと通ったら火を止め、蓋を取って粗熱を取る。"],tip:"途中で箸で触らないのが煮崩れを防ぐ最大のポイントです。"},
-  {name:"ぶり大根",group:"煮物",ratio:"水：酒：醤油：みりん：砂糖＝5：2：1：1：1",amount:"水200ml・酒80ml・醤油大さじ2.5・みりん大さじ2.5・砂糖大さじ2.5・生姜薄切り3枚",base:4,prep:"大根は2cm厚の半月切りにして米のとぎ汁（または水）で15分下ゆでする。ぶりは熱湯を回しかけて霜降りし冷水で血合いを洗う。",steps:["鍋に水・酒・砂糖・みりん・生姜を入れて沸かし、下ゆでした大根を並べて中火で10分煮る。","ぶりの切り身と醤油を加え、落とし蓋をして弱めの中火で15分煮る。","途中でスプーンで煮汁をぶりの上から数回まわしかける。","蓋を外して2〜3分煮汁を煮詰め、ツヤが出たら完成。"],tip:"ぶりの霜降りと大根の下ゆでをすると臭みが全く出ません。"},
+  {name:"ぶり大根",group:"煮物",ratio:"水：酒：醤油：みりん：砂糖＝5：2：1：1：1",amount:"水200ml・酒80ml・醤油大さじ2.5・みりん大さじ2.5・砂糖大さじ2.5・生姜薄切り3枚",base:4,prep:"大根は2cm厚の半月切りにして水で15分下ゆでする。ぶりは熱湯を回しかけて霜降りし冷水で血合いを洗う。",steps:["鍋に水・酒・砂糖・みりん・生姜を入れて沸かし、下ゆでした大根を並べて中火で10分煮る。","ぶりの切り身と醤油を加え、落とし蓋をして弱めの中火で15分煮る。","途中でスプーンで煮汁をぶりの上から数回まわしかける。","蓋を外して2〜3分煮汁を煮詰め、ツヤが出たら完成。"],tip:"ぶりの霜降りと大根の下ゆでをすると臭みが全く出ません。"},
   {name:"さばの味噌煮",group:"煮物",ratio:"水：酒：味噌：みりん：砂糖＝4：4：2：1：1",amount:"水100ml・酒100ml・味噌大さじ2・みりん大さじ1・砂糖大さじ1・生姜薄切り3枚",base:4,prep:"さばの皮目に十字の切り込みを入れ、熱湯をさっとかけて霜降りし水気を拭く。",steps:["フライパンに水・酒・みりん・砂糖・生姜を入れて沸騰させる。","さばを皮目を上にして並べ、落とし蓋（アルミホイル等）をして中火で7〜8分煮る。","煮汁を少しお玉に取り、味噌を溶きほぐしてからフライパンに戻し入れる。","落とし蓋を外し、煮汁をさばにかけながらとろみがつくまで3分ほど煮詰める。"],tip:"味噌は最初に入れず、最後に加えると香りが飛ばず焦げにくくなります。"},
   {name:"ひじきの煮物",group:"煮物",ratio:"だし：醤油：みりん：砂糖＝10：1：1：1",amount:"だし200ml・醤油大さじ1.5・みりん大さじ1.5・砂糖大さじ1",base:4,prep:"乾燥ひじきは水で15分戻してよく洗い水気を切る。にんじんは細切り、油揚げは油抜きして細切りに。",steps:["鍋にごま油小さじ2を熱し、ひじき・にんじん・油揚げを中火で2分ほど炒める。","だしと調味料をすべて加え、弱めの中火で10〜12分ほど煮る。","煮汁がほぼなくなるまで煮含め、全体を大きく混ぜて火を止める。"],tip:"大豆の水煮や枝豆を最後に加えると彩りと栄養がアップします。"},
   {name:"魚の煮付け",group:"煮物",ratio:"酒：水：醤油：みりん：砂糖＝2：2：1：1：1",amount:"酒100ml・水100ml・醤油大さじ2.5・みりん大さじ2.5・砂糖大さじ2.5",base:4,prep:"切り身は皮目に切り込みを入れ、塩を軽く振って10分置き出てきた水気を拭き取る。",steps:["フライパンに調味料と水・生姜を入れて強めの中火で沸騰させる。","沸騰したところに魚を皮目を上にして重ならないよう並べる。","落とし蓋をして中火で8〜10分煮る。","落とし蓋を外し、煮汁を回しかけながら2分ほど煮詰める。"],tip:"煮汁がしっかり沸騰してから魚を入れると身が締まって崩れません。"},
-  {name:"味噌汁",group:"汁物",ratio:"だし200mlに味噌大さじ1〜1.5",amount:"だし汁800ml・味噌大さじ4〜5",base:4,prep:"根菜類は水から、葉物や豆腐・わかめは沸騰後に入れる。",steps:["鍋にだし汁と根菜類を入れて中火にかけ、火が通るまで煮る。","豆腐・わかめなど火が通りやすい具材を加えて1分ほど温める。","一度火を止め（または極弱火にし）、お玉に味噌を取ってだし汁で溶き入れる。","再び火をつけ、沸騰する直前（鍋のフチが小さくふつふつした瞬間）に火を止める。"],tip:"味噌を入れた後にグラグラ沸騰させると風味が消えてしまいます。"},
-  {name:"中華スープ",group:"汁物",ratio:"水200ml：鶏ガラ小さじ1",amount:"水800ml・鶏ガラスープの素小さじ4・醤油小さじ1・ごま油小さじ1",base:4,prep:"卵を入れる場合は溶きほぐし、お好みで水溶き片栗粉を用意しておく。",steps:["鍋に水と鶏ガラスープの素・具材（もやし・玉ねぎ・わかめ等）を入れて火にかける。","具材が柔らかくなったら醤油と塩こしょうで味を調える。","溶き卵を入れる場合は、沸騰した状態で少しずつ細く回し入れ、ふんわり浮いたらすぐ火を止める。","仕上げにごま油を垂らす。"],tip:"卵を入れた直後はかき混ぜず、5秒待ってから大きく一混ぜすると綺麗なかき玉になります。"},
-  {name:"コンソメスープ",group:"汁物",ratio:"水300mlに固形コンソメ1個",amount:"水700ml・固形コンソメ2個・塩こしょう少々",base:4,prep:"キャベツ・玉ねぎ・にんじん・ベーコン・ウインナーは食べやすい大きさに切る。",steps:["鍋に少量の油またはバターを熱し、ベーコンと野菜をさっと炒める。","水とコンソメを加えて中火にし、沸騰したら弱火にして野菜が柔らかくなるまで7〜10分煮る。","味を見て塩・黒こしょうで調える。"],tip:"炒めてから煮ることで野菜の甘みとベーコンのコクがしっかり出ます。"}
+  {name:"味噌汁",group:"汁物",ratio:"だし200mlに味噌大さじ1〜1.5",amount:"だし汁800ml・味噌大さじ4〜5",base:4,prep:"根菜類は水から、葉物や豆腐・わかめは沸騰後に入れる。",steps:["鍋にだし汁と根菜類を入れて中火にかけ、火が通るまで煮る。","豆腐・わかめなど火が通りやすい具材を加えて1分ほど温める。","一度火を止め、お玉に味噌を取ってだし汁で溶き入れる。","再び火をつけ、沸騰する直前に火を止める。"],tip:"味噌を入れた後にグラグラ沸騰させると風味が消えてしまいます。"},
+  {name:"中華スープ",group:"汁物",ratio:"水200ml：鶏ガラ小さじ1",amount:"水800ml・鶏ガラスープの素小さじ4・醤油小さじ1・ごま油小さじ1",base:4,prep:"卵を入れる場合は溶きほぐしておく。",steps:["鍋に水と鶏ガラスープの素・具材を入れて火にかける。","具材が柔らかくなったら醤油と塩こしょうで味を調える。","溶き卵を入れる場合は、沸騰した状態で少しずつ細く回し入れ、5秒待って一混ぜし火を止める。","仕上げにごま油を垂らす。"],tip:"卵を入れた直後はかき混ぜず、5秒待ってから大きく一混ぜすると綺麗なかき玉になります。"},
+  {name:"コンソメスープ",group:"汁物",ratio:"水300mlに固形コンソメ1個",amount:"水700ml・固形コンソメ2個・塩こしょう少々",base:4,prep:"キャベツ・玉ねぎ・にんじん・ベーコンは食べやすい大きさに切る。",steps:["鍋に少量の油を熱し、ベーコンと野菜をさっと炒める。","水とコンソメを加えて中火にし、沸騰したら弱火にして野菜が柔らかくなるまで7〜10分煮る。","味を見て塩・黒こしょうで調える。"],tip:"炒めてから煮ることで野菜の甘みとベーコンのコクがしっかり出ます。"}
 ];
 
 let tasteFilter="すべて",tasteFavs=loadData("uchiTasteFavorites",[]),selectedTasteName=null;
-
 function renderTasteGuide(){
-  const q=(document.getElementById("tasteSearch")?.value||"").trim().toLowerCase();
-  const people=Number(document.getElementById("tastePeople")?.value||4);
-  const favOnly=document.getElementById("tasteFavorites")?.value==="fav";
-
-  const rows=TASTE_GUIDE.filter(x=>
-    (tasteFilter==="すべて"||x.group.includes(tasteFilter)||(tasteFilter==="黄金比"&&x.ratio))&&
-    (!favOnly||tasteFavs.includes(x.name))&&
-    (!q||[x.name,x.group,x.ratio,x.prep,x.steps.join(" "),x.tip].join(" ").toLowerCase().includes(q))
-  );
-
-  // 検索などで1件だけヒットしたら自動選択、未選択ならガイド文を表示
+  const q=(document.getElementById("tasteSearch")?.value||"").trim().toLowerCase(),people=Number(document.getElementById("tastePeople")?.value||4),favOnly=document.getElementById("tasteFavorites")?.value==="fav";
+  const rows=TASTE_GUIDE.filter(x=>(tasteFilter==="すべて"||x.group.includes(tasteFilter)||(tasteFilter==="黄金比"&&x.ratio))&&(!favOnly||tasteFavs.includes(x.name))&&(!q||[x.name,x.group,x.ratio,x.prep,x.steps.join(" "),x.tip].join(" ").toLowerCase().includes(q)));
   if(q&&rows.length===1)selectedTasteName=rows[0].name;
   else if(selectedTasteName&&!rows.some(x=>x.name===selectedTasteName))selectedTasteName=null;
 
-  const cloud=document.getElementById("tasteTagCloud");
-  cloud.innerHTML=rows.length
+  document.getElementById("tasteTagCloud").innerHTML=rows.length
     ?rows.map(x=>`<button type="button" class="taste-tag-btn${selectedTasteName===x.name?" active":""}" data-taste-name="${escapeHTML(x.name)}" onclick="selectTasteTag(this.dataset.tasteName)">${tasteFavs.includes(x.name)?"★ ":""}${escapeHTML(x.name)}</button>`).join("")
     :`<p class="muted">該当するタグがありません。</p>`;
 
-  const detail=document.getElementById("tasteDetailView");
-  const target=rows.find(x=>x.name===selectedTasteName);
-  if(!target){
-    detail.innerHTML=`<p class="muted">上のタグをタップすると、ここに材料の割合・下ごしらえ・細かい作り方が表示されます。</p>`;
-    return;
-  }
-
+  const detail=document.getElementById("tasteDetailView"),target=rows.find(x=>x.name===selectedTasteName);
+  if(!target){detail.innerHTML=`<p class="muted">上のタグをタップすると、ここに材料の割合・下ごしらえ・細かい作り方が表示されます。</p>`;return;}
   const sc=people/target.base;
-  const amt=target.amount
-    .replace(/大さじ(\d+(?:\.\d+)?)/g,(_,n)=>`大さじ${(Number(n)*sc).toFixed(1).replace(/\.0$/,"")}`)
-    .replace(/小さじ(\d+(?:\.\d+)?)/g,(_,n)=>`小さじ${(Number(n)*sc).toFixed(1).replace(/\.0$/,"")}`)
-    .replace(/(\d+(?:\.\d+)?)ml/g,(_,n)=>`${Math.round(Number(n)*sc)}ml`)
-    .replace(/(\d+(?:\.\d+)?)個/g,(_,n)=>`${(Number(n)*sc).toFixed(1).replace(/\.0$/,"")}個`)
-    .replace(/(\d+(?:\.\d+)?)枚/g,(_,n)=>`${(Number(n)*sc).toFixed(1).replace(/\.0$/,"")}枚`);
-
+  const amt=target.amount.replace(/大さじ(\d+(?:\.\d+)?)/g,(_,n)=>`大さじ${(Number(n)*sc).toFixed(1).replace(/\.0$/,"")}`).replace(/小さじ(\d+(?:\.\d+)?)/g,(_,n)=>`小さじ${(Number(n)*sc).toFixed(1).replace(/\.0$/,"")}`).replace(/(\d+(?:\.\d+)?)ml/g,(_,n)=>`${Math.round(Number(n)*sc)}ml`).replace(/(\d+(?:\.\d+)?)個/g,(_,n)=>`${(Number(n)*sc).toFixed(1).replace(/\.0$/,"")}個`).replace(/(\d+(?:\.\d+)?)枚/g,(_,n)=>`${(Number(n)*sc).toFixed(1).replace(/\.0$/,"")}枚`);
   detail.innerHTML=`
     <article class="taste-detail-card">
-      <div class="row" style="justify-content:space-between">
-        <h3>${escapeHTML(target.name)}</h3>
-        <button type="button" data-fav-name="${escapeHTML(target.name)}" onclick="toggleTasteFavorite(this.dataset.favName)">${tasteFavs.includes(target.name)?"★ お気に入り":"☆ お気に入り"}</button>
-      </div>
+      <div class="row" style="justify-content:space-between"><h3>${escapeHTML(target.name)}</h3><button type="button" data-fav-name="${escapeHTML(target.name)}" onclick="toggleTasteFavorite(this.dataset.favName)">${tasteFavs.includes(target.name)?"★ お気に入り":"☆ お気に入り"}</button></div>
       <span class="tag">${escapeHTML(target.group)}</span>
       <p class="taste-ratio">基本比率：${escapeHTML(target.ratio)}</p>
       <p><strong>${people}人分の調味料目安：</strong>${escapeHTML(amt)}</p>
       <p class="small"><strong>下ごしらえ：</strong>${escapeHTML(target.prep)}</p>
-      <h3>細かい作り方</h3>
-      <ol class="taste-steps">${target.steps.map(s=>`<li>${escapeHTML(s)}</li>`).join("")}</ol>
+      <h3>細かい作り方</h3><ol class="taste-steps">${target.steps.map(s=>`<li>${escapeHTML(s)}</li>`).join("")}</ol>
       <p class="notice" style="margin-top:10px">💡 <strong>美味しく作るコツ：</strong>${escapeHTML(target.tip)}</p>
     </article>`;
 }
-
-function selectTasteTag(name){
-  selectedTasteName=(selectedTasteName===name)?null:name;
-  renderTasteGuide();
-}
-function toggleTasteFavorite(name){
-  tasteFavs=tasteFavs.includes(name)?tasteFavs.filter(x=>x!==name):[...tasteFavs,name];
-  saveData("uchiTasteFavorites",tasteFavs);renderTasteGuide();
-}
+function selectTasteTag(name){selectedTasteName=(selectedTasteName===name)?null:name;renderTasteGuide();}
+function toggleTasteFavorite(name){tasteFavs=tasteFavs.includes(name)?tasteFavs.filter(x=>x!==name):[...tasteFavs,name];saveData("uchiTasteFavorites",tasteFavs);renderTasteGuide();}
 document.getElementById("tasteSearch").addEventListener("input",renderTasteGuide);
 document.getElementById("tastePeople").addEventListener("change",renderTasteGuide);
 document.getElementById("tasteFavorites").addEventListener("change",renderTasteGuide);
-document.querySelectorAll("[data-taste-filter]").forEach(b=>b.addEventListener("click",()=>{
-  tasteFilter=b.dataset.tasteFilter;
-  document.querySelectorAll("[data-taste-filter]").forEach(x=>x.classList.toggle("active",x===b));
-  renderTasteGuide();
-}));
+document.querySelectorAll("[data-taste-filter]").forEach(b=>b.addEventListener("click",()=>{tasteFilter=b.dataset.tasteFilter;document.querySelectorAll("[data-taste-filter]").forEach(x=>x.classList.toggle("active",x===b));renderTasteGuide();}));
 
-/* 設定（AI・バックアップ） */
+/* 設定 */
 function loadAISettings(){
   const ep=localStorage.getItem(STORAGE.aiEndpoint)||"",cd=localStorage.getItem(STORAGE.aiCode)||"";
   document.getElementById("aiEndpoint").value=ep;document.getElementById("aiAccessCode").value=cd;

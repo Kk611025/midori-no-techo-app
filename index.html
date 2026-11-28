@@ -376,7 +376,7 @@ details.dish-detail .dish-body{margin-top:8px;padding-top:8px;border-top:1px das
 <nav class="tabs">
   <button class="active" data-tab="home">🏠 ホーム</button><button data-tab="meal">🍽 献立</button>
   <button data-tab="calendar">📅 カレンダー</button><button data-tab="recipe">📖 レシピ</button>
-  <button data-tab="inventory">🥬 在庫</button><button data-tab="shopping">🛒 買い物</button>
+  <button data-tab="shopping">🛒 買い物</button><button data-tab="inventory">🥬 在庫</button>
   <button data-tab="cost">💰 食材費</button><button data-tab="bento">🍱 お弁当</button>
   <button data-tab="history">📚 履歴</button><button data-tab="settings">⚙️ 設定</button>
 </nav>
@@ -464,7 +464,15 @@ const PRESET_RECIPES=[
 
 (function sanitizeData(){
   let changed=false;
-  recipes.forEach(r=>{const f=fixRecipeCategory(r.name,r.category);if(f!==r.category){r.category=f;changed=true;}});
+  const presetMap=new Map(PRESET_RECIPES.map(p=>[p.name,p]));
+  recipes.forEach(r=>{
+    const f=fixRecipeCategory(r.name,r.category);if(f!==r.category){r.category=f;changed=true;}
+    const p=presetMap.get(r.name);
+    if(p){
+      if(!r.steps||r.steps.length<p.steps.length){r.steps=p.steps;changed=true;}
+      if(!r.memo&&p.memo){r.memo=p.memo;changed=true;}
+    }
+  });
   mealPlans.forEach(day=>["breakfast","lunch","dinner"].forEach(t=>{
     const m=day.menu?.[t];if(!m)return;const st=m["主食"];
     if(st&&fixRecipeCategory(st.name,"主食")!=="主食"){
@@ -472,6 +480,13 @@ const PRESET_RECIPES=[
       m["主食"]={...PRESET_RECIPES[0],id:"preset-白ごはん",people:day.people||4,budget:Math.round(PRESET_RECIPES[0].budget*(day.people||4)/4)};
       changed=true;
     }
+    MEAL_CATEGORIES.forEach(c=>{
+      const d=m[c];if(!d)return;const p=presetMap.get(d.name);
+      if(p){
+        if(!d.steps||d.steps.length<p.steps.length){d.steps=p.steps;changed=true;}
+        if(!d.memo&&p.memo){d.memo=p.memo;changed=true;}
+      }
+    });
   }));
   if(changed)persistAll();
 })();
@@ -663,7 +678,7 @@ document.getElementById("makePlan").addEventListener("click",async()=>{
   const btn=document.getElementById("makePlan"),old=btn.textContent;
   btn.disabled=true;let sec=0,doneChunks=0;
   const totalDays=Math.min(49,Math.max(1,Number(document.getElementById("mealDays").value)||7));
-  const chunks=[];for(let off=0;off<totalDays;off+=7)chunks.push({off,days:Math.min(7,totalDays-off)});
+  const chunks=[];for(let off=0;off<totalDays;off+=4)chunks.push({off,days:Math.min(4,totalDays-off)});
   const upd=()=>{btn.textContent=`AIで高速作成中… (${doneChunks}/${chunks.length}週完了・${sec}秒)`;};
   upd();const timer=setInterval(()=>{sec++;upd();},1000);
   try{
@@ -713,7 +728,7 @@ function renderDishItemHTML(cat,r,swapInfo=null){
   const stepLines=String(r.steps||"").split(/\n/).map(s=>s.replace(/^\d+[\.\、\)]\s*/,"").trim()).filter(Boolean);
   const stepsHTML=stepLines.length?`<div style="margin-top:6px"><strong>詳しい作り方：</strong><ol class="dish-steps">${stepLines.map(s=>`<li>${escapeHTML(s)}</li>`).join("")}</ol></div>`:"";
   const tipHTML=r.memo?`<div class="dish-tip">💡 <strong>ポイント・コツ：</strong>${escapeHTML(r.memo)}</div>`:"";
-  return`<details class="dish-detail"><summary><div class="row"><span class="tag">${escapeHTML(cat)}</span><strong>${escapeHTML(r.name)}</strong><span class="small">${Number(r.time||0)}分 / 約${formatYen(r.budget||0)}</span></div>${swapBtn}</summary><div class="dish-body">${r.ingredients?`<div><strong>材料（${Number(r.people||4)}人分）：</strong><br>${escapeHTML(r.ingredients).replace(/\n/g,"<br>")}</div>`:""}${stepsHTML}${tipHTML}</div></details>`;
+  return`<details class="dish-detail"><summary><div class="row"><span class="tag">${escapeHTML(cat)}</span><strong>${escapeHTML(r.name)}</strong><span class="small">${Number(r.time||0)}分 / 約${formatYen(r.budget||0)}</span><span class="tag" style="background:#fff6df;border-color:#e5ca87;color:#8a6214">📖 作り方・コツ ▼</span></div>${swapBtn}</summary><div class="dish-body">${r.ingredients?`<div><strong>材料（${Number(r.people||4)}人分）：</strong><br>${escapeHTML(r.ingredients).replace(/\n/g,"<br>")}</div>`:""}${stepsHTML}${tipHTML}</div></details>`;
 }
 function renderMealResult(){
   const target=document.getElementById("mealResult");
@@ -785,10 +800,24 @@ const FOOD_RULES=[
   [/ちくわ/,"ちくわ"],
   [/(油揚げ|あぶらあげ)/,"油揚げ"],
   [/食パン/,"食パン"],
+  [/納豆/,"納豆"],
+  [/(梅干し|梅干|うめぼし)/,"梅干し"],
+  [/(大葉|青じそ|しそ)/,"大葉"],
+  [/ミニトマト/,"ミニトマト"],
+  [/(しめじ|シメジ)/,"しめじ"],
+  [/(えのき|エノキ)/,"えのき"],
   [/(長ねぎ|長ネギ|小ねぎ|青ねぎ|万能ねぎ|^ねぎ$|^ネギ$)/,"長ねぎ"],
   [/(玉ねぎ|たまねぎ|タマネギ)/,"玉ねぎ"],
   [/(にんじん|人参|ニンジン)/,"にんじん"],
   [/(じゃがいも|ジャガイモ|馬鈴薯)/,"じゃがいも"],
+  [/ピーマン/,"ピーマン"],
+  [/(きゅうり|キュウリ|胡瓜)/,"きゅうり"],
+  [/トマト/,"トマト"],
+  [/大根/,"大根"],
+  [/ごぼう/,"ごぼう"],
+  [/ほうれん草/,"ほうれん草"],
+  [/小松菜/,"小松菜"],
+  [/ブロッコリー/,"ブロッコリー"],
   [/キャベツ/,"キャベツ"],
   [/白菜/,"白菜"],
   [/もやし/,"もやし"],
@@ -801,11 +830,14 @@ const FOOD_RULES=[
   [/(合いびき|合挽き|合びき)/,"合いびき肉"],
   [/(鮭|しゃけ|シャケ)/,"鮭切り身"],
   [/(さば|サバ)/,"さば切り身"],
+  [/(ぶり|ブリ)/,"ぶり切り身"],
+  [/(たら|タラ)/,"たら切り身"],
   [/うどん/,"うどん"],
   [/(焼きそば麺|中華麺)/,"焼きそば麺"],
   [/(スパゲティ|スパゲッティ|パスタ)/,"パスタ"],
   [/そうめん/,"そうめん"],
-  [/コーン/,"コーン缶"]
+  [/コーン/,"コーン缶"],
+  [/ツナ/,"ツナ缶"]
 ];
 
 const SEASONING_RE=/(醤油|みりん|料理酒|砂糖|塩|こしょう|味噌|酢|油|オイル|だし|スープ|コンソメ|ソース|たれ|ケチャップ|マヨネーズ|ポン酢|めんつゆ|片栗粉|小麦粉|パン粉|ごま|生姜|にんにく|わさび|からし|マスタード|七味|一味|唐辛子|豆板醤|コチュジャン|甜麺醤|カレー|ルウ|はちみつ|バター|チーズ|海苔|わかめ|ひじき|昆布|かつお節|青のり|缶|スパイス)/;
@@ -818,6 +850,23 @@ const PACK_CONVERSION={
   "ベーコン":{perPack:5,unit:"パック"},
   "油揚げ":{perPack:3,unit:"袋"},
   "食パン":{perPack:6,unit:"斤"},
+  "納豆":{perPack:3,unit:"セット(3P)"},
+  "梅干し":{perPack:12,unit:"パック"},
+  "大葉":{perPack:10,unit:"パック"},
+  "ミニトマト":{perPack:15,unit:"パック"},
+  "しめじ":{perPack:1,unit:"パック"},
+  "えのき":{perPack:1,unit:"パック"},
+  "ピーマン":{perPack:5,unit:"袋"},
+  "きゅうり":{perPack:3,unit:"袋"},
+  "にんじん":{perPack:3,unit:"袋"},
+  "玉ねぎ":{perPack:3,unit:"袋"},
+  "じゃがいも":{perPack:4,unit:"袋"},
+  "長ねぎ":{perPack:2,unit:"袋"},
+  "トマト":{perPack:3,unit:"パック"},
+  "鮭切り身":{perPack:4,unit:"パック"},
+  "さば切り身":{perPack:4,unit:"パック"},
+  "ぶり切り身":{perPack:4,unit:"パック"},
+  "たら切り身":{perPack:4,unit:"パック"},
   "パスタ":{perPack:400,unit:"袋"},
   "そうめん":{perPack:300,unit:"袋"}
 };

@@ -421,6 +421,7 @@ const STAPLE_RE=/(ご飯|ごはん|白米|雑穀|玄米|むすび|おにぎり|�
 const SOUP_RE=/(汁|スープ|みそ汁|味噌汁|豚汁|けんちん|ポタージュ|チャウダー|吸い物|すまし)/;
 const DRINK_RE=/^(牛乳|ミルク|豆乳|コーヒー|紅茶|お茶|緑茶|麦茶|ジュース|オレンジジュース|カフェオレ|ヨーグルト|飲むヨーグルト|ホットミルク)$/;
 const PAN_ONIGIRI_RE=/(パン|トースト|クロワッサン|ベーグル|ロールパン|バゲット|サンドイッチ|むすび|おにぎり|そうめん)/;
+const SIMPLE_EGG_RE=/^(ゆで卵|ゆでたまご|ゆで玉子|温泉卵|温泉たまご|半熟卵|味玉|煮卵|生卵|卵かけご飯|目玉焼き)$/;
 const MAIN_RE=/(ハンバーグ|唐揚げ|から揚げ|からあげ|照り焼き|生姜焼き|焼き鮭|塩焼き|煮付け|味噌煮|ホイル焼き|ムニエル|ステーキ|ソテー|カツ|フライ|天ぷら|肉じゃが|麻婆|炒め|回鍋肉|青椒肉絲|酢豚|餃子|焼売|オムレツ|卵焼き|だし巻き|目玉焼き|ハムエッグ|納豆|焼肉|ロールキャベツ|シチュー|筑前煮|ぶり大根)/;
 
 function fixRecipeCategory(name,cat){
@@ -653,6 +654,7 @@ function minCostInCategory(cat,people,avoid,slot){
 function pickBudgetSafeRecipe(cat,opt,maxCostAllowed,usedNames,recentNames,lastProtein,required=true){
   let allCat=getAllRecipePool().filter(r=>r.category===cat&&!DRINK_RE.test(r.name));
   if(opt.slot==="dinner"&&cat==="主食")allCat=allCat.filter(r=>!PAN_ONIGIRI_RE.test(r.name));
+  if(opt.slot==="breakfast"&&cat==="main"||opt.slot==="breakfast"&&cat==="主菜")allCat=allCat.filter(r=>!SIMPLE_EGG_RE.test(r.name));
   if(!allCat.length)return null;
   let cands=allCat.filter(r=>!recipeMatchesAvoid(r,opt.avoid)&&estimateCostForPeople(r,opt.people)<=maxCostAllowed&&Number(r.time||0)<=opt.maxTime&&(!r.mealSlot||r.mealSlot.includes(opt.slot)));
   if(!cands.length)cands=allCat.filter(r=>!recipeMatchesAvoid(r,opt.avoid)&&estimateCostForPeople(r,opt.people)<=maxCostAllowed&&(!r.mealSlot||r.mealSlot.includes(opt.slot)));
@@ -663,6 +665,7 @@ function pickBudgetSafeRecipe(cat,opt,maxCostAllowed,usedNames,recentNames,lastP
     let s=0;if(r.isUserRecipe)s+=22;
     const th=inferTheme(r);
     if(opt.theme&&th.includes(opt.theme))s+=42;else if(opt.theme)s-=32;
+    if(opt.slot==="dinner"&&cat==="主菜"&&r.protein==="meat")s+=12;
     s+=recipeUsesInventory(r).length*15+countWantedMatches(r,opt.wanted)*20+Number(r.rating||3)*2;
     if(cat==="主菜"&&lastProtein&&r.protein&&r.protein===lastProtein)s-=22;
     if(r.name!=="白ごはん"){if(usedNames.has(r.name))s-=45;if(recentNames.includes(r.name))s-=30;}
@@ -672,7 +675,11 @@ function pickBudgetSafeRecipe(cat,opt,maxCostAllowed,usedNames,recentNames,lastP
   return{...picked,people:opt.people,budget:estimateCostForPeople(picked,opt.people)};
 }
 function getSlotBudgets(people){
-  return{breakfast:Math.max(0,Number(document.getElementById("breakfastBudget").value)||0)*people,lunch:Math.max(0,Number(document.getElementById("lunchBudget").value)||0)*people,dinner:Math.max(0,Number(document.getElementById("dinnerBudget").value)||0)*people};
+  return{
+    breakfast:Math.max(0,Number(document.getElementById("breakfastBudget").value)||0)*people,
+    lunch:Math.max(0,Number(document.getElementById("lunchBudget").value)||0)*people,
+    dinner:(Math.max(0,Number(document.getElementById("dinnerBudget").value)||0)+10)*people
+  };
 }
 function generateLocalPlan(){
   const people=Math.min(40,Math.max(1,Number(document.getElementById("mealPeople").value)||4));

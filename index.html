@@ -462,6 +462,7 @@ const PRESET_RECIPES=[
   {name:"ウインナーとコーンのソテー",category:"弁当",protein:"meat",people:4,time:10,budget:200,mealSlot:["bento","breakfast"],ingredients:"ウインナー 6本\nコーン缶 1/2缶\nバター 10g",steps:"ウインナーは斜め薄切りまたは輪切りにし、コーンはザルで水気をしっかり切る。\nフライパンにバターを入れて中火で溶かし、ウインナーを1分ほど炒める。\n焼き色がついたらコーンを加えてさらに1分炒め、塩こしょう少々で味を調える。",memo:"コーンの水気をしっかり切ってから炒めるとバターの風味が薄まらずお弁当の彩りも綺麗です。"}
 ];
 
+const MEAL_CATEGORIES=["主食","主菜","副菜","汁物","小鉢"];
 (function sanitizeData(){
   let changed=false;
   const presetMap=new Map(PRESET_RECIPES.map(p=>[p.name,p]));
@@ -595,7 +596,6 @@ function renderInventory(){
   }
 }
 
-const MEAL_CATEGORIES=["主食","主菜","副菜","汁物","小鉢"];
 const getInventoryNames=()=>inventory.filter(i=>Number(i.amount)>0).map(i=>i.name);
 const recipeUsesInventory=r=>getInventoryNames().filter(n=>((r.name||"")+" "+(r.ingredients||"")).includes(n));
 const parseKeywords=s=>String(s||"").split(/[、,，\s]+/).map(x=>x.trim().toLowerCase()).filter(Boolean);

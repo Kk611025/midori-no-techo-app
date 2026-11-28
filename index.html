@@ -93,6 +93,16 @@ details.dish-detail .dish-body{margin-top:8px;padding-top:8px;border-top:1px das
 .taste-steps{margin:8px 0 0;padding-left:18px;font-size:13px;line-height:1.7}
 .recipe-scrap-card{background:#fffdf5;border:1px solid #e5d9c3;border-radius:13px;padding:13px;margin:11px 0;box-shadow:2px 3px 0 rgba(95,75,45,.09)}
 .recipe-scrap-card::before{content:"📎";float:right;font-size:18px}
+.shop-group-title{font-size:12px;font-weight:700;color:var(--accent);margin:12px 0 4px;padding:3px 9px;background:var(--soft);border-radius:6px;display:inline-block}
+.shop-item{border-bottom:1px dashed #dfd4c1;padding:7px 2px}
+.shop-item.done .shop-name,.shop-item.done .shop-amt{text-decoration:line-through;opacity:.5}
+.shop-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.shop-left{display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer;margin:0;color:var(--ink)}
+.shop-left input{width:18px;height:18px;flex:0 0 auto;accent-color:var(--accent)}
+.shop-name{font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shop-amt{font-size:13px;font-weight:700;color:var(--terra);white-space:nowrap}
+.shop-right{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+.shop-buy-box{background:#faf6ec;border:1px dashed #d6c8b2;border-radius:9px;padding:9px;margin-top:6px}
 </style>
 </head>
 <body>
@@ -742,7 +752,7 @@ document.getElementById("saveMealPlan").addEventListener("click",()=>{
   persistAll();renderAll();alert("献立をカレンダーに保存しました！");
 });
 
-/* 買い物リストのスリム化（同義語統合＆大まかな買い出し単位に変換） */
+/* 買い物リストの超スリム化（売り場別・1行チェック・大まかな買い出し単位） */
 const extractIngredients=t=>String(t||"").split(/\n/).map(l=>l.trim()).filter(Boolean);
 const normalizeFoodName=v=>String(v||"").trim().replace(/\s+/g,"").toLowerCase();
 
@@ -781,13 +791,25 @@ const FOOD_ALIASES=[
   [/^(コーン|コーン缶|スイートコーン)$/,"コーン缶"],
   [/^(すりごま|いりごま|白ごま|ごま)$/,"ごま"],
   [/^(生姜|しょうが|おろし生姜|おろししょうが)$/,"生姜"],
-  [/^(にんにく|ニンニク|おろしにんにく)$/,"にんにく"]
+  [/^(にんにく|ニンニク|おろしにんにく)$/,"にんにく"],
+  [/^(ハム|ロースハム)$/,"ハム"]
 ];
 
 const BOTTLE_SEASONINGS=new Set(["醤油","みりん","料理酒","酢","サラダ油","ごま油","ポン酢","めんつゆ","焼きそばソース"]);
-const PACK_SEASONINGS=new Set(["砂糖","塩","塩こしょう","味噌","だしの素","鶏ガラスープの素","コンソメ","ケチャップ","マヨネーズ","片栗粉","小麦粉","パン粉","ごま","青のり","塩昆布","かつお節","乾燥わかめ","乾燥ひじき","バター"]);
+const PACK_SEASONINGS=new Set(["砂糖","塩","塩こしょう","味噌","だしの素","鶏ガラスープの素","コンソメ","ケチャップ","マヨネーズ","片栗粉","小麦粉","パン粉","ごま","青のり","塩昆布","かつお節","乾燥わかめ","乾燥ひじき","バター","焼き海苔"]);
 const MEAT_ITEMS=new Set(["鶏もも肉","鶏むね肉","豚こま肉","豚バラ肉","豚ロース肉","合いびき肉","豚ひき肉"]);
+const PACK_CONVERSION={
+  "ウインナー":{perPack:6,unit:"袋"},
+  "ちくわ":{perPack:4,unit:"袋"},
+  "ハム":{perPack:4,unit:"パック"},
+  "ベーコン":{perPack:4,unit:"パック"},
+  "油揚げ":{perPack:3,unit:"袋"},
+  "食パン":{perPack:6,unit:"斤"},
+  "パスタ":{perPack:400,unit:"袋"},
+  "そうめん":{perPack:300,unit:"袋"}
+};
 const IGNORE_FOODS=new Set(["水","お湯","熱湯","冷水","氷"]);
+let openBuyId=null;
 
 function canonFoodName(raw){
   let s=String(raw||"").trim().replace(/（.*?）|\(.*?\)/g,"").trim();
@@ -799,8 +821,7 @@ function parseIngredientLine(line){
   const t=String(line||"").trim();if(!t)return null;
   const m=t.match(/^(.+?)\s+([0-9]+(?:\.[0-9]+)?(?:\/[0-9]+)?)\s*(.*)$/);
   if(m){
-    const rawNum=m[2];
-    const amt=rawNum.includes("/")?Number(rawNum.split("/")[0])/Number(rawNum.split("/")[1]):Number(rawNum);
+    const rawNum=m[2],amt=rawNum.includes("/")?Number(rawNum.split("/")[0])/Number(rawNum.split("/")[1]):Number(rawNum);
     return{name:canonFoodName(m[1]),amount:Number.isFinite(amt)?amt:1,unit:(m[3]||"").trim()};
   }
   const parts=t.split(/\s+/);
@@ -833,14 +854,22 @@ function hasUsableStock(name){
   return inventory.some(s=>canonFoodName(s.name)===name&&Number(s.amount)>0&&s.stockLevel!=="残り少し");
 }
 
+function getShoppingGroup(name){
+  const n=canonFoodName(name);
+  if(MEAT_ITEMS.has(n)||/(肉|鮭|さば|魚|たら|ぶり|あじ|ハム|ベーコン|ウインナー|ちくわ)/.test(n))return"🥩 肉・魚";
+  if(/^(お米|食パン|うどん|焼きそば麺|パスタ|そうめん)$/.test(n)||/お米/.test(name))return"🍚 お米・パン・麺";
+  if(/^(卵|豆腐|納豆|油揚げ)$/.test(n))return"🥚 卵・豆腐・大豆";
+  if(BOTTLE_SEASONINGS.has(n)||PACK_SEASONINGS.has(n)||/(缶|わかめ|ひじき|昆布|節)$/.test(n))return"🧂 調味料・乾物";
+  return"🥬 野菜・その他";
+}
+
 function buildShoppingFromPlans(){
   const rawMap=new Map();
   mealPlans.forEach(day=>Object.values(day.menu||{}).forEach(meal=>Object.values(meal||{}).forEach(r=>{
     if(!r)return;
     extractIngredients(r.ingredients).forEach(l=>{
       const item=parseIngredientLine(l);
-      if(!item||!item.name||IGNORE_FOODS.has(item.name))return;
-      if(item.amount===0)return;
+      if(!item||!item.name||IGNORE_FOODS.has(item.name)||item.amount===0)return;
       if(!rawMap.has(item.name))rawMap.set(item.name,[]);
       rawMap.get(item.name).push(item);
     });
@@ -848,15 +877,11 @@ function buildShoppingFromPlans(){
 
   const next=[];
   rawMap.forEach((entries,name)=>{
-    // 1. 調味料（ボトル／袋）は「家に十分あるなら出さない・無いか残り少しなら1本/1袋」に統合
     if(BOTTLE_SEASONINGS.has(name)||PACK_SEASONINGS.has(name)){
       if(hasUsableStock(name))return;
-      const unit=BOTTLE_SEASONINGS.has(name)?"本(ボトル)":"袋/個";
-      next.push({id:uid(),name,amount:1,unit,checked:false,purchased:false,price:0});
+      next.push({id:uid(),name,amount:1,unit:BOTTLE_SEASONINGS.has(name)?"本":"袋",checked:false,purchased:false,price:0});
       return;
     }
-
-    // 2. お米は合・膳・kgをまとめて 5kg / 10kg の大まかな袋単位へ統合
     if(name==="お米"){
       const needG=entries.reduce((s,e)=>s+toRiceGrams(e.amount,e.unit),0);
       const stockG=inventory.filter(s=>canonFoodName(s.name)==="お米"&&Number(s.amount)>0).reduce((s,e)=>s+toRiceGrams(Number(e.amount),e.unit||"kg"),0);
@@ -867,8 +892,6 @@ function buildShoppingFromPlans(){
       }
       return;
     }
-
-    // 3. 卵は合計個数から10個入りパック単位へ統合
     if(name==="卵"){
       const need=entries.reduce((s,e)=>s+(e.unit.includes("パック")?e.amount*10:e.amount),0);
       const stock=inventory.filter(s=>canonFoodName(s.name)==="卵"&&Number(s.amount)>0).reduce((s,e)=>s+(String(e.unit||"").includes("パック")?Number(e.amount)*10:Number(e.amount)),0);
@@ -876,8 +899,6 @@ function buildShoppingFromPlans(){
       if(rem>0)next.push({id:uid(),name:"卵",amount:Math.ceil(rem/10),unit:"パック",checked:false,purchased:false,price:0});
       return;
     }
-
-    // 4. 肉類はg・枚・パックを100g単位の大まかなg数へ統合
     if(MEAT_ITEMS.has(name)){
       const needG=entries.reduce((s,e)=>s+toMeatGrams(e.amount,e.unit),0);
       const stockG=inventory.filter(s=>canonFoodName(s.name)===name&&Number(s.amount)>0).reduce((s,e)=>s+toMeatGrams(Number(e.amount),e.unit||"g"),0);
@@ -885,45 +906,104 @@ function buildShoppingFromPlans(){
       if(remG>0)next.push({id:uid(),name,amount:Math.ceil(remG/100)*100,unit:"g",checked:false,purchased:false,price:0});
       return;
     }
+    if(PACK_CONVERSION[name]){
+      const cfg=PACK_CONVERSION[name];
+      const need=entries.reduce((s,e)=>s+(e.unit===cfg.unit?e.amount*cfg.perPack:e.amount),0);
+      const stock=inventory.filter(s=>canonFoodName(s.name)===name&&Number(s.amount)>0).reduce((s,e)=>s+(e.unit===cfg.unit?Number(e.amount)*cfg.perPack:Number(e.amount)),0);
+      const rem=Math.max(0,need-stock);
+      if(rem>0)next.push({id:uid(),name,amount:Math.max(1,Math.ceil(rem/cfg.perPack)),unit:cfg.unit,checked:false,purchased:false,price:0});
+      return;
+    }
 
-    // 5. その他の野菜・魚・豆腐・麺などは1品目1行にまとめ、切り上げ整数に丸める
-    let total=0,mainUnit="";
-    const unitScore={};
+    let total=0;const unitScore={};
     entries.forEach(e=>{
       let val=e.amount;
-      if(e.unit==="cm")val=e.amount*0.04;
-      else if(e.unit==="かけ")val=e.amount*0.5;
-      total+=val;
-      if(e.unit&&e.unit!=="cm"&&e.unit!=="かけ")unitScore[e.unit]=(unitScore[e.unit]||0)+1;
+      if(e.unit==="cm")val=e.amount*0.04;else if(e.unit==="かけ")val=e.amount*0.5;
+      total+=val;if(e.unit&&e.unit!=="cm"&&e.unit!=="かけ")unitScore[e.unit]=(unitScore[e.unit]||0)+1;
     });
-    mainUnit=Object.keys(unitScore).sort((a,b)=>unitScore[b]-unitScore[a])[0]||entries[0].unit||"個";
+    const mainUnit=Object.keys(unitScore).sort((a,b)=>unitScore[b]-unitScore[a])[0]||entries[0].unit||"個";
     const stock=inventory.filter(s=>canonFoodName(s.name)===name&&Number(s.amount)>0).reduce((s,x)=>s+Number(x.amount),0);
     const rem=Math.max(0,total-stock);
-    if(rem>0){
-      const old=shopping.find(x=>canonFoodName(x.name)===name);
-      next.push({id:old?.id||uid(),name,amount:Math.max(1,Math.ceil(rem)),unit:mainUnit,checked:false,purchased:false,price:0});
-    }
+    if(rem>0)next.push({id:uid(),name,amount:Math.max(1,Math.ceil(rem)),unit:mainUnit,checked:false,purchased:false,price:0});
   });
 
   shopping.filter(x=>x.manual).forEach(x=>next.push(x));
-  shopping=next;persistAll();renderShopping();renderHome();
-  alert("同じ食材をまとめ、お米・醤油など買いやすい単位で買い物リストを作成しました！");
+  shopping=next;openBuyId=null;persistAll();renderShopping();renderHome();
+  alert("売り場ごとにまとめたスリムな買い物リストを作成しました！");
+}
+
+function toggleBuyBox(id){
+  openBuyId=(openBuyId===id)?null:id;
+  renderShopping();
+}
+function clearCheckedShopping(){
+  const cnt=shopping.filter(x=>x.checked).length;
+  if(!cnt)return alert("チェック済みの項目がありません。");
+  if(!confirm(`チェック済みの${cnt}品をリストから消しますか？`))return;
+  shopping=shopping.filter(x=>!x.checked);
+  persistAll();renderShopping();renderHome();
 }
 
 function renderShopping(){
   const box=document.getElementById("shoppingList");if(!box)return;
-  const btn=`<button class="primary full" id="makeShoppingFromPlans">献立から買い物リストを作る（スリム統合版）</button>`;
-  box.innerHTML=(shopping.length?shopping.map(item=>`<div class="result"><div class="row" style="justify-content:space-between"><strong>${escapeHTML(item.name)}</strong><span>${Number(item.amount||1)} ${escapeHTML(item.unit||"")}</span></div><div class="grid"><div><label>買った数量</label><input type="number" min="0.1" step="0.1" id="buyQty-${item.id}" value="${Number(item.amount||1)}"></div><div><label>金額（円）</label><input type="number" min="0" id="buyPrice-${item.id}" value="${Number(item.price||0)}"></div></div><label>単位</label><input id="buyUnit-${item.id}" value="${escapeHTML(item.unit||"")}" placeholder="個・袋・本"><div class="actions" style="margin-top:8px"><label style="margin:0"><input type="checkbox" style="width:auto" ${item.checked?"checked":""} onchange="toggleShoppingItem('${item.id}',this.checked)"> 購入済み</label><button class="primary" onclick="recordShoppingPurchase('${item.id}',false)">購入を記録</button><button onclick="recordShoppingPurchase('${item.id}',true)">もらいもの（0円）</button><button onclick="deleteShoppingItem('${item.id}')">削除</button></div></div>`).join(""):`<p class="muted">買い物リストはまだありません。</p>`)+btn;
+  const topControls=`
+    <button class="primary full" style="margin-top:0;margin-bottom:8px" id="makeShoppingFromPlans">🔄 献立からリストを更新（スリム統合）</button>
+    ${shopping.length?`<div class="row" style="justify-content:space-between;margin-bottom:6px"><span class="small">残り <strong>${shopping.filter(x=>!x.checked).length}</strong>品 ／ チェック済 ${shopping.filter(x=>x.checked).length}品</span><button type="button" class="mini-btn" onclick="clearCheckedShopping()">🧹 チェック済みを消す</button></div>`:""}
+  `;
+
+  if(!shopping.length){
+    box.innerHTML=topControls+`<p class="muted">買い物リストはまだありません。上のボタンを押すか、下から追加してください。</p>`;
+  }else{
+    const order=["🥩 肉・魚","🥬 野菜・その他","🥚 卵・豆腐・大豆","🍚 お米・パン・麺","🧂 調味料・乾物"];
+    const groups={};order.forEach(g=>groups[g]=[]);
+    shopping.forEach(item=>{(groups[getShoppingGroup(item.name)]||groups["🥬 野菜・その他"]).push(item);});
+
+    const body=order.filter(g=>groups[g].length).map(g=>`
+      <div class="shop-group-title">${g}</div>
+      ${groups[g].map(item=>{
+        const amtText=MEAT_ITEMS.has(canonFoodName(item.name))&&item.unit==="g"?`約${item.amount}g`:`${Number(item.amount||1)}${escapeHTML(item.unit||"")}`;
+        return`
+        <div class="shop-item${item.checked?" done":""}">
+          <div class="shop-row">
+            <label class="shop-left">
+              <input type="checkbox" ${item.checked?"checked":""} onchange="toggleShoppingItem('${item.id}',this.checked)">
+              <span class="shop-name">${escapeHTML(item.name)}</span>
+            </label>
+            <div class="shop-right">
+              <span class="shop-amt">${amtText}</span>
+              <button type="button" class="mini-btn" onclick="toggleBuyBox('${item.id}')">💰</button>
+              <button type="button" class="mini-btn" onclick="deleteShoppingItem('${item.id}')">×</button>
+            </div>
+          </div>
+          ${openBuyId===item.id?`
+          <div class="shop-buy-box">
+            <div class="grid">
+              <div><label style="margin-top:2px">数量</label><input type="number" min="0.1" step="0.1" id="buyQty-${item.id}" value="${Number(item.amount||1)}"></div>
+              <div><label style="margin-top:2px">金額（円）</label><input type="number" min="0" id="buyPrice-${item.id}" value="${Number(item.price||0)}"></div>
+            </div>
+            <label style="margin-top:6px">単位</label><input id="buyUnit-${item.id}" value="${escapeHTML(item.unit||"")}">
+            <div class="actions" style="margin-top:8px">
+              <button class="primary mini-btn" onclick="recordShoppingPurchase('${item.id}',false)">購入を記録＆在庫へ</button>
+              <button class="mini-btn" onclick="recordShoppingPurchase('${item.id}',true)">もらいもの(0円)</button>
+            </div>
+          </div>`:""}
+        </div>`;
+      }).join("")}
+    `).join("");
+
+    box.innerHTML=topControls+body;
+  }
   document.getElementById("makeShoppingFromPlans")?.addEventListener("click",buildShoppingFromPlans);
 }
-function toggleShoppingItem(id,checked){const i=shopping.find(x=>x.id===id);if(i){i.checked=checked;persistAll();renderHome();}}
-function deleteShoppingItem(id){shopping=shopping.filter(x=>x.id!==id);persistAll();renderShopping();renderHome();}
+
+function toggleShoppingItem(id,checked){const i=shopping.find(x=>x.id===id);if(i){i.checked=checked;persistAll();renderShopping();renderHome();}}
+function deleteShoppingItem(id){shopping=shopping.filter(x=>x.id!==id);if(openBuyId===id)openBuyId=null;persistAll();renderShopping();renderHome();}
 function recordShoppingPurchase(id,gift){
   const item=shopping.find(x=>x.id===id);if(!item)return;
   const qty=Number(document.getElementById(`buyQty-${id}`)?.value),price=gift?0:Number(document.getElementById(`buyPrice-${id}`)?.value),unit=document.getElementById(`buyUnit-${id}`)?.value.trim()||item.unit||"個";
   if(!(qty>0))return alert("購入数量を正しく入力してください。");if(!(price>=0)||!Number.isFinite(price))return alert("金額を正しく入力してください。");
   const rec={id:uid(),name:item.name,quantity:qty,unit,price,gift:!!gift,date:todayString()};
-  purchases.push(rec);addPurchaseToInventory(rec);shopping=shopping.filter(x=>x.id!==id);persistAll();renderAll();
+  purchases.push(rec);addPurchaseToInventory(rec);shopping=shopping.filter(x=>x.id!==id);openBuyId=null;persistAll();renderAll();
   alert(gift?"もらいものを0円で記録し在庫に追加しました。":"購入金額を記録し在庫に追加しました。");
 }
 document.getElementById("addShoppingItem").addEventListener("click",()=>{
@@ -952,7 +1032,6 @@ function addPurchaseToInventory(p){
   if(ex){ex.amount=(Number(ex.amount)||0)+amount;ex.price=(Number(ex.price)||0)+(Number(p.price)||0);ex.stockLevel="";}
   else{inventory.unshift({id:uid(),name:cleanName,amount,unit:saveUnit,expiry:"",category:"その他",source:p.gift?"もらいもの":"購入",price:Number(p.price)||0,createdAt:p.date||todayString()});}
 }
-
 /* カレンダー・ホーム・履歴・費用・お弁当 */
 function renderCalendar(){
   const y=calendarMonth.getFullYear(),m=calendarMonth.getMonth(),first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate(),today=todayString(),sel=dateKey(selectedCalendarDate);
